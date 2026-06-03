@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gross Income 💩</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #1a1208;
+    --surface: #231a0a;
+    --surface2: #2a1f0e;
+    --gold: #f5c842;
+    --amber: #e07b00;
+    --cream: #f5ead6;
+    --white: #ffffff;
+    --muted: #a08060;
+    --green: #4caf6e;
+    --paper: #130e05;
+    --border: rgba(245,200,66,0.12);
+    --heading: #f0ddb0;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--cream);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 16px 48px;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background:
+      radial-gradient(ellipse 600px 400px at 30% 20%, rgba(245,200,66,0.07) 0%, transparent 60%),
+      radial-gradient(ellipse 500px 500px at 80% 80%, rgba(224,123,0,0.06) 0%, transparent 50%);
+    pointer-events: none; z-index: 0;
+  }
+
+  .wrapper { width: 100%; max-width: 520px; position: relative; z-index: 1; }
+
+  /* ── HEADER ── */
+  header { text-align: center; margin-bottom: 28px; padding-top: 8px; }
+
+  .emoji-big {
+    font-size: 44px; display: block; margin-bottom: 8px;
+    animation: bob 3.5s ease-in-out infinite;
+    filter: drop-shadow(0 4px 16px rgba(245,200,66,0.3));
+  }
+
+  @keyframes bob {
+    0%, 100% { transform: translateY(0) rotate(-3deg); }
+    50% { transform: translateY(-10px) rotate(3deg); }
+  }
+
+  h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(48px, 12vw, 72px);
+    letter-spacing: 4px; line-height: 1; color: var(--gold);
+    text-shadow: 0 0 60px rgba(245,200,66,0.25), 0 2px 0 rgba(0,0,0,0.5);
+  }
+
+  .tagline {
+    font-size: 12px; color: var(--muted); letter-spacing: 3px;
+    text-transform: uppercase; margin-top: 6px; font-family: 'DM Mono', monospace;
+  }
+
+  /* ── CARD ── */
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 20px; padding: 24px; margin-bottom: 12px;
+    position: relative; overflow: hidden;
+  }
+
+  .card-shine {
+    position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(245,200,66,0.3), transparent);
+  }
+
+  /* ── SECTION LABELS (AA compliant, bigger, whiter) ── */
+  .section-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--heading);
+    margin-bottom: 14px;
+    display: block;
+    font-weight: 500;
+  }
+
+  /* ── SALARY SECTION: collapsed summary ── */
+  .salary-summary {
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .salary-summary.visible { display: flex; }
+
+  .summary-left {}
+
+  .summary-amount {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 32px;
+    letter-spacing: 2px;
+    color: var(--gold);
+    line-height: 1;
+  }
+
+  .summary-period {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-top: 3px;
+  }
+
+  .edit-btn {
+    background: rgba(245,200,66,0.1);
+    border: 1px solid rgba(245,200,66,0.25);
+    border-radius: 8px;
+    color: var(--gold);
+    font-size: 16px;
+    width: 38px; height: 38px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+
+  .edit-btn:hover { background: rgba(245,200,66,0.2); }
+
+  /* ── SALARY FORM (expanded) ── */
+  .salary-form { display: block; }
+  .salary-form.hidden { display: none; }
+
+  .input-row {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--paper); border: 1px solid rgba(245,200,66,0.15);
+    border-radius: 12px; padding: 0 16px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .input-row:focus-within {
+    border-color: rgba(245,200,66,0.45);
+    box-shadow: 0 0 0 3px rgba(245,200,66,0.07);
+  }
+
+  .input-prefix { font-family: 'Bebas Neue', sans-serif; font-size: 20px; color: var(--amber); }
+
+  input[type="text"] {
+    background: none; border: none; outline: none;
+    color: var(--cream); font-family: 'DM Mono', monospace;
+    font-size: 18px; width: 100%; padding: 14px 0;
+  }
+
+  .period-tabs { display: flex; gap: 6px; margin-top: 12px; }
+
+  .tab {
+    flex: 1; background: var(--paper); border: 1px solid var(--border);
+    border-radius: 8px; color: var(--muted); font-family: 'DM Mono', monospace;
+    font-size: 11px; padding: 9px 4px; cursor: pointer; transition: all 0.2s;
+    text-transform: uppercase; letter-spacing: 1px;
+  }
+
+  .tab:hover { color: var(--cream); border-color: rgba(245,200,66,0.3); }
+  .tab.active { background: rgba(245,200,66,0.1); border-color: rgba(245,200,66,0.5); color: var(--gold); }
+
+  .save-btn {
+    margin-top: 14px;
+    width: 100%;
+    background: var(--gold);
+    color: #1a1208;
+    border: none;
+    border-radius: 12px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px;
+    letter-spacing: 3px;
+    padding: 14px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .save-btn:hover { background: #ffd84a; transform: translateY(-1px); box-shadow: 0 8px 24px rgba(245,200,66,0.3); }
+  .save-btn:active { transform: translateY(0); }
+
+  /* ── DASHBOARD ── */
+  .dashboard {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 20px; margin-bottom: 12px; overflow: hidden; position: relative;
+  }
+
+  #waveCanvas {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    width: 100%; height: 130px; opacity: 0.45; pointer-events: none;
+  }
+
+  .dashboard-top { padding: 24px 24px 16px; position: relative; z-index: 2; }
+
+  .dash-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+
+  .dash-earned-label {
+    font-family: 'DM Mono', monospace; font-size: 13px;
+    letter-spacing: 2px; text-transform: uppercase;
+    color: var(--heading); margin-bottom: 4px; font-weight: 500;
+  }
+
+  .dash-earned-amount {
+    font-family: 'Bebas Neue', sans-serif; font-size: 64px;
+    letter-spacing: 2px; line-height: 1; color: var(--green);
+    text-shadow: 0 0 40px rgba(76,175,110,0.4); transition: all 0.3s;
+  }
+
+  @keyframes pulse-green {
+    0%, 100% { text-shadow: 0 0 40px rgba(76,175,110,0.4); }
+    50% { text-shadow: 0 0 80px rgba(76,175,110,0.6), 0 0 120px rgba(245,200,66,0.2); }
+  }
+
+  .dash-earned-amount.ticking { animation: pulse-green 1s ease-in-out infinite; }
+
+  .rate-badge {
+    background: rgba(245,200,66,0.08); border: 1px solid rgba(245,200,66,0.2);
+    border-radius: 10px; padding: 10px 14px; text-align: right;
+  }
+
+  .rate-badge-val { font-family: 'Bebas Neue', sans-serif; font-size: 24px; color: var(--gold); letter-spacing: 1px; }
+  .rate-badge-lbl {
+    font-family: 'DM Mono', monospace; font-size: 10px;
+    color: var(--heading); letter-spacing: 1.5px; text-transform: uppercase;
+  }
+
+  .dash-timer-row { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+
+  .timer-pill {
+    background: var(--paper); border: 1px solid var(--border);
+    border-radius: 10px; padding: 10px 16px;
+    display: flex; align-items: center; gap: 12px; flex: 1;
+  }
+
+  .timer-dot {
+    width: 9px; height: 9px; border-radius: 50%;
+    background: var(--muted); transition: background 0.3s; flex-shrink: 0;
+  }
+
+  .timer-dot.live { background: var(--gold); box-shadow: 0 0 10px var(--gold); animation: blink 1s ease-in-out infinite; }
+
+  @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
+
+  .timer-digits { font-family: 'Bebas Neue', sans-serif; font-size: 38px; letter-spacing: 3px; color: var(--cream); line-height: 1; }
+  .timer-sub {
+    font-family: 'DM Mono', monospace; font-size: 10px;
+    color: var(--heading); letter-spacing: 2px; text-transform: uppercase; margin-top: 2px;
+  }
+
+  .mini-metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+
+  .mini-metric { background: var(--paper); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; }
+  .mini-val { font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 1px; color: var(--amber); line-height: 1; }
+  .mini-lbl {
+    font-family: 'DM Mono', monospace; font-size: 10px;
+    color: var(--heading); letter-spacing: 1px; text-transform: uppercase; margin-top: 3px;
+  }
+
+  /* ── BUTTONS ── */
+  .dash-btns { display: flex; gap: 8px; padding: 16px 24px 22px; position: relative; z-index: 2; }
+
+  .btn {
+    flex: 1; border: none; border-radius: 12px;
+    font-family: 'Bebas Neue', sans-serif; font-size: 18px;
+    letter-spacing: 2px; padding: 14px; cursor: pointer; transition: all 0.15s;
+  }
+
+  .btn-start { background: var(--gold); color: #1a1208; }
+  .btn-start:hover { background: #ffd84a; transform: translateY(-1px); box-shadow: 0 8px 24px rgba(245,200,66,0.35); }
+  .btn-start:active { transform: translateY(0); }
+  .btn-stop { background: transparent; color: #ff8a65; border: 1px solid rgba(255,138,101,0.4); }
+  .btn-stop:hover { background: rgba(255,138,101,0.07); }
+  .btn-reset { background: transparent; color: var(--muted); border: 1px solid var(--border); flex: 0 0 auto; padding: 14px 16px; }
+  .btn-reset:hover { color: var(--cream); }
+
+  /* ── LIFETIME PROJECTOR ── */
+  .lifetime-card {
+    background: linear-gradient(135deg, rgba(245,200,66,0.06), rgba(224,123,0,0.04));
+    border: 1px solid rgba(245,200,66,0.16); border-radius: 20px;
+    padding: 24px; margin-bottom: 12px; position: relative; overflow: hidden;
+  }
+
+  .lifetime-card::before {
+    content: ''; position: absolute; top: -40px; right: -40px;
+    width: 160px; height: 160px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(245,200,66,0.08), transparent 70%);
+  }
+
+  .lifetime-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+
+  .lt-val { font-family: 'Bebas Neue', sans-serif; font-size: 32px; letter-spacing: 1px; color: var(--amber); line-height: 1; }
+  .lt-lbl {
+    font-family: 'DM Mono', monospace; font-size: 11px;
+    color: var(--heading); letter-spacing: 1.5px; text-transform: uppercase; margin-top: 4px;
+  }
+
+  /* ── FUN FACT ── */
+  .fun-fact {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    padding: 14px 18px; font-size: 13px; color: var(--muted);
+    font-family: 'DM Mono', monospace; line-height: 1.6; text-align: center;
+    margin-bottom: 12px; opacity: 0; transition: opacity 0.6s;
+  }
+
+  .fun-fact.visible { opacity: 1; }
+  .fun-fact span { color: var(--gold); }
+
+  /* ── NO SALARY NOTICE ── */
+  .no-salary-notice {
+    background: var(--paper); border: 1px dashed rgba(245,200,66,0.2);
+    border-radius: 12px; padding: 16px; text-align: center;
+    font-family: 'DM Mono', monospace; font-size: 12px; color: var(--muted);
+    margin-bottom: 12px; display: none;
+  }
+
+  .no-salary-notice.visible { display: block; }
+
+  footer { text-align: center; font-family: 'DM Mono', monospace; font-size: 10px; color: #3d2f1a; margin-top: 8px; }
+
+  /* ── SESSION END AD OVERLAY ── */
+  .ad-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(13,9,3,0.92); z-index: 100;
+    align-items: center; justify-content: center;
+    padding: 24px; animation: fadein 0.4s ease;
+  }
+  .ad-overlay.visible { display: flex; }
+  @keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
+  .ad-modal {
+    background: var(--surface); border: 1px solid rgba(245,200,66,0.22);
+    border-radius: 24px; padding: 32px 28px 24px;
+    width: 100%; max-width: 380px; text-align: center;
+    animation: slideup 0.4s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  @keyframes slideup { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  .ad-sponsored { font-family: 'DM Mono',monospace; font-size: 10px; letter-spacing: 2.5px; text-transform: uppercase; color: var(--muted); margin-bottom: 16px; }
+  .ad-earned-lbl { font-family: 'DM Mono',monospace; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--heading); margin-bottom: 4px; }
+  .ad-earned-amt { font-family: 'Bebas Neue',sans-serif; font-size: 72px; letter-spacing: 2px; line-height: 1; color: var(--green); margin-bottom: 20px; }
+  .ad-divider { height: 1px; background: rgba(245,200,66,0.12); margin: 0 0 20px; }
+  .ad-while { font-family: 'DM Mono',monospace; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 14px; }
+  .ad-brand-row { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 10px; }
+  .ad-brand-logo { width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; }
+  .ad-brand-name { font-family: 'Bebas Neue',sans-serif; font-size: 24px; letter-spacing: 2px; color: var(--cream); }
+  .ad-offer { font-family: 'DM Sans',sans-serif; font-size: 14px; color: var(--muted); line-height: 1.6; margin-bottom: 14px; }
+  .ad-offer strong { color: var(--gold); }
+  .ad-code { display: inline-block; background: rgba(245,200,66,0.1); border: 1px dashed rgba(245,200,66,0.35); border-radius: 8px; padding: 6px 16px; font-family: 'DM Mono',monospace; font-size: 15px; color: var(--gold); letter-spacing: 3px; margin-bottom: 20px; }
+  .ad-cta { width: 100%; background: var(--gold); color: #1a1208; border: none; border-radius: 12px; font-family: 'Bebas Neue',sans-serif; font-size: 20px; letter-spacing: 2px; padding: 15px; cursor: pointer; margin-bottom: 10px; transition: all 0.15s; }
+  .ad-cta:hover { background: #ffd84a; transform: translateY(-1px); }
+  .ad-skip { font-family: 'DM Mono',monospace; font-size: 11px; color: var(--muted); cursor: pointer; border: none; background: none; padding: 6px; width: 100%; text-align: center; transition: color 0.2s; }
+  .ad-skip:hover { color: var(--cream); }
+  .ad-dots { display: flex; justify-content: center; gap: 6px; margin-top: 16px; }
+  .ad-dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(245,200,66,0.2); cursor: pointer; transition: background 0.2s; }
+  .ad-dot.active { background: var(--gold); }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <!-- HEADER -->
+  <header>
+    <span class="emoji-big">💩</span>
+    <h1>Gross Income</h1>
+    <p class="tagline">In every sense of the word</p>
+  </header>
+
+  <!-- SALARY CARD -->
+  <div class="card" id="salaryCard">
+    <div class="card-shine"></div>
+
+    <!-- Collapsed summary (shown after saving) -->
+    <div class="salary-summary" id="salarySummary">
+      <div class="summary-left">
+        <div class="summary-amount" id="summaryAmount">$0</div>
+        <div class="summary-period" id="summaryPeriod">per year</div>
+      </div>
+      <button class="edit-btn" onclick="openSalaryForm()" title="Edit salary">✏️</button>
+    </div>
+
+    <!-- Form (shown initially) -->
+    <div class="salary-form" id="salaryForm">
+      <span class="section-label">Your Salary</span>
+      <div class="input-row">
+        <span class="input-prefix">$</span>
+        <input type="text" id="salaryInput" placeholder="75,000" inputmode="numeric" />
+      </div>
+      <div class="period-tabs">
+        <button class="tab active" data-period="year">Per Year</button>
+        <button class="tab" data-period="month">Per Month</button>
+        <button class="tab" data-period="hour">Per Hour</button>
+      </div>
+      <button class="save-btn" onclick="saveSalary()">Drop Your Log 💩</button>
+    </div>
+  </div>
+
+  <!-- MAIN DASHBOARD -->
+  <div class="dashboard">
+    <canvas id="waveCanvas"></canvas>
+    <div class="dashboard-top">
+      <div class="dash-header">
+        <div>
+          <div class="dash-earned-label">Session Earnings</div>
+          <div class="dash-earned-amount" id="dashEarned">$0.00</div>
+        </div>
+        <div class="rate-badge">
+          <div class="rate-badge-val" id="ratePerMin">$0.00</div>
+          <div class="rate-badge-lbl">/ minute</div>
+        </div>
+      </div>
+
+      <div class="dash-timer-row">
+        <div class="timer-pill">
+          <div class="timer-dot" id="timerDot"></div>
+          <div>
+            <div class="timer-digits" id="timerDisplay">00:00</div>
+            <div class="timer-sub">Session Time</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mini-metrics">
+        <div class="mini-metric">
+          <div class="mini-val" id="miniPerHour">$0</div>
+          <div class="mini-lbl">Per Hour</div>
+        </div>
+        <div class="mini-metric">
+          <div class="mini-val" id="miniDaily">$0</div>
+          <div class="mini-lbl">Daily 💩</div>
+        </div>
+        <div class="mini-metric">
+          <div class="mini-val" id="miniYearly">$0</div>
+          <div class="mini-lbl">Yearly 💩</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dash-btns">
+      <button class="btn btn-start" id="startBtn" onclick="startTimer()">▶ Start a Bog</button>
+      <button class="btn btn-stop" id="stopBtn" onclick="stopTimer()" style="display:none">■ Finish Up</button>
+      <button class="btn btn-reset" onclick="resetTimer()">↺</button>
+    </div>
+  </div>
+
+  <!-- LIFETIME PROJECTOR -->
+  <div class="lifetime-card">
+    <span class="section-label">🚀 Lifetime Poop Portfolio</span>
+    <div class="lifetime-grid">
+      <div>
+        <div class="lt-val" id="ltWeekly">$0</div>
+        <div class="lt-lbl">This Week</div>
+      </div>
+      <div>
+        <div class="lt-val" id="ltMonthly">$0</div>
+        <div class="lt-lbl">This Month</div>
+      </div>
+      <div>
+        <div class="lt-val" id="ltYearly">$0</div>
+        <div class="lt-lbl">This Year</div>
+      </div>
+      <div>
+        <div class="lt-val" id="ltCareer">$0</div>
+        <div class="lt-lbl">40yr Career</div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- SESSION END AD OVERLAY -->
+  <div class="ad-overlay" id="adOverlay">
+    <div class="ad-modal" id="adModal">
+      <div class="ad-sponsored">Sponsored</div>
+      <div class="ad-earned-lbl">You just earned</div>
+      <div class="ad-earned-amt" id="adEarnedAmt">$0.00</div>
+      <div class="ad-divider"></div>
+      <div class="ad-while" id="adWhile">While you wash your hands...</div>
+      <div class="ad-brand-row">
+        <div class="ad-brand-logo" id="adLogo">🧻</div>
+        <div class="ad-brand-name" id="adBrandName">Who Gives A Crap</div>
+      </div>
+      <div class="ad-offer" id="adOffer">Get <strong>10% off</strong> your first order of 100% recycled toilet paper. Better for your bum, better for the planet.</div>
+      <div class="ad-code" id="adCode">GROSSINCOME</div>
+      <button class="ad-cta" id="adCta" onclick="adClick()">Claim Offer 🧻</button>
+      <button class="ad-skip" onclick="closeAd()">No thanks, skip →</button>
+      <div class="ad-dots" id="adDots"></div>
+    </div>
+  </div>
+  <div class="fun-fact" id="funFact"></div>
+  <footer>© Gross Income Inc. · All rights earned</footer>
+</div>
+
+<script>
+  // ── STATE ──
+  let timerInterval = null;
+  let seconds = 0;
+  let running = false;
+  let currentPeriod = 'year';
+  let waveT = 0;
+  let savedSalary = 0;
+
+  // ── TABS ──
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      currentPeriod = tab.dataset.period;
+    });
+  });
+
+  // ── SALARY INPUT FORMATTING ──
+  const salaryInput = document.getElementById('salaryInput');
+  salaryInput.addEventListener('input', (e) => {
+    const raw = e.target.value.replace(/[^\d]/g, '');
+    const cursor = e.target.selectionStart;
+    const prevLen = e.target.value.length;
+    if (raw === '') { e.target.value = ''; return; }
+    const formatted = Number(raw).toLocaleString('en-US');
+    e.target.value = formatted;
+    const diff = formatted.length - prevLen;
+    e.target.setSelectionRange(cursor + diff, cursor + diff);
+  });
+
+  function getSalaryRaw() {
+    return parseFloat(salaryInput.value.replace(/,/g, '')) || 0;
+  }
+
+  function getHourlyRate() {
+    const raw = savedSalary;
+    if (currentPeriod === 'year') return raw / 52 / 40;
+    if (currentPeriod === 'month') return raw / 4 / 40;
+    return raw;
+  }
+
+  // ── SALARY SAVE / COLLAPSE ──
+  function saveSalary() {
+    const raw = getSalaryRaw();
+    if (raw <= 0) {
+      salaryInput.style.borderColor = 'red';
+      salaryInput.focus();
+      return;
+    }
+    savedSalary = raw;
+
+    const periodLabels = { year: 'per year', month: 'per month', hour: 'per hour' };
+    document.getElementById('summaryAmount').textContent = '$' + raw.toLocaleString('en-US');
+    document.getElementById('summaryPeriod').textContent = periodLabels[currentPeriod];
+
+    document.getElementById('salaryForm').classList.add('hidden');
+    document.getElementById('salarySummary').classList.add('visible');
+
+    refreshAll();
+  }
+
+  function openSalaryForm() {
+    document.getElementById('salaryForm').classList.remove('hidden');
+    document.getElementById('salarySummary').classList.remove('visible');
+    salaryInput.focus();
+  }
+
+  // ── MONEY FORMAT ──
+  function fmt(n) {
+    if (n >= 1000000) return '$' + (n/1000000).toFixed(1) + 'M';
+    if (n >= 1000) return '$' + (n/1000).toFixed(1) + 'k';
+    if (n >= 10) return '$' + n.toFixed(2);
+    return '$' + n.toFixed(4);
+  }
+
+  function fmtExact(n) { return '$' + n.toFixed(2); }
+
+  // ── TIMER ──
+  function updateTimer() {
+    seconds++;
+    const m = String(Math.floor(seconds / 60)).padStart(2, '0');
+    const s = String(seconds % 60).padStart(2, '0');
+    document.getElementById('timerDisplay').textContent = `${m}:${s}`;
+    refreshAll();
+  }
+
+  function startTimer() {
+    if (running) return;
+    if (savedSalary <= 0) {
+      openSalaryForm();
+      salaryInput.focus();
+      return;
+    }
+    running = true;
+    timerInterval = setInterval(updateTimer, 1000);
+    document.getElementById('timerDot').classList.add('live');
+    document.getElementById('dashEarned').classList.add('ticking');
+    document.getElementById('startBtn').style.display = 'none';
+    document.getElementById('stopBtn').style.display = 'block';
+  }
+
+  function stopTimer() {
+    if (!running) return;
+    running = false;
+    clearInterval(timerInterval);
+    document.getElementById('timerDot').classList.remove('live');
+    document.getElementById('dashEarned').classList.remove('ticking');
+    document.getElementById('startBtn').style.display = 'block';
+    document.getElementById('stopBtn').style.display = 'none';
+    const _earned = getHourlyRate() * (seconds / 3600);
+    showAd(_earned);
+  }
+
+  function resetTimer() {
+    stopTimer();
+    seconds = 0;
+    document.getElementById('timerDisplay').textContent = '00:00';
+    document.getElementById('funFact').classList.remove('visible');
+    refreshAll();
+  }
+
+  // ── REFRESH ALL ──
+  function refreshAll() {
+    const hourly = getHourlyRate();
+    const earned = hourly * (seconds / 3600);
+    const perMin = hourly / 60;
+    const daily = perMin * 8;
+    const yearly = daily * 250;
+
+    document.getElementById('dashEarned').textContent = fmtExact(earned);
+    document.getElementById('ratePerMin').textContent = fmt(perMin);
+    document.getElementById('miniPerHour').textContent = fmt(hourly);
+    document.getElementById('miniDaily').textContent = fmt(daily);
+    document.getElementById('miniYearly').textContent = fmt(yearly);
+
+    document.getElementById('ltWeekly').textContent = fmt(daily * 5);
+    document.getElementById('ltMonthly').textContent = fmt(daily * 21);
+    document.getElementById('ltYearly').textContent = fmt(yearly);
+    document.getElementById('ltCareer').textContent = fmt(yearly * 40);
+  }
+
+  // ── MAIN WAVE ANIMATION ──
+  function drawMainWave() {
+    const canvas = document.getElementById('waveCanvas');
+    const W = canvas.offsetWidth;
+    const H = 130;
+    if (W === 0) return;
+    canvas.width = W;
+    canvas.height = H;
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, W, H);
+
+    const waves = [
+      { amp: 20, freq: 0.016, speed: running ? 0.045 : 0.015, color: 'rgba(245,200,66,0.45)', offset: 0 },
+      { amp: 14, freq: 0.024, speed: running ? 0.065 : 0.02,  color: 'rgba(224,123,0,0.35)',   offset: 2.1 },
+      { amp: 25, freq: 0.011, speed: running ? 0.028 : 0.01,  color: 'rgba(200,169,110,0.22)', offset: 4.3 },
+    ];
+
+    waves.forEach(w => {
+      ctx.beginPath();
+      ctx.moveTo(0, H);
+      for (let x = 0; x <= W; x += 2) {
+        const y = H * 0.52
+          + Math.sin(x * w.freq + waveT * w.speed + w.offset) * w.amp
+          + Math.sin(x * w.freq * 1.8 + waveT * w.speed * 0.55) * (w.amp * 0.35);
+        ctx.lineTo(x, y);
+      }
+      ctx.lineTo(W, H); ctx.closePath();
+      const grad = ctx.createLinearGradient(0, 0, 0, H);
+      grad.addColorStop(0, w.color);
+      grad.addColorStop(1, 'transparent');
+      ctx.fillStyle = grad;
+      ctx.fill();
+    });
+    waveT++;
+  }
+
+  // ── ANIMATION LOOP ──
+  (function loop() {
+    drawMainWave();
+    requestAnimationFrame(loop);
+  })();
+
+  refreshAll();
+
+
+  // ── AD BRANDS ──
+  const adBrands = [
+    {
+      logo: '🧻',
+      name: 'Who Gives A Crap',
+      tagline: 'While you wash your hands...',
+      offer: 'Get <strong>10% off</strong> your first order of 100% recycled toilet paper. Better for your bum, better for the planet.',
+      code: 'GROSSINCOME',
+      cta: 'Claim Offer 🧻',
+      url: 'https://whogivesacrap.org',
+      bg: '#1B4332',
+    },
+    {
+      logo: '🩺',
+      name: 'Haemorrhoid Help',
+      tagline: 'Since you were sitting a while...',
+      offer: 'Soothe the throne room. Get <strong>15% off</strong> your first order of HaemorrhoidHelp cream. Clinically proven relief.',
+      code: 'BOGBREAK',
+      cta: 'Get Relief 🩺',
+      url: 'https://haemorrhoidhelp.com.au',
+      bg: '#1a2a4a',
+    },
+    {
+      logo: '🪠',
+      name: 'Plunger Club',
+      tagline: 'A little emergency preparedness...',
+      offer: 'Every throne needs a trusty plunger. Get <strong>20% off</strong> the world\'s most powerful plunger. Free shipping included.',
+      code: 'GROSSPLUNGE',
+      cta: 'Shop Now 🪠',
+      url: 'https://plungerclub.com',
+      bg: '#2a1a0a',
+    },
+  ];
+
+  let currentAdIdx = 0;
+
+  function showAd(earned) {
+    currentAdIdx = Math.floor(Math.random() * adBrands.length);
+    renderAd(earned);
+    document.getElementById('adOverlay').classList.add('visible');
+  }
+
+  function renderAd(earned) {
+    const b = adBrands[currentAdIdx];
+    if (earned !== undefined) document.getElementById('adEarnedAmt').textContent = fmtExact(earned);
+    document.getElementById('adLogo').textContent = b.logo;
+    document.getElementById('adLogo').style.background = b.bg;
+    document.getElementById('adBrandName').textContent = b.name;
+    document.getElementById('adWhile').textContent = b.tagline;
+    document.getElementById('adOffer').innerHTML = b.offer;
+    document.getElementById('adCode').textContent = b.code;
+    document.getElementById('adCta').textContent = b.cta;
+
+    const dots = document.getElementById('adDots');
+    dots.innerHTML = adBrands.map((_, i) =>
+      `<div class="ad-dot${i === currentAdIdx ? ' active' : ''}" onclick="switchAd(${i})"></div>`
+    ).join('');
+  }
+
+  function switchAd(idx) {
+    currentAdIdx = idx;
+    renderAd();
+  }
+
+  function adClick() {
+    window.open(adBrands[currentAdIdx].url, '_blank');
+    closeAd();
+  }
+
+  function closeAd() {
+    document.getElementById('adOverlay').classList.remove('visible');
+    showFunFact();
+  }
+
+  // ── FUN FACTS ──
+  const facts = [
+    (min, earned) => `In <span>${min} minutes</span> you earned <span>${fmtExact(earned)}</span>. The average person spends <span>~8 min/day</span> on the throne at work.`,
+    (min, earned) => `That's <span>${fmtExact(earned)}</span> for your most natural talent. Multiply by 250 working days and it's serious money.`,
+    (min, earned) => `<span>${fmtExact(earned)}</span> richer. Your bathroom break just outperformed most meetings.`,
+    (min, earned) => `You made <span>${fmtExact(earned)}</span>. Over a 40-year career, the toilet is basically a second income stream.`,
+    (min, earned) => `A <span>${min}-min</span> bog = <span>${fmtExact(earned)}</span>. Nobody said passive income had to be glamorous. 💸`,
+  ];
+
+  function showFunFact() {
+    const hourly = getHourlyRate();
+    const earned = hourly * (seconds / 3600);
+    const min = Math.max(1, Math.round(seconds / 60));
+    const fact = facts[Math.floor(Math.random() * facts.length)](min, earned);
+    const el = document.getElementById('funFact');
+    el.innerHTML = '💡 ' + fact;
+    el.classList.add('visible');
+  }
+</script>
+</body>
+</html>
