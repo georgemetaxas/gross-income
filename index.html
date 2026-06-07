@@ -294,6 +294,12 @@
     background: linear-gradient(135deg, rgba(245,200,66,0.06), rgba(224,123,0,0.04));
     border: 1px solid rgba(245,200,66,0.16); border-radius: 20px;
     padding: 24px; margin-bottom: 12px; position: relative; overflow: hidden;
+    opacity: 0; transform: translateY(16px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+
+  .lifetime-card.revealed {
+    opacity: 1; transform: translateY(0);
   }
 
   .lifetime-card::before {
@@ -304,11 +310,53 @@
 
   .lifetime-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
 
-  .lt-val { font-family: 'Bebas Neue', sans-serif; font-size: 32px; letter-spacing: 1px; color: var(--amber); line-height: 1; }
+  .lt-val {
+    font-family: 'Bebas Neue', sans-serif; font-size: 32px; letter-spacing: 1px;
+    color: var(--amber); line-height: 1;
+    position: relative;
+  }
   .lt-lbl {
     font-family: 'DM Mono', monospace; font-size: 11px;
     color: var(--heading); letter-spacing: 1.5px; text-transform: uppercase; margin-top: 4px;
   }
+
+  /* ── SKELETON ── */
+  @keyframes shimmer {
+    0%   { background-position: -400px 0; }
+    100% { background-position:  400px 0; }
+  }
+
+  .lt-val.skeleton {
+    color: transparent;
+    border-radius: 6px;
+    background: linear-gradient(
+      90deg,
+      rgba(245,200,66,0.07) 25%,
+      rgba(245,200,66,0.18) 50%,
+      rgba(245,200,66,0.07) 75%
+    );
+    background-size: 400px 100%;
+    animation: shimmer 1.2s ease-in-out infinite;
+    min-width: 80px;
+    display: inline-block;
+  }
+
+  .lt-lbl.skeleton {
+    color: transparent;
+    border-radius: 4px;
+    background: linear-gradient(
+      90deg,
+      rgba(245,200,66,0.05) 25%,
+      rgba(245,200,66,0.12) 50%,
+      rgba(245,200,66,0.05) 75%
+    );
+    background-size: 400px 100%;
+    animation: shimmer 1.2s ease-in-out infinite;
+    min-width: 60px;
+    display: inline-block;
+  }
+
+  .lt-val.counting { transition: none; }
 
   /* ── FUN FACT ── */
   .fun-fact {
@@ -333,40 +381,6 @@
 
   footer { text-align: center; font-family: 'DM Mono', monospace; font-size: 10px; color: #3d2f1a; margin-top: 8px; }
 
-  /* ── SESSION END AD OVERLAY ── */
-  .ad-overlay {
-    display: none; position: fixed; inset: 0;
-    background: rgba(13,9,3,0.92); z-index: 100;
-    align-items: center; justify-content: center;
-    padding: 24px; animation: fadein 0.4s ease;
-  }
-  .ad-overlay.visible { display: flex; }
-  @keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
-  .ad-modal {
-    background: var(--surface); border: 1px solid rgba(245,200,66,0.22);
-    border-radius: 24px; padding: 32px 28px 24px;
-    width: 100%; max-width: 380px; text-align: center;
-    animation: slideup 0.4s cubic-bezier(0.34,1.56,0.64,1);
-  }
-  @keyframes slideup { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-  .ad-sponsored { font-family: 'DM Mono',monospace; font-size: 10px; letter-spacing: 2.5px; text-transform: uppercase; color: var(--muted); margin-bottom: 16px; }
-  .ad-earned-lbl { font-family: 'DM Mono',monospace; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--heading); margin-bottom: 4px; }
-  .ad-earned-amt { font-family: 'Bebas Neue',sans-serif; font-size: 72px; letter-spacing: 2px; line-height: 1; color: var(--green); margin-bottom: 20px; }
-  .ad-divider { height: 1px; background: rgba(245,200,66,0.12); margin: 0 0 20px; }
-  .ad-while { font-family: 'DM Mono',monospace; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 14px; }
-  .ad-brand-row { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 10px; }
-  .ad-brand-logo { width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; }
-  .ad-brand-name { font-family: 'Bebas Neue',sans-serif; font-size: 24px; letter-spacing: 2px; color: var(--cream); }
-  .ad-offer { font-family: 'DM Sans',sans-serif; font-size: 14px; color: var(--muted); line-height: 1.6; margin-bottom: 14px; }
-  .ad-offer strong { color: var(--gold); }
-  .ad-code { display: inline-block; background: rgba(245,200,66,0.1); border: 1px dashed rgba(245,200,66,0.35); border-radius: 8px; padding: 6px 16px; font-family: 'DM Mono',monospace; font-size: 15px; color: var(--gold); letter-spacing: 3px; margin-bottom: 20px; }
-  .ad-cta { width: 100%; background: var(--gold); color: #1a1208; border: none; border-radius: 12px; font-family: 'Bebas Neue',sans-serif; font-size: 20px; letter-spacing: 2px; padding: 15px; cursor: pointer; margin-bottom: 10px; transition: all 0.15s; }
-  .ad-cta:hover { background: #ffd84a; transform: translateY(-1px); }
-  .ad-skip { font-family: 'DM Mono',monospace; font-size: 11px; color: var(--muted); cursor: pointer; border: none; background: none; padding: 6px; width: 100%; text-align: center; transition: color 0.2s; }
-  .ad-skip:hover { color: var(--cream); }
-  .ad-dots { display: flex; justify-content: center; gap: 6px; margin-top: 16px; }
-  .ad-dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(245,200,66,0.2); cursor: pointer; transition: background 0.2s; }
-  .ad-dot.active { background: var(--gold); }
 </style>
 </head>
 <body>
@@ -397,7 +411,7 @@
       <span class="section-label">Your Salary</span>
       <div class="input-row">
         <span class="input-prefix">$</span>
-        <input type="text" id="salaryInput" placeholder="75,000" inputmode="numeric" />
+        <input type="text" id="salaryInput" placeholder="" inputmode="numeric" />
       </div>
       <div class="period-tabs">
         <button class="tab active" data-period="year">Per Year</button>
@@ -457,7 +471,7 @@
   </div>
 
   <!-- LIFETIME PROJECTOR -->
-  <div class="lifetime-card">
+  <div class="lifetime-card" id="lifetimeCard" style="display:none">
     <span class="section-label">🚀 Lifetime Poop Portfolio</span>
     <div class="lifetime-grid">
       <div>
@@ -480,25 +494,6 @@
   </div>
 
 
-  <!-- SESSION END AD OVERLAY -->
-  <div class="ad-overlay" id="adOverlay">
-    <div class="ad-modal" id="adModal">
-      <div class="ad-sponsored">Sponsored</div>
-      <div class="ad-earned-lbl">You just earned</div>
-      <div class="ad-earned-amt" id="adEarnedAmt">$0.00</div>
-      <div class="ad-divider"></div>
-      <div class="ad-while" id="adWhile">While you wash your hands...</div>
-      <div class="ad-brand-row">
-        <div class="ad-brand-logo" id="adLogo">🧻</div>
-        <div class="ad-brand-name" id="adBrandName">Who Gives A Crap</div>
-      </div>
-      <div class="ad-offer" id="adOffer">Get <strong>10% off</strong> your first order of 100% recycled toilet paper. Better for your bum, better for the planet.</div>
-      <div class="ad-code" id="adCode">GROSSINCOME</div>
-      <button class="ad-cta" id="adCta" onclick="adClick()">Claim Offer 🧻</button>
-      <button class="ad-skip" onclick="closeAd()">No thanks, skip →</button>
-      <div class="ad-dots" id="adDots"></div>
-    </div>
-  </div>
   <div class="fun-fact" id="funFact"></div>
   <footer>© Gross Income Inc. · All rights earned</footer>
 </div>
@@ -523,6 +518,7 @@
 
   // ── SALARY INPUT FORMATTING ──
   const salaryInput = document.getElementById('salaryInput');
+  salaryInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') saveSalary(); });
   salaryInput.addEventListener('input', (e) => {
     const raw = e.target.value.replace(/[^\d]/g, '');
     const cursor = e.target.selectionStart;
@@ -563,6 +559,7 @@
     document.getElementById('salarySummary').classList.add('visible');
 
     refreshAll();
+    revealLifetime();
   }
 
   function openSalaryForm() {
@@ -613,8 +610,7 @@
     document.getElementById('dashEarned').classList.remove('ticking');
     document.getElementById('startBtn').style.display = 'block';
     document.getElementById('stopBtn').style.display = 'none';
-    const _earned = getHourlyRate() * (seconds / 3600);
-    showAd(_earned);
+    showFunFact();
   }
 
   function resetTimer() {
@@ -623,6 +619,54 @@
     document.getElementById('timerDisplay').textContent = '00:00';
     document.getElementById('funFact').classList.remove('visible');
     refreshAll();
+  }
+
+  // ── LIFETIME REVEAL ──
+  function revealLifetime() {
+    const card = document.getElementById('lifetimeCard');
+    const vals = ['ltWeekly','ltMonthly','ltYearly','ltCareer'];
+    const lbls = card.querySelectorAll('.lt-lbl');
+
+    // Show card with skeleton state
+    vals.forEach(id => document.getElementById(id).classList.add('skeleton'));
+    lbls.forEach(el => el.classList.add('skeleton'));
+    card.style.display = 'block';
+
+    // Fade + slide in
+    requestAnimationFrame(() => requestAnimationFrame(() => card.classList.add('revealed')));
+
+    // After skeleton shimmer, count up values
+    setTimeout(() => {
+      vals.forEach(id => document.getElementById(id).classList.remove('skeleton'));
+      lbls.forEach(el => el.classList.remove('skeleton'));
+
+      const hourly = getHourlyRate();
+      const daily  = hourly * 8;
+      const yearly = daily * 250;
+
+      const targets = {
+        ltWeekly:  daily * 5,
+        ltMonthly: daily * 21,
+        ltYearly:  yearly,
+        ltCareer:  yearly * 40,
+      };
+
+      const DURATION = 1200;
+      const START = performance.now();
+
+      function easeOut(t) { return 1 - Math.pow(1 - t, 3); }
+
+      function tick(now) {
+        const t = Math.min((now - START) / DURATION, 1);
+        const e = easeOut(t);
+        Object.entries(targets).forEach(([id, target]) => {
+          document.getElementById(id).textContent = fmt(target * e);
+        });
+        if (t < 1) requestAnimationFrame(tick);
+      }
+
+      requestAnimationFrame(tick);
+    }, 900);
   }
 
   // ── REFRESH ALL ──
@@ -689,80 +733,6 @@
 
   refreshAll();
 
-
-  // ── AD BRANDS ──
-  const adBrands = [
-    {
-      logo: '🧻',
-      name: 'Who Gives A Crap',
-      tagline: 'While you wash your hands...',
-      offer: 'Get <strong>10% off</strong> your first order of 100% recycled toilet paper. Better for your bum, better for the planet.',
-      code: 'GROSSINCOME',
-      cta: 'Claim Offer 🧻',
-      url: 'https://whogivesacrap.org',
-      bg: '#1B4332',
-    },
-    {
-      logo: '🩺',
-      name: 'Haemorrhoid Help',
-      tagline: 'Since you were sitting a while...',
-      offer: 'Soothe the throne room. Get <strong>15% off</strong> your first order of HaemorrhoidHelp cream. Clinically proven relief.',
-      code: 'BOGBREAK',
-      cta: 'Get Relief 🩺',
-      url: 'https://haemorrhoidhelp.com.au',
-      bg: '#1a2a4a',
-    },
-    {
-      logo: '🪠',
-      name: 'Plunger Club',
-      tagline: 'A little emergency preparedness...',
-      offer: 'Every throne needs a trusty plunger. Get <strong>20% off</strong> the world\'s most powerful plunger. Free shipping included.',
-      code: 'GROSSPLUNGE',
-      cta: 'Shop Now 🪠',
-      url: 'https://plungerclub.com',
-      bg: '#2a1a0a',
-    },
-  ];
-
-  let currentAdIdx = 0;
-
-  function showAd(earned) {
-    currentAdIdx = Math.floor(Math.random() * adBrands.length);
-    renderAd(earned);
-    document.getElementById('adOverlay').classList.add('visible');
-  }
-
-  function renderAd(earned) {
-    const b = adBrands[currentAdIdx];
-    if (earned !== undefined) document.getElementById('adEarnedAmt').textContent = fmtExact(earned);
-    document.getElementById('adLogo').textContent = b.logo;
-    document.getElementById('adLogo').style.background = b.bg;
-    document.getElementById('adBrandName').textContent = b.name;
-    document.getElementById('adWhile').textContent = b.tagline;
-    document.getElementById('adOffer').innerHTML = b.offer;
-    document.getElementById('adCode').textContent = b.code;
-    document.getElementById('adCta').textContent = b.cta;
-
-    const dots = document.getElementById('adDots');
-    dots.innerHTML = adBrands.map((_, i) =>
-      `<div class="ad-dot${i === currentAdIdx ? ' active' : ''}" onclick="switchAd(${i})"></div>`
-    ).join('');
-  }
-
-  function switchAd(idx) {
-    currentAdIdx = idx;
-    renderAd();
-  }
-
-  function adClick() {
-    window.open(adBrands[currentAdIdx].url, '_blank');
-    closeAd();
-  }
-
-  function closeAd() {
-    document.getElementById('adOverlay').classList.remove('visible');
-    showFunFact();
-  }
 
   // ── FUN FACTS ──
   const facts = [
