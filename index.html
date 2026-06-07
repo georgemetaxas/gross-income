@@ -409,16 +409,18 @@
     <!-- Form (shown initially) -->
     <div class="salary-form" id="salaryForm">
       <span class="section-label">Your Salary</span>
-      <div class="input-row">
-        <span class="input-prefix">$</span>
-        <input type="text" id="salaryInput" placeholder="" inputmode="numeric" />
-      </div>
-      <div class="period-tabs">
-        <button class="tab active" data-period="year">Per Year</button>
-        <button class="tab" data-period="month">Per Month</button>
-        <button class="tab" data-period="hour">Per Hour</button>
-      </div>
-      <button class="save-btn" onclick="saveSalary()">Drop Your Log 💩</button>
+      <form onsubmit="saveSalary(); return false;" action="#">
+        <div class="input-row">
+          <span class="input-prefix">$</span>
+          <input type="text" id="salaryInput" placeholder="" inputmode="numeric" />
+        </div>
+        <div class="period-tabs">
+          <button type="button" class="tab active" data-period="year">Per Year</button>
+          <button type="button" class="tab" data-period="month">Per Month</button>
+          <button type="button" class="tab" data-period="hour">Per Hour</button>
+        </div>
+        <button type="submit" class="save-btn">Drop Your Log 💩</button>
+      </form>
     </div>
   </div>
 
