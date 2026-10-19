@@ -358,6 +358,11 @@
 
   .lt-val.counting { transition: none; }
 
+  @media (prefers-reduced-motion: reduce) {
+    .lifetime-card { transition: none; transform: none; }
+    .lt-val.skeleton, .lt-lbl.skeleton { animation: none; }
+  }
+
   /* ── FUN FACT ── */
   .fun-fact {
     background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
@@ -520,8 +525,8 @@
 
   // ── SALARY INPUT FORMATTING ──
   const salaryInput = document.getElementById('salaryInput');
-  salaryInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') saveSalary(); });
   salaryInput.addEventListener('input', (e) => {
+    e.target.style.borderColor = '';
     const raw = e.target.value.replace(/[^\d]/g, '');
     const cursor = e.target.selectionStart;
     const prevLen = e.target.value.length;
@@ -624,10 +629,30 @@
   }
 
   // ── LIFETIME REVEAL ──
+  let revealTimeout = null;
+  let revealFrame = null;
+  let revealing = false;
+
   function revealLifetime() {
     const card = document.getElementById('lifetimeCard');
     const vals = ['ltWeekly','ltMonthly','ltYearly','ltCareer'];
     const lbls = card.querySelectorAll('.lt-lbl');
+
+    // Cancel any reveal still in flight so a quick re-save restarts cleanly
+    clearTimeout(revealTimeout);
+    cancelAnimationFrame(revealFrame);
+
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      revealing = false;
+      vals.forEach(id => document.getElementById(id).classList.remove('skeleton'));
+      lbls.forEach(el => el.classList.remove('skeleton'));
+      card.style.display = 'block';
+      card.classList.add('revealed');
+      refreshAll();
+      return;
+    }
+
+    revealing = true;
 
     // Show card with skeleton state
     vals.forEach(id => document.getElementById(id).classList.add('skeleton'));
@@ -638,7 +663,7 @@
     requestAnimationFrame(() => requestAnimationFrame(() => card.classList.add('revealed')));
 
     // After skeleton shimmer, count up values
-    setTimeout(() => {
+    revealTimeout = setTimeout(() => {
       vals.forEach(id => document.getElementById(id).classList.remove('skeleton'));
       lbls.forEach(el => el.classList.remove('skeleton'));
 
@@ -664,10 +689,11 @@
         Object.entries(targets).forEach(([id, target]) => {
           document.getElementById(id).textContent = fmt(target * e);
         });
-        if (t < 1) requestAnimationFrame(tick);
+        if (t < 1) revealFrame = requestAnimationFrame(tick);
+        else revealing = false;
       }
 
-      requestAnimationFrame(tick);
+      revealFrame = requestAnimationFrame(tick);
     }, 900);
   }
 
@@ -676,7 +702,7 @@
     const hourly = getHourlyRate();
     const earned = hourly * (seconds / 3600);
     const perMin = hourly / 60;
-    const daily = perMin * 8;
+    const daily = hourly * 8;
     const yearly = daily * 250;
 
     document.getElementById('dashEarned').textContent = fmtExact(earned);
@@ -685,6 +711,8 @@
     document.getElementById('miniDaily').textContent = fmt(daily);
     document.getElementById('miniYearly').textContent = fmt(yearly);
 
+    // Don't stomp on the skeleton / count-up while the reveal is running
+    if (revealing) return;
     document.getElementById('ltWeekly').textContent = fmt(daily * 5);
     document.getElementById('ltMonthly').textContent = fmt(daily * 21);
     document.getElementById('ltYearly').textContent = fmt(yearly);
