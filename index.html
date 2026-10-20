@@ -1384,9 +1384,11 @@
     async invite() {
       const p = currentPool();
       const url = inviteLink(p.invite_code);
-      const text = `Think you spend less time on the bog than me? Join ${p.name} on Gross Income 💩`;
+      // The link goes inside the text: iOS's share sheet "Copy" (and some apps) keep
+      // only `text` and drop a separate `url`.
+      const text = `Think you spend less time on the bog than me? Join ${p.name} on Gross Income 💩\n${url}`;
       if (navigator.share) {
-        try { await navigator.share({ title: 'Poop Pool invite', text, url }); return; } catch (e) { if (e.name === 'AbortError') return; }
+        try { await navigator.share({ title: 'Poop Pool invite', text }); return; } catch (e) { if (e.name === 'AbortError') return; }
       }
       try { await navigator.clipboard.writeText(url); pool.msg = 'Invite link copied. Paste it to your mates.'; }
       catch (e) { pool.msg = 'Send your mates this link: ' + url; }
