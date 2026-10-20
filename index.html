@@ -1176,7 +1176,7 @@
       <div class="pool-title">The Royal Flush</div>
       <p class="pool-text">${esc(v.note || 'Race your mates for the Golden Throne. Private, invite-only leaderboards for bog time.')}</p>
       <input class="pool-input" id="poolEmail" type="email" inputmode="email" autocomplete="email" placeholder="you@email.com">
-      <div class="pool-btns"><button class="btn btn-start" data-act="login">Email me a magic link</button></div>
+      <div class="pool-btns"><button class="btn btn-start" data-act="login">Email me a login code</button></div>
       <p class="pool-sub" style="margin-top:10px">No passwords. Your salary never leaves your phone.</p>`;
   }
 
@@ -1184,7 +1184,9 @@
     return `
       <span class="section-label">👑 Poop Pool · Beta</span>
       <div class="pool-title">Check your inbox</div>
-      <p class="pool-text">We sent a magic link to <b>${esc(v.email)}</b>. Open it on this device to get on the board.</p>
+      <p class="pool-text">We emailed a login code to <b>${esc(v.email)}</b>. Type it in here to get on the board.</p>
+      <input class="pool-input" id="poolCode" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="8" placeholder="123456">
+      <div class="pool-btns"><button class="btn btn-start" data-act="verify">Let me in</button></div>
       <button class="pool-link" data-act="back">Use a different email</button>`;
   }
 
@@ -1193,7 +1195,7 @@
     const action = pool.user
       ? `<div class="pool-btns"><button class="btn btn-start" data-act="join">Join the pool</button></div>`
       : `<input class="pool-input" id="poolEmail" type="email" inputmode="email" autocomplete="email" placeholder="you@email.com">
-         <div class="pool-btns"><button class="btn btn-start" data-act="login">Email me a magic link to join</button></div>`;
+         <div class="pool-btns"><button class="btn btn-start" data-act="login">Email me a login code to join</button></div>`;
     return `
       <span class="section-label">💩 Poop Pool Invite</span>
       <p class="pool-sub" style="margin-top:14px">${esc(p.owner_name.toUpperCase())} INVITED YOU TO</p>
@@ -1335,6 +1337,15 @@
       });
       if (error) throw error;
       pool.view = { name: 'sent', email };
+    },
+    // A typed code works inside the home screen app. A link in the email would
+    // open in Safari, which on iPhone doesn't share its login with the app.
+    async verify() {
+      const token = (document.getElementById('poolCode').value || '').replace(/\D/g, '');
+      if (token.length < 6) throw new Error('That code looks a few digits short.');
+      const { error } = await pool.sb.auth.verifyOtp({ email: pool.view.email, token, type: 'email' });
+      if (error) throw new Error('That code didn\'t flush. Check it, or ask for a new one.');
+      await refreshPool(); return 'done';
     },
     async back() { pool.view = { name: 'pitch' }; },
     async decline() { writeJSON(POOL_INVITE_KEY, null); await refreshPool(); return 'done'; },
