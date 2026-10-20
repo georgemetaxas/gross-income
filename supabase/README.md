@@ -2,11 +2,16 @@
 
 The leaderboard runs on Supabase. The site itself stays static.
 
+## Where it runs
+
+- Production: https://grossincome.com.au (GitHub Pages, from `main`). Poop Pool hidden unless `?poolbeta`.
+- Cloudflare Pages project `gross-income`: https://gross-income.pages.dev (from `main`), plus a preview for every branch at `https://<branch-name>.gross-income.pages.dev`.
+
 ## One-time setup
 
 1. **Database:** in the Supabase dashboard, open SQL Editor → New query, paste all of `schema.sql`, and click Run. It is safe to re-run.
 2. **Login redirects:** go to Authentication → URL Configuration.
-   - Site URL: your Cloudflare preview, e.g. `https://gross-income-xxx.pages.dev`
+   - Site URL: `https://gross-income.pages.dev`
    - Redirect URLs: add `https://*.pages.dev/**` and `https://grossincome.com.au/**`
 3. **Email for mates:** Supabase's built-in email only reaches members of your Supabase team and is heavily rate limited. Before mates can log in, add a free SMTP sender (e.g. Resend) under Project Settings → Authentication → SMTP Settings.
 
