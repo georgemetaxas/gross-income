@@ -390,6 +390,71 @@
   .history-row:last-child { border-bottom: none; }
   .history-row b { color: var(--amber); font-weight: 400; }
 
+  /* ── POOP POOL ── */
+  .pool-card {
+    background: var(--surface); border: 1px solid rgba(245,200,66,0.35); border-radius: 20px;
+    padding: 24px; margin-bottom: 12px;
+  }
+  .pool-card[hidden] { display: none; }
+  .pool-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  .pool-head .section-label { margin-bottom: 0; }
+  .pool-title { font-family: 'Bebas Neue', sans-serif; font-size: 34px; letter-spacing: 2px; color: var(--gold); line-height: 1; margin: 14px 0 4px; }
+  .pool-sub { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); letter-spacing: 1px; line-height: 1.6; }
+  .pool-text { font-size: 14px; color: var(--cream); line-height: 1.5; margin: 12px 0; }
+  .pool-input, .pool-select {
+    width: 100%; background: var(--paper); border: 1px solid var(--border); border-radius: 12px;
+    padding: 13px 14px; color: var(--cream); font-family: 'DM Mono', monospace; font-size: 14px; margin-top: 10px;
+  }
+  .pool-select { padding: 8px 10px; font-size: 11px; width: auto; margin-top: 0; letter-spacing: 1px; }
+  .pool-btns { display: flex; gap: 10px; margin-top: 14px; }
+  .pool-btns .btn { flex: 1; }
+  .btn-ghost { background: transparent; color: var(--cream); border: 1px solid var(--border); }
+  .btn-ghost:hover { border-color: var(--muted); }
+  .pool-link { background: none; border: none; color: var(--muted); font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 1px; text-decoration: underline; cursor: pointer; padding: 0; }
+  .pool-msg { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--amber); margin-top: 10px; min-height: 1em; }
+  .emoji-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .emoji-opt { width: 40px; height: 40px; border-radius: 50%; background: var(--paper); border: 1px solid var(--border); font-size: 20px; cursor: pointer; }
+  .emoji-opt.on { border-color: var(--gold); background: rgba(245,200,66,0.14); }
+  .pool-check { display: flex; gap: 10px; align-items: flex-start; margin-top: 14px; font-size: 13px; color: var(--cream); line-height: 1.4; }
+  .pool-check input { margin-top: 3px; accent-color: #F5C842; }
+  .pool-list { list-style: none; margin: 12px 0 0; padding: 0; font-size: 13px; line-height: 1.9; color: var(--cream); }
+  .pool-tabs { display: flex; gap: 8px; margin-top: 16px; }
+  /* Same look as .tab, separate class so the salary tab handler leaves these alone */
+  .pool-tab {
+    flex: 1; background: var(--paper); border: 1px solid var(--border);
+    border-radius: 8px; color: var(--muted); font-family: 'DM Mono', monospace;
+    font-size: 11px; padding: 9px 4px; cursor: pointer; transition: all 0.2s;
+    text-transform: uppercase; letter-spacing: 1px;
+  }
+  .pool-tab:hover { color: var(--cream); border-color: rgba(245,200,66,0.3); }
+  .pool-tab.active { background: rgba(245,200,66,0.1); border-color: rgba(245,200,66,0.5); color: var(--gold); }
+  .podium { display: flex; align-items: flex-end; gap: 8px; margin-top: 18px; }
+  .podium-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 0; }
+  .podium-av { width: 46px; height: 46px; border-radius: 50%; background: var(--paper); border: 1px solid rgba(245,200,66,0.25); display: flex; align-items: center; justify-content: center; font-size: 22px; }
+  .podium-col.p1 .podium-av { width: 56px; height: 56px; font-size: 28px; }
+  .podium-name { font-size: 12px; font-weight: 700; color: var(--cream); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .podium-val { font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 1px; color: var(--amber); }
+  .podium-col.p1 .podium-val { color: var(--gold); }
+  .pillar { width: 100%; border-radius: 12px 12px 0 0; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #1a1208; }
+  .pillar b { font-family: 'Bebas Neue', sans-serif; font-size: 32px; font-weight: 400; line-height: 1; }
+  .pillar span { font-family: 'DM Mono', monospace; font-size: 8px; letter-spacing: 1px; }
+  .p1 .pillar { height: 96px; background: #F5C842; }
+  .p2 .pillar { height: 72px; background: #CFC6B8; }
+  .p3 .pillar { height: 54px; background: #C07A3A; }
+  .pool-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .pool-row:last-child { border-bottom: none; }
+  .pool-row.me { background: rgba(245,200,66,0.07); border-radius: 10px; padding: 10px 8px; }
+  .pool-rank { font-family: 'Bebas Neue', sans-serif; font-size: 20px; color: var(--muted); width: 18px; }
+  .pool-av { font-size: 20px; }
+  .pool-who { flex: 1; min-width: 0; }
+  .pool-who b { display: block; font-size: 14px; color: var(--cream); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pool-who span { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--muted); letter-spacing: 0.5px; }
+  .pool-who span.low { color: #ff8a65; }
+  .pool-val { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 1px; color: var(--amber); }
+  .pool-rest { margin-top: 14px; border-top: 1px solid var(--border); }
+  .pool-nudge { margin-top: 14px; background: rgba(224,123,0,0.14); border-radius: 10px; padding: 10px 12px; font-family: 'DM Mono', monospace; font-size: 11px; color: var(--cream); line-height: 1.5; }
+  .pool-foot { display: flex; justify-content: space-between; margin-top: 14px; flex-wrap: wrap; gap: 10px; }
+
   /* ── NO SALARY NOTICE ── */
   .no-salary-notice {
     background: var(--paper); border: 1px dashed rgba(245,200,66,0.2);
@@ -539,6 +604,9 @@
     </div>
     <div class="history-list" id="historyList"></div>
   </div>
+
+  <!-- POOP POOL (beta) -->
+  <div class="pool-card" id="poolCard" hidden></div>
 
 
   <div class="fun-fact" id="funFact"></div>
@@ -871,6 +939,7 @@
     });
     writeJSON(SESSIONS_KEY, sessions);
     renderHistory();
+    if (window.poolOnSession) window.poolOnSession();
   }
 
   function renderHistory() {
@@ -913,6 +982,430 @@
       saveSalary();
     }
     renderHistory();
+  })();
+</script>
+
+<script>
+  // ══ POOP POOL (beta) ══
+  // Friends-only leaderboards backed by Supabase. Hidden unless on a preview
+  // host, opened from an invite link, or turned on with ?poolbeta.
+  // Schema and privacy rules: supabase/schema.sql
+  const SUPABASE_URL = 'https://pngsoygqbvhlfkzdghtr.supabase.co';
+  // Publishable key: meant to ship in browser code. Access is enforced by row level security.
+  const SUPABASE_KEY = 'sb_publishable_VfI274ud8nqxAFZvKzquwQ_qChku-Bu';
+  const SUPABASE_JS = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js';
+
+  const POOL_BETA_KEY = 'gi.poolBeta';
+  const POOL_INVITE_KEY = 'gi.pendingInvite';
+  const POOL_CURRENT_KEY = 'gi.currentPool';
+  const POOL_EMOJIS = ['💩', '🦍', '🧻', '🐻', '🦄', '🐢', '🚽', '🐸', '🦆', '👑'];
+  const RANK_TITLES = ['GOLDEN THRONE', 'SILVER SEAT', 'BRONZE BOWL'];
+
+  const pool = {
+    sb: null, user: null, profile: null, pools: [], board: [],
+    period: 'week', view: null, msg: '', busy: false,
+  };
+  const poolCard = document.getElementById('poolCard');
+
+  function poolBetaOn() {
+    const q = new URLSearchParams(location.search);
+    if (q.has('poolbeta') || q.has('pool')) { writeJSON(POOL_BETA_KEY, 1); return true; }
+    return location.hostname.endsWith('.pages.dev') || location.hostname === 'localhost'
+      || readJSON(POOL_BETA_KEY, 0) === 1;
+  }
+
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+
+  function errText(e) { return (e && (e.message || e.error_description)) || 'Something blocked the pipes. Try again.'; }
+
+  function inviteLink(code) { return location.origin + location.pathname + '?pool=' + code; }
+
+  function periodStart(period) {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    if (period === 'week') d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); // back to Monday
+    else if (period === 'month') d.setDate(1);
+    else return null;
+    return d.toISOString();
+  }
+
+  function currentPool() {
+    const id = readJSON(POOL_CURRENT_KEY, null);
+    return pool.pools.find(p => p.id === id) || pool.pools[0] || null;
+  }
+
+  // ── DATA ──
+  async function syncSessions() {
+    if (!pool.user || !pool.profile) return;
+    const rows = loadSessions()
+      .filter(s => s.start && s.secs >= MIN_SESSION_SECS)
+      .map(s => ({
+        user_id: pool.user.id,
+        local_id: s.start,
+        started_at: s.start,
+        secs: Math.min(s.secs, 86400),
+        earned: pool.profile.share_money ? s.earned : null,
+      }));
+    if (rows.length === 0) return;
+    const { error } = await pool.sb.from('sessions').upsert(rows, { onConflict: 'user_id,local_id' });
+    if (error) console.warn('Poop Pool sync failed', error);
+  }
+
+  async function loadBoard() {
+    const p = currentPool();
+    if (!p) { pool.board = []; return; }
+    const { data, error } = await pool.sb.rpc('pool_leaderboard', { p_pool: p.id, p_since: periodStart(pool.period) });
+    if (error) throw error;
+    pool.board = data || [];
+  }
+
+  async function refreshPool() {
+    pool.msg = '';
+    const { data: { session } } = await pool.sb.auth.getSession();
+    pool.user = session ? session.user : null;
+    const code = readJSON(POOL_INVITE_KEY, null);
+
+    if (!pool.user) {
+      pool.view = code ? await inviteView(code) : { name: 'pitch' };
+      return renderPool();
+    }
+
+    const { data: profile } = await pool.sb.from('profiles').select('*').eq('id', pool.user.id).maybeSingle();
+    pool.profile = profile;
+    if (!profile) { pool.view = { name: 'profile', emoji: '💩' }; return renderPool(); }
+
+    await syncSessions();
+
+    if (code) { pool.view = await inviteView(code); return renderPool(); }
+
+    const { data: pools, error } = await pool.sb.from('pools').select('id,name,invite_code,owner_id').order('created_at');
+    if (error) throw error;
+    pool.pools = pools || [];
+    if (pool.pools.length === 0) { pool.view = { name: 'create' }; return renderPool(); }
+
+    await loadBoard();
+    pool.view = { name: 'board' };
+    renderPool();
+  }
+
+  async function inviteView(code) {
+    const { data } = await pool.sb.rpc('pool_preview', { p_code: code });
+    const preview = data && data[0];
+    if (!preview) { writeJSON(POOL_INVITE_KEY, null); return { name: 'pitch', note: 'That invite link has been flushed. Ask your mate for a fresh one.' }; }
+    return { name: 'invite', preview, code };
+  }
+
+  // ── RENDER ──
+  function renderPool() {
+    const v = pool.view || { name: 'loading' };
+    const html = {
+      loading: () => `<span class="section-label">👑 Poop Pool</span><p class="pool-sub">Warming up the seat…</p>`,
+      pitch: viewPitch, sent: viewSent, invite: viewInvite, profile: viewProfile,
+      create: viewCreate, board: viewBoard, settings: viewSettings,
+    }[v.name](v);
+    poolCard.innerHTML = html + `<div class="pool-msg" id="poolMsg">${esc(pool.msg)}</div>`;
+    poolCard.hidden = false;
+  }
+
+  function viewPitch(v) {
+    return `
+      <span class="section-label">👑 Poop Pool · Beta</span>
+      <div class="pool-title">The Royal Flush</div>
+      <p class="pool-text">${esc(v.note || 'Race your mates for the Golden Throne. Private, invite-only leaderboards for bog time.')}</p>
+      <input class="pool-input" id="poolEmail" type="email" inputmode="email" autocomplete="email" placeholder="you@email.com">
+      <div class="pool-btns"><button class="btn btn-start" data-act="login">Email me a magic link</button></div>
+      <p class="pool-sub" style="margin-top:10px">No passwords. Your salary never leaves your phone.</p>`;
+  }
+
+  function viewSent(v) {
+    return `
+      <span class="section-label">👑 Poop Pool · Beta</span>
+      <div class="pool-title">Check your inbox</div>
+      <p class="pool-text">We sent a magic link to <b>${esc(v.email)}</b>. Open it on this device to get on the board.</p>
+      <button class="pool-link" data-act="back">Use a different email</button>`;
+  }
+
+  function viewInvite(v) {
+    const p = v.preview;
+    const action = pool.user
+      ? `<div class="pool-btns"><button class="btn btn-start" data-act="join">Join the pool</button></div>`
+      : `<input class="pool-input" id="poolEmail" type="email" inputmode="email" autocomplete="email" placeholder="you@email.com">
+         <div class="pool-btns"><button class="btn btn-start" data-act="login">Email me a magic link to join</button></div>`;
+    return `
+      <span class="section-label">💩 Poop Pool Invite</span>
+      <p class="pool-sub" style="margin-top:14px">${esc(p.owner_name.toUpperCase())} INVITED YOU TO</p>
+      <div class="pool-title" style="margin-top:4px">${esc(p.name)}</div>
+      <p class="pool-text">${p.member_count} ${p.member_count === 1 ? 'mate is' : 'mates are'} already logging their bog time. Think you can take the Golden Throne?</p>
+      <ul class="pool-list">
+        <li>✓ Your bog time and session count</li>
+        <li>✓ Your rank (and crown, if you earn it)</li>
+        <li style="color:var(--amber)">◐ $ earned on the bog, only if you opt in</li>
+        <li style="color:var(--muted)">✗ Your salary. It never leaves your phone.</li>
+      </ul>
+      ${action}
+      <div class="pool-foot"><button class="pool-link" data-act="decline">No thanks</button></div>`;
+  }
+
+  function viewProfile(v) {
+    const p = pool.profile || {};
+    const emoji = v.emoji || p.emoji || '💩';
+    return `
+      <span class="section-label">👑 Poop Pool · Your Throne Name</span>
+      <input class="pool-input" id="poolName" maxlength="24" placeholder="Display name" value="${esc(p.display_name || '')}">
+      <div class="emoji-row">${POOL_EMOJIS.map(e =>
+        `<button type="button" class="emoji-opt ${e === emoji ? 'on' : ''}" data-act="emoji" data-emoji="${e}">${e}</button>`).join('')}</div>
+      <label class="pool-check"><input type="checkbox" id="poolMoney" ${p.share_money ? 'checked' : ''}>
+        <span>Show my $ earned to my pools. Off by default, because dollars per minute gives away your pay.</span></label>
+      <div class="pool-btns"><button class="btn btn-start" data-act="save-profile">Save</button></div>`;
+  }
+
+  function viewCreate(v) {
+    return `
+      <span class="section-label">👑 Poop Pool</span>
+      <div class="pool-title">Start a Poop Pool</div>
+      <p class="pool-text">Name it, then send the invite link to your mates.</p>
+      <input class="pool-input" id="poolNewName" maxlength="40" placeholder="e.g. Office Throne Room">
+      <div class="pool-btns">
+        ${pool.pools.length ? '<button class="btn btn-ghost" data-act="cancel">Cancel</button>' : ''}
+        <button class="btn btn-start" data-act="create-pool">Create pool</button>
+      </div>
+      ${pool.pools.length ? '' : '<p class="pool-sub" style="margin-top:12px">Got an invite? Just open the link your mate sent.</p>'}`;
+  }
+
+  function fmtVal(r) { return fmtDuration(r.total_secs); }
+
+  function subLine(r, rank, last) {
+    const bits = [`${r.session_count} SESH`];
+    if (r.earned != null) bits.push(fmtExact(Number(r.earned)));
+    if (r.flagged_count > 0) bits.push('🚩 SUSPICIOUS LOG');
+    if (last) return `<span class="low">💤 CONSTIPATED · ${bits.join(' · ')}</span>`;
+    return `<span>${bits.join(' · ')}</span>`;
+  }
+
+  function nudge(board) {
+    const i = board.findIndex(r => r.is_me);
+    if (i < 0) return '';
+    const me = board[i];
+    if (me.total_secs === 0) return '🚽 Log a bog to get on the board.';
+    if (i === 0) return '👑 You hold the Golden Throne. Defend it.';
+    const gap = Math.max(1, Math.ceil((board[i - 1].total_secs - me.total_secs) / 60));
+    const prize = i <= 2 ? `the ${RANK_TITLES[i - 1].toLowerCase().replace(/\b\w/g, c => c.toUpperCase())}` : `${board[i - 1].display_name}'s spot`;
+    return `🏁 You're ${gap} min off ${esc(prize)}. Get back on the throne.`;
+  }
+
+  function viewBoard() {
+    const p = currentPool();
+    const b = pool.board;
+    const tabs = [['week', 'This Week'], ['month', 'This Month'], ['all', 'All Time']]
+      .map(([k, l]) => `<button class="pool-tab ${pool.period === k ? 'active' : ''}" data-act="period" data-period="${k}">${l}</button>`).join('');
+    const picker = pool.pools.length > 1
+      ? `<select class="pool-select" id="poolPicker">${pool.pools.map(x =>
+          `<option value="${x.id}" ${x.id === p.id ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select>`
+      : '';
+
+    const top = b.slice(0, 3);
+    const order = [1, 0, 2].filter(i => top[i]); // 2nd, 1st, 3rd
+    const podium = order.map(i => {
+      const r = top[i];
+      return `<div class="podium-col p${i + 1}">
+        ${i === 0 ? '<div style="font-size:20px">👑</div>' : ''}
+        <div class="podium-av">${esc(r.emoji)}</div>
+        <div class="podium-name">${esc(r.display_name)}${r.is_me ? ' (you)' : ''}</div>
+        <div class="podium-val">${fmtVal(r)}</div>
+        ${r.earned != null ? `<div class="pool-sub">${fmtExact(Number(r.earned))}</div>` : ''}
+        ${r.flagged_count > 0 ? '<div class="pool-sub">🚩 SUS</div>' : ''}
+        <div class="pillar"><b>${i + 1}</b><span>${RANK_TITLES[i]}</span></div>
+      </div>`;
+    }).join('');
+
+    const rest = b.slice(3).map((r, j) => {
+      const rank = j + 4;
+      const last = rank === b.length && b.length > 3;
+      return `<div class="pool-row ${r.is_me ? 'me' : ''}">
+        <div class="pool-rank">${rank}</div><div class="pool-av">${esc(r.emoji)}</div>
+        <div class="pool-who"><b>${esc(r.display_name)}${r.is_me ? ' (you)' : ''}</b>${subLine(r, rank, last)}</div>
+        <div class="pool-val">${fmtVal(r)}</div></div>`;
+    }).join('');
+
+    const n = nudge(b);
+    return `
+      <div class="pool-head"><span class="section-label">👑 Poop Pool</span>${picker}</div>
+      <div class="pool-title">${esc(p.name)}</div>
+      <div class="pool-sub">THE ROYAL FLUSH · ${b.length} ${b.length === 1 ? 'MATE' : 'MATES'}</div>
+      <div class="pool-tabs">${tabs}</div>
+      ${b.length < 2 ? '<p class="pool-text">It\'s lonely on the throne. Invite your mates to start the race.</p>' : ''}
+      <div class="podium">${podium}</div>
+      ${rest ? `<div class="pool-rest">${rest}</div>` : ''}
+      ${n ? `<div class="pool-nudge">${n}</div>` : ''}
+      <div class="pool-btns"><button class="btn btn-start" data-act="invite">+ Invite mates</button></div>
+      <div class="pool-foot">
+        <button class="pool-link" data-act="new-pool">New pool</button>
+        <button class="pool-link" data-act="settings">Settings</button>
+      </div>`;
+  }
+
+  function viewSettings() {
+    const p = currentPool();
+    const owner = p && p.owner_id === pool.user.id;
+    return `
+      <span class="section-label">👑 Poop Pool · Settings</span>
+      <p class="pool-text">Signed in as ${esc(pool.user.email || '')}</p>
+      <div class="pool-btns"><button class="btn btn-ghost" data-act="edit-profile">Edit name, emoji and $ sharing</button></div>
+      ${p ? `<p class="pool-sub" style="margin-top:16px">${esc(p.name.toUpperCase())} · INVITE CODE ${esc(p.invite_code)}</p>
+        <div class="pool-btns">
+          ${owner ? '<button class="btn btn-ghost" data-act="new-code">New invite code</button>' : ''}
+          <button class="btn btn-stop" data-act="leave">Leave pool</button>
+        </div>` : ''}
+      <div class="pool-foot">
+        <button class="pool-link" data-act="cancel">Back to the board</button>
+        <button class="pool-link" data-act="signout">Sign out</button>
+      </div>`;
+  }
+
+  // ── ACTIONS ──
+  const actions = {
+    async login() {
+      const email = (document.getElementById('poolEmail').value || '').trim();
+      if (!/^\S+@\S+\.\S+$/.test(email)) throw new Error('That email looks blocked up.');
+      const { error } = await pool.sb.auth.signInWithOtp({
+        email, options: { emailRedirectTo: location.origin + location.pathname },
+      });
+      if (error) throw error;
+      pool.view = { name: 'sent', email };
+    },
+    async back() { pool.view = { name: 'pitch' }; },
+    async decline() { writeJSON(POOL_INVITE_KEY, null); await refreshPool(); return 'done'; },
+    async join() {
+      const { data: pid, error } = await pool.sb.rpc('join_pool', { p_code: pool.view.code });
+      if (error) throw error;
+      writeJSON(POOL_INVITE_KEY, null);
+      if (pid) writeJSON(POOL_CURRENT_KEY, pid);
+      await refreshPool(); return 'done';
+    },
+    async emoji(el) {
+      pool.view = { name: 'profile', emoji: el.dataset.emoji };
+      pool.profile = Object.assign({}, pool.profile, {
+        display_name: document.getElementById('poolName').value,
+        share_money: document.getElementById('poolMoney').checked,
+      });
+    },
+    async 'save-profile'() {
+      const name = document.getElementById('poolName').value.trim();
+      if (!name) throw new Error('Pick a throne name first.');
+      const on = poolCard.querySelector('.emoji-opt.on');
+      const row = {
+        id: pool.user.id, display_name: name.slice(0, 24),
+        emoji: on ? on.dataset.emoji : '💩',
+        share_money: document.getElementById('poolMoney').checked,
+      };
+      const { error } = await pool.sb.from('profiles').upsert(row);
+      if (error) throw error;
+      pool.profile = row;
+      await refreshPool(); return 'done';
+    },
+    async 'create-pool'() {
+      const name = document.getElementById('poolNewName').value.trim();
+      if (!name) throw new Error('Give your pool a name.');
+      const { data, error } = await pool.sb.rpc('create_pool', { p_name: name });
+      if (error) throw error;
+      writeJSON(POOL_CURRENT_KEY, data.id);
+      await refreshPool(); return 'done';
+    },
+    async period(el) { pool.period = el.dataset.period; await loadBoard(); },
+    async invite() {
+      const p = currentPool();
+      const url = inviteLink(p.invite_code);
+      const text = `Think you spend less time on the bog than me? Join ${p.name} on Gross Income 💩`;
+      if (navigator.share) {
+        try { await navigator.share({ title: 'Poop Pool invite', text, url }); return; } catch (e) { if (e.name === 'AbortError') return; }
+      }
+      try { await navigator.clipboard.writeText(url); pool.msg = 'Invite link copied. Paste it to your mates.'; }
+      catch (e) { pool.msg = 'Send your mates this link: ' + url; }
+    },
+    async 'new-pool'() { pool.view = { name: 'create' }; },
+    async settings() { pool.view = { name: 'settings' }; },
+    async cancel() { pool.view = { name: 'board' }; await loadBoard(); },
+    async 'edit-profile'() { pool.view = { name: 'profile' }; },
+    async 'new-code'() {
+      const p = currentPool();
+      const { data, error } = await pool.sb.rpc('regenerate_invite_code', { p_pool: p.id });
+      if (error) throw error;
+      p.invite_code = data;
+      pool.msg = 'Old invite links are flushed. New code: ' + data;
+    },
+    async leave() {
+      const p = currentPool();
+      const { error } = await pool.sb.from('pool_members').delete().eq('pool_id', p.id).eq('user_id', pool.user.id);
+      if (error) throw error;
+      writeJSON(POOL_CURRENT_KEY, null);
+      await refreshPool(); return 'done';
+    },
+    async signout() { await pool.sb.auth.signOut(); pool.profile = null; pool.pools = []; await refreshPool(); return 'done'; },
+  };
+
+  poolCard.addEventListener('click', async (e) => {
+    const el = e.target.closest('[data-act]');
+    if (!el || pool.busy) return;
+    pool.busy = true;
+    el.disabled = true;
+    pool.msg = '';
+    try {
+      const r = await actions[el.dataset.act](el);
+      if (r !== 'done') renderPool();
+    } catch (err) {
+      pool.msg = errText(err);
+      const m = document.getElementById('poolMsg');
+      if (m) m.textContent = pool.msg;
+      el.disabled = false;
+    } finally {
+      pool.busy = false;
+    }
+  });
+
+  poolCard.addEventListener('change', async (e) => {
+    if (e.target.id !== 'poolPicker') return;
+    writeJSON(POOL_CURRENT_KEY, e.target.value);
+    try { await loadBoard(); renderPool(); } catch (err) { pool.msg = errText(err); renderPool(); }
+  });
+
+  window.poolOnSession = async () => {
+    if (!pool.sb || !pool.user) return;
+    try {
+      await syncSessions();
+      if (pool.view && pool.view.name === 'board') { await loadBoard(); renderPool(); }
+    } catch (e) { console.warn('Poop Pool refresh failed', e); }
+  };
+
+  // ── BOOT ──
+  (function bootPool() {
+    if (!poolBetaOn()) return;
+    const q = new URLSearchParams(location.search);
+    if (q.has('pool')) {
+      writeJSON(POOL_INVITE_KEY, q.get('pool').toUpperCase().slice(0, 12));
+      q.delete('pool');
+      const qs = q.toString();
+      history.replaceState(null, '', location.pathname + (qs ? '?' + qs : '') + location.hash);
+    }
+    renderPool();
+    if (readJSON(POOL_INVITE_KEY, null)) poolCard.scrollIntoView({ block: 'start' });
+
+    const s = document.createElement('script');
+    s.src = SUPABASE_JS;
+    s.onload = async () => {
+      pool.sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      // Only re-render when the signed-in person actually changes (e.g. arriving from a
+      // magic link). Deferred because awaiting Supabase calls inside this callback deadlocks.
+      pool.sb.auth.onAuthStateChange((event, session) => {
+        const id = session ? session.user.id : null;
+        if (id === (pool.user ? pool.user.id : null)) return;
+        setTimeout(() => refreshPool().catch(e => { pool.msg = errText(e); renderPool(); }), 0);
+      });
+      try { await refreshPool(); } catch (e) { pool.msg = errText(e); renderPool(); }
+    };
+    s.onerror = () => { pool.msg = 'Poop Pool is offline right now.'; renderPool(); };
+    document.body.appendChild(s);
   })();
 </script>
 </body>
