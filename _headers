@@ -1,0 +1,18 @@
+# Cloudflare Pages response headers.
+# The app shell must never be served stale, or the PWA "new version" bar lags behind deploys.
+/
+  Cache-Control: no-cache
+/index.html
+  Cache-Control: no-cache
+/sw.js
+  Cache-Control: no-cache
+/manifest.webmanifest
+  Cache-Control: no-cache
+
+# Icons rarely change; let browsers keep them for a week.
+/icons/*
+  Cache-Control: public, max-age=604800
+
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
