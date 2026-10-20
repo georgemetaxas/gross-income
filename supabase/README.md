@@ -13,7 +13,9 @@ The leaderboard runs on Supabase. The site itself stays static.
 2. **Login redirects:** go to Authentication → URL Configuration.
    - Site URL: `https://gross-income.pages.dev`
    - Redirect URLs: add `https://gross-income.pages.dev/**`, `https://*.gross-income.pages.dev/**` and `https://grossincome.com.au/**`. Don't use a bare `*.pages.dev`, which would let any Pages site receive login links.
-3. **Email for mates:** Supabase's built-in email only reaches members of your Supabase team and is heavily rate limited. Before mates can log in, add a free SMTP sender (e.g. Resend) under Project Settings → Authentication → SMTP Settings.
+3. **Email for mates:** Supabase's built-in email only reaches members of your Supabase team, so login emails go through Cloudflare Email Sending instead.
+   - Authentication → Emails → SMTP Settings: host `smtp.mx.cloudflare.net`, port `465`, username `api_token`, password a Cloudflare API token with Email Sending: Edit. Sender `Gross Income BogBot <bogbot@grossincome.com.au>`.
+   - Templates (Magic link and Confirm sign up) link to `{{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=email` rather than `{{ .ConfirmationURL }}`. The app finishes the login with `verifyOtp`, and keeping the link on our own domain helps the email stay out of spam.
 
 ## Turning the beta on
 
