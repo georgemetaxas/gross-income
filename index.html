@@ -13,6 +13,11 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Gross Income">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💩</text></svg>">
+<!-- Open connections early: fonts, the Supabase library for Poop Pool, and Supabase itself -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://pngsoygqbvhlfkzdghtr.supabase.co" crossorigin>
+<link rel="preload" as="script" href="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;600&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -404,6 +409,14 @@
     padding: 24px; margin-bottom: 12px;
   }
   .pool-card[hidden] { display: none; }
+  /* Quick fade when the pool switches screens, and a dimmed board while fresh numbers load */
+  @keyframes pool-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+  .pool-card.pool-enter > * { animation: pool-in 0.18s ease-out; }
+  .pool-card.stale .podium, .pool-card.stale .pool-rest { opacity: 0.45; transition: opacity 0.15s; }
+  .pool-card .btn:disabled { opacity: 0.7; cursor: progress; }
+  @media (prefers-reduced-motion: reduce) {
+    .pool-card.pool-enter > * { animation: none; }
+  }
   .pool-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
   .pool-head .section-label { margin-bottom: 0; }
   .pool-title { font-family: 'Bebas Neue', sans-serif; font-size: 34px; letter-spacing: 2px; color: var(--gold); line-height: 1; margin: 14px 0 4px; }
@@ -669,6 +682,7 @@
   let savedPeriod = 'year';
   let segmentStartSeconds = 0;
   let segmentStartedAt = null;
+  let segmentStartMs = 0;
 
   // ── STORAGE ──
   // Everything stays on this device. Storage can be blocked (private mode),
@@ -783,8 +797,12 @@
   function fmtExact(n) { return '$' + n.toFixed(2); }
 
   // ── TIMER ──
+  // Counted from the clock, not from ticks: phones pause timers when the
+  // screen locks or the app goes to the background, so ticks undercount.
   function updateTimer() {
-    seconds++;
+    const now = segmentStartSeconds + Math.floor((Date.now() - segmentStartMs) / 1000);
+    if (now === seconds) return;
+    seconds = now;
     const m = String(Math.floor(seconds / 60)).padStart(2, '0');
     const s = String(seconds % 60).padStart(2, '0');
     document.getElementById('timerDisplay').textContent = `${m}:${s}`;
@@ -800,8 +818,9 @@
     }
     running = true;
     segmentStartSeconds = seconds;
-    segmentStartedAt = new Date().toISOString();
-    timerInterval = setInterval(updateTimer, 1000);
+    segmentStartMs = Date.now();
+    segmentStartedAt = new Date(segmentStartMs).toISOString();
+    timerInterval = setInterval(updateTimer, 250);
     document.getElementById('timerDot').classList.add('live');
     document.getElementById('dashEarned').classList.add('ticking');
     document.getElementById('startBtn').style.display = 'none';
@@ -810,6 +829,7 @@
 
   function stopTimer() {
     if (!running) return;
+    updateTimer();
     running = false;
     clearInterval(timerInterval);
     document.getElementById('timerDot').classList.remove('live');
@@ -920,14 +940,23 @@
   }
 
   // ── MAIN WAVE ANIMATION ──
+  // Sized only on resize: resetting canvas.width every frame reallocates it and
+  // forces a layout read, which was the app's main per-frame cost.
+  const waveCanvas = document.getElementById('waveCanvas');
+  const waveCtx = waveCanvas.getContext('2d');
+  const WAVE_H = 130;
+  function sizeWave() {
+    waveCanvas.width = waveCanvas.offsetWidth;
+    waveCanvas.height = WAVE_H;
+  }
+  window.addEventListener('resize', sizeWave);
+  sizeWave();
+
   function drawMainWave() {
-    const canvas = document.getElementById('waveCanvas');
-    const W = canvas.offsetWidth;
-    const H = 130;
+    const W = waveCanvas.width;
+    const H = WAVE_H;
     if (W === 0) return;
-    canvas.width = W;
-    canvas.height = H;
-    const ctx = canvas.getContext('2d');
+    const ctx = waveCtx;
     ctx.clearRect(0, 0, W, H);
 
     const waves = [
@@ -956,9 +985,23 @@
   }
 
   // ── ANIMATION LOOP ──
-  (function loop() {
-    drawMainWave();
-    requestAnimationFrame(loop);
+  // Paused while the dashboard is scrolled out of view. Reduced motion gets one still frame.
+  (function () {
+    const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let onScreen = true;
+    let frame = null;
+    function loop() {
+      drawMainWave();
+      frame = still || !onScreen ? null : requestAnimationFrame(loop);
+    }
+    if ('IntersectionObserver' in window) {
+      new IntersectionObserver(([e]) => {
+        onScreen = e.isIntersecting;
+        if (onScreen && frame === null) loop();
+      }).observe(waveCanvas);
+    }
+    window.addEventListener('resize', () => { if (frame === null) drawMainWave(); });
+    loop();
   })();
 
   refreshAll();
@@ -1062,10 +1105,17 @@
   const POOL_EMOJIS = ['💩', '🦍', '🧻', '🐻', '🦄', '🐢', '🚽', '🐸', '🦆', '👑'];
   const RANK_TITLES = ['GOLDEN THRONE', 'SILVER SEAT', 'BRONZE BOWL'];
 
+  // Last known profile, pools and boards, so the pool draws instantly on the next
+  // visit while fresh numbers load. Cleared on sign out.
+  const POOL_CACHE_KEY = 'gi.poolCache.v1';
+  const POOL_SYNCED_KEY = 'gi.poolSynced.v1';
+
   const pool = {
-    sb: null, user: null, profile: null, pools: [], board: [],
-    period: 'week', view: null, msg: '', busy: false,
+    sb: null, user: null, profile: null, pools: [], board: [], boards: {},
+    period: 'week', view: null, msg: '', busy: false, stale: false, shown: null,
   };
+  let sbReadyResolve;
+  const sbReady = new Promise(r => { sbReadyResolve = r; });
   const poolCard = document.getElementById('poolCard');
 
   function esc(s) {
@@ -1090,6 +1140,18 @@
     return pool.pools.find(p => p.id === id) || pool.pools[0] || null;
   }
 
+  function boardKey() {
+    const p = currentPool();
+    return p ? p.id + ':' + pool.period : null;
+  }
+
+  function saveCache() {
+    writeJSON(POOL_CACHE_KEY, pool.user ? {
+      user: { id: pool.user.id, email: pool.user.email },
+      profile: pool.profile, pools: pool.pools, boards: pool.boards,
+    } : null);
+  }
+
   // ── DATA ──
   async function syncSessions() {
     if (!pool.user || !pool.profile) return;
@@ -1103,44 +1165,75 @@
         earned: pool.profile.share_money ? s.earned : null,
       }));
     if (rows.length === 0) return;
+    // Skip the upload when nothing changed since the last one
+    const sig = pool.user.id + ':' + rows.length + ':' + (pool.profile.share_money ? 1 : 0);
+    if (readJSON(POOL_SYNCED_KEY, null) === sig) return;
     const { error } = await pool.sb.from('sessions').upsert(rows, { onConflict: 'user_id,local_id' });
     if (error) console.warn('Poop Pool sync failed', error);
+    else writeJSON(POOL_SYNCED_KEY, sig);
   }
 
   async function loadBoard() {
     const p = currentPool();
     if (!p) { pool.board = []; return; }
+    const key = p.id + ':' + pool.period;
     const { data, error } = await pool.sb.rpc('pool_leaderboard', { p_pool: p.id, p_since: periodStart(pool.period) });
     if (error) throw error;
-    pool.board = data || [];
+    pool.boards[key] = data || [];
+    pool.board = pool.boards[key];
+    saveCache();
   }
 
-  async function refreshPool() {
-    pool.msg = '';
+  // Draw the board straight away from what we already have, then swap in fresh numbers.
+  async function showBoard() {
+    const k = boardKey();
+    pool.stale = !(k && pool.boards[k]);
+    if (!pool.stale) pool.board = pool.boards[k];
+    renderPool();
+    try { await loadBoard(); }
+    catch (e) { pool.stale = false; renderPool(); throw e; }
+    pool.stale = false;
+  }
+
+  // Login and boot can both ask for a refresh at once; share one instead of
+  // running every query twice.
+  let poolRefresh = null;
+  function refreshPool() {
+    if (!poolRefresh) poolRefresh = loadPool().finally(() => { poolRefresh = null; });
+    return poolRefresh;
+  }
+
+  async function loadPool() {
     const { data: { session } } = await pool.sb.auth.getSession();
     pool.user = session ? session.user : null;
     const code = readJSON(POOL_INVITE_KEY, null);
 
     if (!pool.user) {
+      pool.profile = null; pool.pools = []; pool.boards = {};
+      saveCache();
       pool.view = code ? await inviteView(code) : { name: 'pitch' };
       return renderPool();
     }
 
-    const { data: profile } = await pool.sb.from('profiles').select('*').eq('id', pool.user.id).maybeSingle();
+    const [{ data: profile, error: profileError }, { data: pools, error }] = await Promise.all([
+      pool.sb.from('profiles').select('*').eq('id', pool.user.id).maybeSingle(),
+      pool.sb.from('pools').select('id,name,invite_code,owner_id').order('created_at'),
+    ]);
+    if (profileError) throw profileError;
+    if (error) throw error;
     pool.profile = profile;
+    pool.pools = pools || [];
+    saveCache();
     if (!profile) { pool.view = { name: 'profile', emoji: '💩' }; return renderPool(); }
 
     await syncSessions();
 
     if (code) { pool.view = await inviteView(code); return renderPool(); }
-
-    const { data: pools, error } = await pool.sb.from('pools').select('id,name,invite_code,owner_id').order('created_at');
-    if (error) throw error;
-    pool.pools = pools || [];
     if (pool.pools.length === 0) { pool.view = { name: 'create' }; return renderPool(); }
 
     await loadBoard();
     pool.view = { name: 'board' };
+    pool.stale = false;
     renderPool();
   }
 
@@ -1161,6 +1254,13 @@
     }[v.name](v);
     poolCard.innerHTML = html + `<div class="pool-msg" id="poolMsg">${esc(pool.msg)}</div>`;
     poolCard.hidden = false;
+    poolCard.classList.toggle('stale', pool.stale);
+    if (v.name !== pool.shown) {
+      pool.shown = v.name;
+      poolCard.classList.remove('pool-enter');
+      void poolCard.offsetWidth; // restart the fade
+      poolCard.classList.add('pool-enter');
+    }
   }
 
   function viewPitch(v) {
@@ -1168,7 +1268,7 @@
       <span class="section-label">👑 Poop Pool · Beta</span>
       <div class="pool-title">The Royal Flush</div>
       <p class="pool-text">${esc(v.note || 'Race your mates for the Golden Throne. Private, invite-only leaderboards for bog time.')}</p>
-      <input class="pool-input" id="poolEmail" type="email" inputmode="email" autocomplete="email" placeholder="you@email.com">
+      <input class="pool-input" id="poolEmail" type="email" inputmode="email" autocomplete="email" placeholder="you@email.com" value="${esc(v.email || '')}">
       <div class="pool-btns"><button class="btn btn-start" data-act="login">Email me a login code</button></div>
       <p class="pool-sub" style="margin-top:10px">No passwords. Your salary never leaves your phone.</p>`;
   }
@@ -1177,19 +1277,25 @@
     return `
       <span class="section-label">👑 Poop Pool · Beta</span>
       <div class="pool-title">Check your inbox</div>
-      <p class="pool-text">We emailed a login code to <b>${esc(v.email)}</b>. Type it in here to get on the board. Not there? Check your spam.</p>
+      <p class="pool-text" id="poolSentText">${sentText(v)}</p>
       <div class="input-row code-row">
         <input id="poolCode" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="8" aria-label="Login code">
       </div>
-      <div class="pool-btns"><button class="btn btn-start" data-act="verify">Let me in</button></div>
+      <div class="pool-btns"><button class="btn btn-start" data-act="verify" data-busy="Checking…">Let me in</button></div>
       <button class="pool-link" data-act="back">Use a different email</button>`;
+  }
+
+  function sentText(v) {
+    return v.sending
+      ? `Sending a login code to <b>${esc(v.email)}</b>…`
+      : `We emailed a login code to <b>${esc(v.email)}</b>. Type it in here to get on the board. Not there? Check your spam.`;
   }
 
   function viewInvite(v) {
     const p = v.preview;
     const action = pool.user
-      ? `<div class="pool-btns"><button class="btn btn-start" data-act="join">Join the pool</button></div>`
-      : `<input class="pool-input" id="poolEmail" type="email" inputmode="email" autocomplete="email" placeholder="you@email.com">
+      ? `<div class="pool-btns"><button class="btn btn-start" data-act="join" data-busy="Joining…">Join the pool</button></div>`
+      : `<input class="pool-input" id="poolEmail" type="email" inputmode="email" autocomplete="email" placeholder="you@email.com" value="${esc(v.email || '')}">
          <div class="pool-btns"><button class="btn btn-start" data-act="login">Email me a login code to join</button></div>`;
     return `
       <span class="section-label">💩 Poop Pool Invite</span>
@@ -1216,7 +1322,7 @@
         `<button type="button" class="emoji-opt ${e === emoji ? 'on' : ''}" data-act="emoji" data-emoji="${e}">${e}</button>`).join('')}</div>
       <label class="pool-check"><input type="checkbox" id="poolMoney" ${p.share_money ? 'checked' : ''}>
         <span>Show my $ earned to my pools. Off by default, because dollars per minute gives away your pay.</span></label>
-      <div class="pool-btns"><button class="btn btn-start" data-act="save-profile">Save</button></div>`;
+      <div class="pool-btns"><button class="btn btn-start" data-act="save-profile" data-busy="Saving…">Save</button></div>`;
   }
 
   function viewCreate(v) {
@@ -1227,7 +1333,7 @@
       <input class="pool-input" id="poolNewName" maxlength="40" placeholder="e.g. Office Throne Room">
       <div class="pool-btns">
         ${pool.pools.length ? '<button class="btn btn-ghost" data-act="cancel">Cancel</button>' : ''}
-        <button class="btn btn-start" data-act="create-pool">Create pool</button>
+        <button class="btn btn-start" data-act="create-pool" data-busy="Creating…">Create pool</button>
       </div>
       ${pool.pools.length ? '' : '<p class="pool-sub" style="margin-top:12px">Got an invite? Just open the link your mate sent.</p>'}`;
   }
@@ -1313,8 +1419,8 @@
       <div class="pool-btns"><button class="btn btn-ghost" data-act="edit-profile">Edit name, emoji and $ sharing</button></div>
       ${p ? `<p class="pool-sub" style="margin-top:16px">${esc(p.name.toUpperCase())} · INVITE CODE ${esc(p.invite_code)}</p>
         <div class="pool-btns">
-          ${owner ? '<button class="btn btn-ghost" data-act="new-code">New invite code</button>' : ''}
-          <button class="btn btn-stop" data-act="leave">Leave pool</button>
+          ${owner ? '<button class="btn btn-ghost" data-act="new-code" data-busy="Flushing…">New invite code</button>' : ''}
+          <button class="btn btn-stop" data-act="leave" data-busy="Leaving…">Leave pool</button>
         </div>` : ''}
       <div class="pool-foot">
         <button class="pool-link" data-act="cancel">Back to the board</button>
@@ -1327,11 +1433,20 @@
     async login() {
       const email = (document.getElementById('poolEmail').value || '').trim();
       if (!/^\S+@\S+\.\S+$/.test(email)) throw new Error('That email looks blocked up.');
+      // Move to the code screen straight away; sending the email takes a few seconds.
+      const from = pool.view;
+      pool.view = { name: 'sent', email, sending: true };
+      renderPool();
+      document.getElementById('poolCode').focus();
       const { error } = await pool.sb.auth.signInWithOtp({
         email, options: { emailRedirectTo: location.origin + location.pathname },
       });
-      if (error) throw error;
-      pool.view = { name: 'sent', email };
+      if (error) { pool.view = Object.assign({}, from, { email }); renderPool(); throw error; }
+      pool.view.sending = false;
+      // Update the line in place so a code already being typed isn't wiped
+      const t = document.getElementById('poolSentText');
+      if (t) t.innerHTML = sentText(pool.view);
+      return 'done';
     },
     // A typed code works inside the home screen app. A link in the email would
     // open in Safari, which on iPhone doesn't share its login with the app.
@@ -1380,7 +1495,7 @@
       writeJSON(POOL_CURRENT_KEY, data.id);
       await refreshPool(); return 'done';
     },
-    async period(el) { pool.period = el.dataset.period; await loadBoard(); },
+    async period(el) { pool.period = el.dataset.period; await showBoard(); },
     async invite() {
       const p = currentPool();
       const url = inviteLink(p.invite_code);
@@ -1393,7 +1508,7 @@
     },
     async 'new-pool'() { pool.view = { name: 'create' }; },
     async settings() { pool.view = { name: 'settings' }; },
-    async cancel() { pool.view = { name: 'board' }; await loadBoard(); },
+    async cancel() { pool.view = { name: 'board' }; await showBoard(); },
     async 'edit-profile'() { pool.view = { name: 'profile' }; },
     async 'new-code'() {
       const p = currentPool();
@@ -1417,8 +1532,13 @@
     if (!el || pool.busy) return;
     pool.busy = true;
     el.disabled = true;
+    const label = el.dataset.busy ? el.textContent : null;
+    if (label !== null) el.textContent = el.dataset.busy;
     pool.msg = '';
     try {
+      // A tap on the saved board can land before Supabase has loaded
+      if (!pool.sb && !(await sbReady)) throw new Error('Poop Pool is offline right now.');
+      if (poolRefresh) await poolRefresh.catch(() => {});
       const r = await actions[el.dataset.act](el);
       if (r !== 'done') renderPool();
     } catch (err) {
@@ -1426,15 +1546,20 @@
       const m = document.getElementById('poolMsg');
       if (m) m.textContent = pool.msg;
       el.disabled = false;
+      if (label !== null) el.textContent = label;
     } finally {
       pool.busy = false;
     }
   });
 
   poolCard.addEventListener('change', async (e) => {
-    if (e.target.id !== 'poolPicker') return;
+    if (e.target.id !== 'poolPicker' || pool.busy) return;
     writeJSON(POOL_CURRENT_KEY, e.target.value);
-    try { await loadBoard(); renderPool(); } catch (err) { pool.msg = errText(err); renderPool(); }
+    pool.busy = true;
+    try {
+      if (!(await sbReady)) throw new Error('Poop Pool is offline right now.');
+      await showBoard(); renderPool(); } catch (err) { pool.msg = errText(err); renderPool(); }
+    finally { pool.busy = false; }
   });
 
   window.poolOnSession = async () => {
@@ -1454,6 +1579,18 @@
       const qs = q.toString();
       history.replaceState(null, '', location.pathname + (qs ? '?' + qs : '') + location.hash);
     }
+
+    // Show the last board we saw right away instead of "Warming up the seat…"
+    const cache = readJSON(POOL_CACHE_KEY, null);
+    if (cache && cache.user && cache.profile && !readJSON(POOL_INVITE_KEY, null)) {
+      pool.user = cache.user;
+      pool.profile = cache.profile;
+      pool.pools = cache.pools || [];
+      pool.boards = cache.boards || {};
+      const k = boardKey();
+      if (k && pool.boards[k]) { pool.board = pool.boards[k]; pool.view = { name: 'board' }; }
+      else if (pool.pools.length === 0) pool.view = { name: 'create' };
+    }
     renderPool();
     if (readJSON(POOL_INVITE_KEY, null)) poolCard.scrollIntoView({ block: 'start' });
 
@@ -1461,6 +1598,7 @@
     s.src = SUPABASE_JS;
     s.onload = async () => {
       pool.sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      sbReadyResolve(true);
       // Only re-render when the signed-in person actually changes (e.g. arriving from a
       // magic link). Deferred because awaiting Supabase calls inside this callback deadlocks.
       pool.sb.auth.onAuthStateChange((event, session) => {
@@ -1482,7 +1620,7 @@
       }
       try { await refreshPool(); } catch (e) { pool.msg = errText(e); renderPool(); }
     };
-    s.onerror = () => { pool.msg = 'Poop Pool is offline right now.'; renderPool(); };
+    s.onerror = () => { sbReadyResolve(false); pool.msg = 'Poop Pool is offline right now.'; renderPool(); };
     document.body.appendChild(s);
   })();
 </script>
