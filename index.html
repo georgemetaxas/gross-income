@@ -374,6 +374,22 @@
   .fun-fact.visible { opacity: 1; }
   .fun-fact span { color: var(--gold); }
 
+  /* ── BOG HISTORY ── */
+  .history-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 20px;
+    padding: 24px; margin-bottom: 12px; display: none;
+  }
+  .history-card.visible { display: block; }
+  .history-card .lt-val { color: var(--gold); }
+  .history-list { margin-top: 18px; border-top: 1px solid var(--border); }
+  .history-row {
+    display: flex; justify-content: space-between; gap: 12px; padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    font-family: 'DM Mono', monospace; font-size: 12px; color: var(--muted);
+  }
+  .history-row:last-child { border-bottom: none; }
+  .history-row b { color: var(--amber); font-weight: 400; }
+
   /* ── NO SALARY NOTICE ── */
   .no-salary-notice {
     background: var(--paper); border: 1px dashed rgba(245,200,66,0.2);
@@ -500,6 +516,30 @@
     </div>
   </div>
 
+  <!-- BOG HISTORY -->
+  <div class="history-card" id="historyCard">
+    <span class="section-label">🧻 Your Bog History</span>
+    <div class="lifetime-grid">
+      <div>
+        <div class="lt-val" id="histTime">0m</div>
+        <div class="lt-lbl">Total Bog Time</div>
+      </div>
+      <div>
+        <div class="lt-val" id="histEarned">$0</div>
+        <div class="lt-lbl">Total Earned</div>
+      </div>
+      <div>
+        <div class="lt-val" id="histCount">0</div>
+        <div class="lt-lbl">Sessions</div>
+      </div>
+      <div>
+        <div class="lt-val" id="histLongest">0m</div>
+        <div class="lt-lbl">Longest Sesh</div>
+      </div>
+    </div>
+    <div class="history-list" id="historyList"></div>
+  </div>
+
 
   <div class="fun-fact" id="funFact"></div>
   <footer>© Gross Income Inc. · All rights earned</footer>
@@ -513,6 +553,31 @@
   let currentPeriod = 'year';
   let waveT = 0;
   let savedSalary = 0;
+  let segmentStartSeconds = 0;
+  let segmentStartedAt = null;
+
+  // ── STORAGE ──
+  // Everything stays on this device. Storage can be blocked (private mode),
+  // so every read/write is guarded and the app still works without it.
+  const SESSIONS_KEY = 'gi.sessions.v1';
+  const SALARY_KEY = 'gi.salary.v1';
+  const MIN_SESSION_SECS = 5;
+
+  function readJSON(key, fallback) {
+    try {
+      const v = JSON.parse(localStorage.getItem(key));
+      return v == null ? fallback : v;
+    } catch (e) { return fallback; }
+  }
+
+  function writeJSON(key, value) {
+    try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) {}
+  }
+
+  function loadSessions() {
+    const s = readJSON(SESSIONS_KEY, []);
+    return Array.isArray(s) ? s : [];
+  }
 
   // ── TABS ──
   document.querySelectorAll('.tab').forEach(tab => {
@@ -557,6 +622,7 @@
       return;
     }
     savedSalary = raw;
+    writeJSON(SALARY_KEY, { amount: raw, period: currentPeriod });
 
     const periodLabels = { year: 'per year', month: 'per month', hour: 'per hour' };
     document.getElementById('summaryAmount').textContent = '$' + raw.toLocaleString('en-US');
@@ -602,6 +668,8 @@
       return;
     }
     running = true;
+    segmentStartSeconds = seconds;
+    segmentStartedAt = new Date().toISOString();
     timerInterval = setInterval(updateTimer, 1000);
     document.getElementById('timerDot').classList.add('live');
     document.getElementById('dashEarned').classList.add('ticking');
@@ -617,6 +685,7 @@
     document.getElementById('dashEarned').classList.remove('ticking');
     document.getElementById('startBtn').style.display = 'block';
     document.getElementById('stopBtn').style.display = 'none';
+    logSession(seconds - segmentStartSeconds);
     showFunFact();
   }
 
@@ -782,6 +851,69 @@
     el.innerHTML = '💡 ' + fact;
     el.classList.add('visible');
   }
+
+  // ── BOG HISTORY ──
+  function fmtDuration(secs) {
+    const h = Math.floor(secs / 3600);
+    const m = Math.floor((secs % 3600) / 60);
+    if (h > 0) return `${h}h ${m}m`;
+    if (m > 0) return `${m}m`;
+    return `${secs}s`;
+  }
+
+  function logSession(secs) {
+    if (secs < MIN_SESSION_SECS) return;
+    const sessions = loadSessions();
+    sessions.push({
+      start: segmentStartedAt,
+      secs,
+      earned: Math.round(getHourlyRate() * (secs / 3600) * 100) / 100,
+    });
+    writeJSON(SESSIONS_KEY, sessions);
+    renderHistory();
+  }
+
+  function renderHistory() {
+    const sessions = loadSessions();
+    const card = document.getElementById('historyCard');
+    if (sessions.length === 0) { card.classList.remove('visible'); return; }
+
+    const totalSecs = sessions.reduce((t, s) => t + s.secs, 0);
+    const totalEarned = sessions.reduce((t, s) => t + s.earned, 0);
+    const longest = Math.max(...sessions.map(s => s.secs));
+
+    document.getElementById('histTime').textContent = fmtDuration(totalSecs);
+    document.getElementById('histEarned').textContent = totalEarned >= 1000 ? fmt(totalEarned) : fmtExact(totalEarned);
+    document.getElementById('histCount').textContent = sessions.length;
+    document.getElementById('histLongest').textContent = fmtDuration(longest);
+
+    const list = document.getElementById('historyList');
+    list.innerHTML = '';
+    sessions.slice(-5).reverse().forEach(s => {
+      const when = new Date(s.start).toLocaleString('en-AU', {
+        weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit',
+      });
+      const row = document.createElement('div');
+      row.className = 'history-row';
+      row.innerHTML = `<span>${when}</span><span>${fmtDuration(s.secs)} · <b>${fmtExact(s.earned)}</b></span>`;
+      list.appendChild(row);
+    });
+
+    card.classList.add('visible');
+  }
+
+  // ── RESTORE SAVED STATE ──
+  (function restore() {
+    const saved = readJSON(SALARY_KEY, null);
+    if (saved && saved.amount > 0 && ['year', 'month', 'hour'].includes(saved.period)) {
+      currentPeriod = saved.period;
+      document.querySelectorAll('.tab').forEach(t =>
+        t.classList.toggle('active', t.dataset.period === saved.period));
+      salaryInput.value = Number(saved.amount).toLocaleString('en-US');
+      saveSalary();
+    }
+    renderHistory();
+  })();
 </script>
 </body>
 </html>
