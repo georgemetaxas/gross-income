@@ -2,8 +2,16 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Gross Income 💩</title>
+<meta name="description" content="Find out how much you earn on the toilet. In every sense of the word.">
+<meta name="theme-color" content="#1a1208">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Gross Income">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💩</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;600&display=swap" rel="stylesheet">
 <style>
@@ -33,6 +41,11 @@
     flex-direction: column;
     align-items: center;
     padding: 24px 16px 48px;
+    /* Home screen app draws under the notch and home bar */
+    padding-top: calc(24px + env(safe-area-inset-top));
+    padding-bottom: calc(48px + env(safe-area-inset-bottom));
+    padding-left: max(16px, env(safe-area-inset-left));
+    padding-right: max(16px, env(safe-area-inset-right));
     position: relative;
     overflow-x: hidden;
   }
@@ -462,6 +475,32 @@
 
   footer { text-align: center; font-family: 'DM Mono', monospace; font-size: 10px; color: #3d2f1a; margin-top: 8px; }
 
+
+  /* ── APP BAR: install hint + new version prompt ── */
+  .app-bar {
+    position: fixed; left: 12px; right: 12px; z-index: 30;
+    bottom: calc(12px + env(safe-area-inset-bottom));
+    max-width: 496px; margin: 0 auto;
+    display: flex; align-items: center; gap: 12px;
+    background: var(--surface2); border: 1px solid rgba(245,200,66,0.3);
+    border-radius: 14px; padding: 12px 12px 12px 16px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    font-size: 13px; line-height: 1.4; color: var(--cream);
+  }
+  .app-bar[hidden] { display: none; }
+  .app-bar-text { flex: 1; }
+  .app-bar-text b { color: var(--gold); font-weight: 600; }
+  .app-bar-btn {
+    background: var(--gold); color: var(--bg); border: none; border-radius: 8px;
+    font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 1px;
+    text-transform: uppercase; padding: 9px 12px; cursor: pointer; white-space: nowrap;
+  }
+  .app-bar-btn[hidden] { display: none; }
+  .app-bar-x {
+    background: none; border: none; color: var(--muted);
+    font-size: 14px; padding: 6px; cursor: pointer;
+  }
+  .sheet-open .app-bar { display: none; }
 </style>
 </head>
 <body>
@@ -609,6 +648,12 @@
 
   <div class="fun-fact" id="funFact"></div>
   <footer>© Gross Income Inc. · All rights earned</footer>
+</div>
+
+<div class="app-bar" id="appBar" role="status" hidden>
+  <div class="app-bar-text" id="appBarText"></div>
+  <button type="button" class="app-bar-btn" id="appBarBtn" hidden></button>
+  <button type="button" class="app-bar-x" id="appBarX" aria-label="Dismiss">✕</button>
 </div>
 
 <script>
@@ -1434,6 +1479,93 @@
     };
     s.onerror = () => { pool.msg = 'Poop Pool is offline right now.'; renderPool(); };
     document.body.appendChild(s);
+  })();
+</script>
+<script>
+  // ── HOME SCREEN APP ──
+  // sw.js always fetches the page fresh when online, so opening the app gets the
+  // latest version. A home screen app can sit open in the background for days,
+  // so when it comes back we check whether a newer version has been deployed.
+  (function () {
+    const bar = document.getElementById('appBar');
+    const text = document.getElementById('appBarText');
+    const btn = document.getElementById('appBarBtn');
+    const INSTALL_HINT_KEY = 'gi.installHintDismissed';
+    const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+    const ua = navigator.userAgent;
+    const isIOS = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    const isIOSSafari = isIOS && !/CriOS|FxiOS|EdgiOS|OPiOS/.test(ua);
+    let barKind = null;
+    let installPrompt = null;
+
+    function showBar(kind, html, btnLabel) {
+      barKind = kind;
+      text.innerHTML = html;
+      btn.hidden = !btnLabel;
+      btn.textContent = btnLabel || '';
+      bar.hidden = false;
+    }
+    function hideBar() { bar.hidden = true; barKind = null; }
+
+    document.getElementById('appBarX').addEventListener('click', () => {
+      if (barKind === 'install') writeJSON(INSTALL_HINT_KEY, true);
+      hideBar();
+    });
+    btn.addEventListener('click', async () => {
+      if (barKind === 'update') { location.reload(); return; }
+      if (barKind === 'install' && installPrompt) {
+        installPrompt.prompt();
+        await installPrompt.userChoice.catch(() => {});
+        installPrompt = null;
+        hideBar();
+      }
+    });
+
+    // Install hint: only after the first salary save, so first visits stay clean.
+    function maybeShowInstallHint() {
+      if (standalone || barKind || readJSON(INSTALL_HINT_KEY, false)) return;
+      if (!document.body.classList.contains('has-salary')) return;
+      if (installPrompt) {
+        showBar('install', '<b>Get the app.</b> Add Gross Income to your home screen.', 'Install');
+      } else if (isIOSSafari) {
+        showBar('install', '<b>Get the app.</b> Tap Share, then <b>Add to Home Screen</b>.');
+      }
+    }
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      installPrompt = e;
+      maybeShowInstallHint();
+    });
+    window.addEventListener('appinstalled', () => {
+      writeJSON(INSTALL_HINT_KEY, true);
+      if (barKind === 'install') hideBar();
+    });
+    new MutationObserver(maybeShowInstallHint).observe(document.body, { attributes: true, attributeFilter: ['class'] });
+    setTimeout(maybeShowInstallHint, 1500);
+
+    if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+
+    // New version check: compare the page's ETag/Last-Modified with what we loaded.
+    let loadedVersion = null;
+    async function pageVersion() {
+      const res = await fetch(location.pathname, { method: 'HEAD', cache: 'no-store' });
+      if (!res.ok) return null;
+      return res.headers.get('etag') || res.headers.get('last-modified');
+    }
+    pageVersion().then(v => { loadedVersion = v; }).catch(() => {});
+
+    let lastCheck = Date.now();
+    document.addEventListener('visibilitychange', async () => {
+      if (document.visibilityState !== 'visible' || Date.now() - lastCheck < 60000) return;
+      lastCheck = Date.now();
+      try {
+        const v = await pageVersion();
+        // Never interrupt a bog in progress: an unsaved timer is lost on reload.
+        if (!v || !loadedVersion || v === loadedVersion || running || seconds > 0) return;
+        showBar('update', '<b>Fresh drop.</b> A new version of Gross Income is ready.', 'Refresh');
+      } catch (e) {}
+    });
   })();
 </script>
 </body>
