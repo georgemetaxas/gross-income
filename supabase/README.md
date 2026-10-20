@@ -12,7 +12,7 @@ The leaderboard runs on Supabase. The site itself stays static.
 1. **Database:** in the Supabase dashboard, open SQL Editor → New query, paste all of `schema.sql`, and click Run. It is safe to re-run.
 2. **Login redirects:** go to Authentication → URL Configuration.
    - Site URL: `https://gross-income.pages.dev`
-   - Redirect URLs: add `https://*.pages.dev/**` and `https://grossincome.com.au/**`
+   - Redirect URLs: add `https://gross-income.pages.dev/**`, `https://*.gross-income.pages.dev/**` and `https://grossincome.com.au/**`. Don't use a bare `*.pages.dev`, which would let any Pages site receive login links.
 3. **Email for mates:** Supabase's built-in email only reaches members of your Supabase team and is heavily rate limited. Before mates can log in, add a free SMTP sender (e.g. Resend) under Project Settings → Authentication → SMTP Settings.
 
 ## Turning the beta on
