@@ -1025,7 +1025,7 @@
 
   function poolBetaOn() {
     const q = new URLSearchParams(location.search);
-    if (q.has('poolbeta') || q.has('pool')) { writeJSON(POOL_BETA_KEY, 1); return true; }
+    if (q.has('poolbeta') || q.has('pool') || q.has('token_hash')) { writeJSON(POOL_BETA_KEY, 1); return true; }
     return location.hostname.endsWith('.pages.dev') || location.hostname === 'localhost'
       || readJSON(POOL_BETA_KEY, 0) === 1;
   }
@@ -1418,6 +1418,18 @@
         if (id === (pool.user ? pool.user.id : null)) return;
         setTimeout(() => refreshPool().catch(e => { pool.msg = errText(e); renderPool(); }), 0);
       });
+      // Login emails link back here with ?token_hash=… (not to supabase.co), which
+      // keeps the link on our own domain and out of spam folders.
+      const q2 = new URLSearchParams(location.search);
+      const tokenHash = q2.get('token_hash');
+      if (tokenHash) {
+        const type = q2.get('type') || 'email';
+        ['token_hash', 'type'].forEach(k => q2.delete(k));
+        const qs = q2.toString();
+        history.replaceState(null, '', location.pathname + (qs ? '?' + qs : '') + location.hash);
+        const { error } = await pool.sb.auth.verifyOtp({ token_hash: tokenHash, type });
+        if (error) pool.msg = 'That login link has expired. Ask for a new one.';
+      }
       try { await refreshPool(); } catch (e) { pool.msg = errText(e); renderPool(); }
     };
     s.onerror = () => { pool.msg = 'Poop Pool is offline right now.'; renderPool(); };
