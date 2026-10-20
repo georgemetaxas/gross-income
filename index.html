@@ -98,52 +98,47 @@
     font-weight: 500;
   }
 
-  /* ── SALARY SECTION: collapsed summary ── */
-  .salary-summary {
-    display: none;
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  .salary-summary.visible { display: flex; }
-
-  .summary-left {}
-
-  .summary-amount {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 32px;
-    letter-spacing: 2px;
-    color: var(--gold);
-    line-height: 1;
-  }
-
-  .summary-period {
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    color: var(--muted);
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    margin-top: 3px;
-  }
-
-  .edit-btn {
+  /* ── SETTINGS BUTTON (shown once salary is set) ── */
+  .settings-btn {
+    position: absolute; top: 4px; right: 0;
+    width: 44px; height: 44px; border-radius: 50%;
     background: rgba(245,200,66,0.1);
-    border: 1px solid rgba(245,200,66,0.25);
-    border-radius: 8px;
+    border: 1px solid rgba(245,200,66,0.3);
     color: var(--gold);
-    font-size: 16px;
-    width: 38px; height: 38px;
-    cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    transition: all 0.2s;
-    flex-shrink: 0;
+    display: none; align-items: center; justify-content: center;
+    cursor: pointer; transition: background 0.2s; z-index: 2;
   }
+  .settings-btn:hover { background: rgba(245,200,66,0.2); }
+  .has-salary .settings-btn { display: flex; }
 
-  .edit-btn:hover { background: rgba(245,200,66,0.2); }
+  /* ── SALARY CARD: hidden once set, reopens as a sheet ── */
+  .has-salary #salaryCard { display: none; }
+  .sheet-backdrop {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.62); z-index: 19;
+  }
+  .sheet-head { display: none; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .sheet-title {
+    font-family: 'Bebas Neue', sans-serif; font-size: 32px;
+    letter-spacing: 2px; color: var(--gold); line-height: 1;
+  }
+  .sheet-close {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: var(--paper); border: 1px solid var(--border);
+    color: var(--muted); font-size: 14px; cursor: pointer;
+  }
+  .sheet-open { overflow: hidden; }
+  .sheet-open .sheet-backdrop { display: block; }
+  .sheet-open .sheet-head { display: flex; }
+  .sheet-open #salaryCard {
+    display: block; position: fixed; left: 0; right: 0; bottom: 0;
+    max-width: 520px; margin: 0 auto; z-index: 20;
+    background: var(--surface2);
+    border-radius: 24px 24px 0 0;
+    padding-bottom: calc(34px + env(safe-area-inset-bottom));
+  }
 
   /* ── SALARY FORM (expanded) ── */
-  .salary-form { display: block; }
-  .salary-form.hidden { display: none; }
 
   .input-row {
     display: flex; align-items: center; gap: 10px;
@@ -473,6 +468,10 @@
 <div class="wrapper">
 
   <!-- HEADER -->
+  <button class="settings-btn" id="settingsBtn" onclick="openSettings()" title="Settings and crap" aria-label="Settings">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+  </button>
+
   <header>
     <span class="emoji-big">💩</span>
     <h1>Gross Income</h1>
@@ -483,16 +482,13 @@
   <div class="card" id="salaryCard">
     <div class="card-shine"></div>
 
-    <!-- Collapsed summary (shown after saving) -->
-    <div class="salary-summary" id="salarySummary">
-      <div class="summary-left">
-        <div class="summary-amount" id="summaryAmount">$0</div>
-        <div class="summary-period" id="summaryPeriod">per year</div>
-      </div>
-      <button class="edit-btn" onclick="openSalaryForm()" title="Edit salary">✏️</button>
+    <!-- Sheet header (only when reopened from settings) -->
+    <div class="sheet-head">
+      <div class="sheet-title">Settings &amp; Crap</div>
+      <button type="button" class="sheet-close" onclick="closeSettings()" aria-label="Close">✕</button>
     </div>
 
-    <!-- Form (shown initially) -->
+    <!-- Form (shown until a salary is saved) -->
     <div class="salary-form" id="salaryForm">
       <span class="section-label">Your Salary</span>
       <form onsubmit="saveSalary(); return false;" action="#">
@@ -505,10 +501,12 @@
           <button type="button" class="tab" data-period="month">Per Month</button>
           <button type="button" class="tab" data-period="hour">Per Hour</button>
         </div>
-        <button type="submit" class="save-btn">Drop Your Log 💩</button>
+        <button type="submit" class="save-btn" id="saveBtn">Drop Your Log 💩</button>
       </form>
     </div>
   </div>
+
+  <div class="sheet-backdrop" onclick="closeSettings()"></div>
 
   <!-- MAIN DASHBOARD -->
   <div class="dashboard">
@@ -621,6 +619,7 @@
   let currentPeriod = 'year';
   let waveT = 0;
   let savedSalary = 0;
+  let savedPeriod = 'year';
   let segmentStartSeconds = 0;
   let segmentStartedAt = null;
 
@@ -690,24 +689,41 @@
       return;
     }
     savedSalary = raw;
+    savedPeriod = currentPeriod;
     writeJSON(SALARY_KEY, { amount: raw, period: currentPeriod });
 
-    const periodLabels = { year: 'per year', month: 'per month', hour: 'per hour' };
-    document.getElementById('summaryAmount').textContent = '$' + raw.toLocaleString('en-US');
-    document.getElementById('summaryPeriod').textContent = periodLabels[currentPeriod];
-
-    document.getElementById('salaryForm').classList.add('hidden');
-    document.getElementById('salarySummary').classList.add('visible');
+    document.body.classList.add('has-salary');
+    closeSettings();
 
     refreshAll();
     revealLifetime();
   }
 
   function openSalaryForm() {
-    document.getElementById('salaryForm').classList.remove('hidden');
-    document.getElementById('salarySummary').classList.remove('visible');
     salaryInput.focus();
   }
+
+  // ── SETTINGS SHEET ──
+  function openSettings() {
+    document.getElementById('saveBtn').textContent = 'Save & Flush 💩';
+    document.body.classList.add('sheet-open');
+    salaryInput.focus();
+  }
+
+  function closeSettings() {
+    if (!document.body.classList.contains('sheet-open')) return;
+    document.body.classList.remove('sheet-open');
+    // Closing without saving keeps the old salary and period
+    salaryInput.value = savedSalary.toLocaleString('en-US');
+    salaryInput.style.borderColor = '';
+    currentPeriod = savedPeriod;
+    document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.period === savedPeriod));
+    document.getElementById('settingsBtn').focus();
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeSettings();
+  });
 
   // ── MONEY FORMAT ──
   function fmt(n) {
