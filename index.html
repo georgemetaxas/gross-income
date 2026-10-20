@@ -1050,15 +1050,13 @@
 
 <script>
   // ══ POOP POOL (beta) ══
-  // Friends-only leaderboards backed by Supabase. Hidden unless on a preview
-  // host, opened from an invite link, or turned on with ?poolbeta.
+  // Friends-only leaderboards backed by Supabase.
   // Schema and privacy rules: supabase/schema.sql
   const SUPABASE_URL = 'https://pngsoygqbvhlfkzdghtr.supabase.co';
   // Publishable key: meant to ship in browser code. Access is enforced by row level security.
   const SUPABASE_KEY = 'sb_publishable_VfI274ud8nqxAFZvKzquwQ_qChku-Bu';
   const SUPABASE_JS = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js';
 
-  const POOL_BETA_KEY = 'gi.poolBeta';
   const POOL_INVITE_KEY = 'gi.pendingInvite';
   const POOL_CURRENT_KEY = 'gi.currentPool';
   const POOL_EMOJIS = ['💩', '🦍', '🧻', '🐻', '🦄', '🐢', '🚽', '🐸', '🦆', '👑'];
@@ -1069,13 +1067,6 @@
     period: 'week', view: null, msg: '', busy: false,
   };
   const poolCard = document.getElementById('poolCard');
-
-  function poolBetaOn() {
-    const q = new URLSearchParams(location.search);
-    if (q.has('poolbeta') || q.has('pool') || q.has('token_hash')) { writeJSON(POOL_BETA_KEY, 1); return true; }
-    return location.hostname.endsWith('.pages.dev') || location.hostname === 'localhost'
-      || readJSON(POOL_BETA_KEY, 0) === 1;
-  }
 
   function esc(s) {
     return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -1456,7 +1447,6 @@
 
   // ── BOOT ──
   (function bootPool() {
-    if (!poolBetaOn()) return;
     const q = new URLSearchParams(location.search);
     if (q.has('pool')) {
       writeJSON(POOL_INVITE_KEY, q.get('pool').toUpperCase().slice(0, 12));

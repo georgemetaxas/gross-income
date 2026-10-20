@@ -1,0 +1,2 @@
+# Local Claude settings live in the repo but shouldn't be served.
+/.claude/* / 302
