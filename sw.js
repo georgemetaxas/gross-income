@@ -2,8 +2,8 @@
 // The page is always fetched from the network first, so a deploy reaches people
 // the next time they open the app. The cache is only an offline fallback.
 // Other origins (Supabase, Google Fonts, the CDN) are never touched.
-const CACHE = 'gi-v1';
-const SHELL = ['./', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/apple-touch-icon.png'];
+const CACHE = 'gi-v2';
+const SHELL = ['./', 'manifest.webmanifest', 'icons/icon-192.png?v=2', 'icons/apple-touch-icon.png?v=2'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));

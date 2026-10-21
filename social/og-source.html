@@ -1,0 +1,45 @@
+<!DOCTYPE html><html><head><meta charset="utf-8">
+<!-- Source for social/og-image.png and og-image.gif (1200x630). Render frames with Playwright, calling setWink(k) from 1 (open) to 0 (shut). -->
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1200px;height:630px;overflow:hidden;background:#1A1208}
+.card{position:relative;width:1200px;height:630px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+ background:radial-gradient(ellipse 520px 300px at 50% 36%, #3a2a0e 0%, #1A1208 70%);}
+.frame{position:absolute;inset:22px;border:2px solid rgba(245,200,66,.18);border-radius:28px}
+svg.poo{width:250px;height:250px;margin-top:-18px}
+h1{font-family:'Bebas Neue';color:#F5C842;font-size:168px;line-height:.9;letter-spacing:6px;margin-top:4px;font-weight:400}
+.tag{font-family:'DM Mono';color:#F5EAD6;font-size:24px;letter-spacing:9px;text-transform:uppercase;margin-top:18px;opacity:.9}
+</style></head><body><div class="card"><div class="frame"></div>
+<svg class="poo" viewBox="0 0 200 200">
+ <defs>
+  <linearGradient id="b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#A86A36"/><stop offset="1" stop-color="#6E3F1A"/></linearGradient>
+ </defs>
+ <g stroke="#3F230C" stroke-width="4" stroke-linejoin="round" fill="url(#b)">
+  <path d="M82,66 Q84,42 98,32 Q110,24 116,12 Q126,30 121,46 Q117,60 116,66 Z"/>
+  <path d="M68,104 Q52,104 54,86 Q57,63 82,61 L118,61 Q143,63 146,86 Q148,104 132,104 Z"/>
+  <path d="M50,144 Q30,144 32,122 Q35,97 64,95 L136,95 Q165,97 168,122 Q170,144 150,144 Z"/>
+  <path d="M30,188 Q8,188 10,165 Q13,138 46,134 L154,134 Q187,138 190,165 Q192,188 170,188 Z"/>
+ </g>
+ <g fill="#fff" opacity=".22">
+  <ellipse cx="80" cy="70" rx="14" ry="4"/><ellipse cx="62" cy="104" rx="16" ry="4.5"/><ellipse cx="42" cy="145" rx="18" ry="5"/>
+ </g>
+ <!-- eyes -->
+ <g id="eyeL"><ellipse cx="76" cy="114" rx="17" ry="19" fill="#fff" stroke="#3F230C" stroke-width="3"/><circle cx="79" cy="117" r="8" fill="#1A1208"/><circle cx="82" cy="113" r="2.6" fill="#fff"/></g>
+ <g id="eyeR"><g id="eyeRopen"><ellipse id="eyeRball" cx="124" cy="114" rx="17" ry="19" fill="#fff" stroke="#3F230C" stroke-width="3"/><circle id="eyeRpupil" cx="121" cy="117" r="8" fill="#1A1208"/><circle id="eyeRglint" cx="124" cy="113" r="2.6" fill="#fff"/></g>
+  <path id="eyeRshut" d="M108,118 Q124,104 140,118" fill="none" stroke="#2A1608" stroke-width="5.5" stroke-linecap="round" opacity="0"/></g>
+ <!-- mouth -->
+ <path d="M66,150 Q100,186 134,150 Q100,160 66,150 Z" fill="#2A1608" stroke="#2A1608" stroke-width="3" stroke-linejoin="round"/>
+ <path d="M74,153 Q100,160 126,153 L124,158 Q100,164 76,158 Z" fill="#fff"/>
+</svg>
+<h1>Gross Income</h1>
+<div class="tag">In every sense of the word.</div>
+</div>
+<script>
+// k: 1 = open, 0 = shut
+window.setWink=function(k){
+ const ball=document.getElementById('eyeRball'),open=document.getElementById('eyeRopen'),shut=document.getElementById('eyeRshut');
+ open.setAttribute('transform',`translate(0 ${114*(1-k)}) scale(1 ${Math.max(k,0.001)})`);
+ open.style.opacity=k<0.15?0:1; shut.style.opacity=k<0.15?1:0;
+};
+</script></body></html>

@@ -6,13 +6,32 @@
 <title>Gross Income 💩</title>
 <meta name="description" content="Find out how much you earn on the toilet. In every sense of the word.">
 <meta name="theme-color" content="#1a1208">
+<!-- Link previews (iMessage, WhatsApp, Facebook, X, LinkedIn, Slack, Discord). Absolute URLs: crawlers don't resolve relative ones reliably. -->
+<link rel="canonical" href="https://grossincome.com.au/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Gross Income">
+<meta property="og:url" content="https://grossincome.com.au/">
+<meta property="og:title" content="Gross Income 💩">
+<meta property="og:description" content="Find out how much you earn on the toilet. In every sense of the word.">
+<meta property="og:image" content="https://grossincome.com.au/social/og-image.png">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Gross Income: a smiling poo above the words Gross Income, In every sense of the word.">
+<meta property="og:locale" content="en_AU">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Gross Income 💩">
+<meta name="twitter:description" content="Find out how much you earn on the toilet. In every sense of the word.">
+<meta name="twitter:image" content="https://grossincome.com.au/social/og-image.png">
+<meta name="twitter:image:alt" content="Gross Income: a smiling poo above the words Gross Income, In every sense of the word.">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=2">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Gross Income">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💩</text></svg>">
+<link rel="icon" href="icons/logo.svg?v=2" type="image/svg+xml">
+<link rel="icon" href="icons/favicon-32.png?v=2" sizes="32x32" type="image/png">
 <!-- Open connections early: fonts, the Supabase library for Poop Pool, and Supabase itself -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -69,10 +88,18 @@
   /* ── HEADER ── */
   header { text-align: center; margin-bottom: 28px; padding-top: 8px; }
 
-  .emoji-big {
-    font-size: 44px; display: block; margin-bottom: 8px;
+  .logo-mark {
+    width: 64px; height: 64px; display: block; margin: 0 auto 6px;
     animation: bob 3.5s ease-in-out infinite;
     filter: drop-shadow(0 4px 16px rgba(245,200,66,0.3));
+  }
+  /* The logo winks every so often */
+  .logo-mark .eye-r { animation: wink-open 7s infinite; }
+  .logo-mark .eye-r-shut { animation: wink-shut 7s infinite; }
+  @keyframes wink-open { 0%, 90%, 96%, 100% { opacity: 1; } 91%, 95% { opacity: 0; } }
+  @keyframes wink-shut { 0%, 90%, 96%, 100% { opacity: 0; } 91%, 95% { opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) {
+    .logo-mark, .logo-mark .eye-r, .logo-mark .eye-r-shut { animation: none; }
   }
 
   @keyframes bob {
@@ -653,7 +680,21 @@
   <button class="settings-btn" id="settingsBtn" onclick="openSettings()" title="Profile and crap" aria-label="Profile and settings"></button>
 
   <header>
-    <span class="emoji-big">💩</span>
+    <svg class="logo-mark" viewBox="0 0 200 200" role="img" aria-label="Gross Income">
+     <defs><linearGradient id="gi-poo" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#A86A36"/><stop offset="1" stop-color="#6E3F1A"/></linearGradient></defs>
+     <g stroke="#3F230C" stroke-width="4" stroke-linejoin="round" fill="url(#gi-poo)">
+      <path d="M82,66 Q84,42 98,32 Q110,24 116,12 Q126,30 121,46 Q117,60 116,66 Z"/>
+      <path d="M68,104 Q52,104 54,86 Q57,63 82,61 L118,61 Q143,63 146,86 Q148,104 132,104 Z"/>
+      <path d="M50,144 Q30,144 32,122 Q35,97 64,95 L136,95 Q165,97 168,122 Q170,144 150,144 Z"/>
+      <path d="M30,188 Q8,188 10,165 Q13,138 46,134 L154,134 Q187,138 190,165 Q192,188 170,188 Z"/>
+     </g>
+     <g fill="#fff" opacity=".22"><ellipse cx="80" cy="70" rx="14" ry="4"/><ellipse cx="62" cy="104" rx="16" ry="4.5"/><ellipse cx="42" cy="145" rx="18" ry="5"/></g>
+     <g><ellipse cx="76" cy="114" rx="17" ry="19" fill="#fff" stroke="#3F230C" stroke-width="3"/><circle cx="79" cy="117" r="8" fill="#1A1208"/><circle cx="82" cy="113" r="2.6" fill="#fff"/></g>
+     <g class="eye-r"><ellipse cx="124" cy="114" rx="17" ry="19" fill="#fff" stroke="#3F230C" stroke-width="3"/><circle cx="121" cy="117" r="8" fill="#1A1208"/><circle cx="124" cy="113" r="2.6" fill="#fff"/></g>
+     <path class="eye-r-shut" d="M108,118 Q124,104 140,118" fill="none" stroke="#2A1608" stroke-width="5.5" stroke-linecap="round" opacity="0"/>
+     <path d="M66,150 Q100,186 134,150 Q100,160 66,150 Z" fill="#2A1608" stroke="#2A1608" stroke-width="3" stroke-linejoin="round"/>
+     <path d="M74,153 Q100,160 126,153 L124,158 Q100,164 76,158 Z" fill="#fff"/>
+    </svg>
     <h1>Gross Income</h1>
     <p class="tagline">In every sense of the word</p>
   </header>
