@@ -222,13 +222,11 @@
   .dashboard-top { padding: 20px 20px 0; position: relative; z-index: 2; }
 
   /* Earnings and time side by side, same size. .long shrinks both once the numbers get wide. */
-  .dash-header { display: flex; align-items: flex-start; gap: 40px; margin-bottom: 10px; }
+  .dash-header { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 10px; }
   .dash-header > div { min-width: 0; }
-  .dash-header .timer-digits { font-size: 64px; line-height: 1; }
-  .dash-header.long { gap: 24px; }
-  .dash-header.long .dash-earned-amount, .dash-header.long .timer-digits { font-size: 48px; }
-  .dash-time-row { display: flex; align-items: center; gap: 6px; height: 64px; }
-  .dash-header.long .dash-time-row { height: 48px; }
+  .dash-header .dash-earned-amount, .dash-header .timer-digits { font-size: min(64px, 16.5vw); line-height: 1; }
+  .dash-header.long .dash-earned-amount, .dash-header.long .timer-digits { font-size: min(48px, 12.5vw); }
+  .dash-time-row { display: flex; align-items: center; gap: 6px; }
 
   .dash-earned-label {
     font-family: 'DM Mono', monospace; font-size: 13px; white-space: nowrap;
