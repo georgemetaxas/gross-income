@@ -410,6 +410,22 @@
   }
   .history-row:last-child { border-bottom: none; }
   .history-row b { color: var(--amber); font-weight: 400; }
+  .history-row { align-items: center; }
+  .history-row .row-info { margin-left: auto; }
+  /* Delete buttons ask twice: first tap arms them, second tap deletes */
+  .hist-del {
+    background: none; border: 1px solid transparent; border-radius: 8px; cursor: pointer;
+    color: var(--muted); font-family: 'DM Mono', monospace; font-size: 16px; line-height: 1;
+    padding: 4px 8px; margin-right: -8px;
+  }
+  .history-row:has(.armed) .row-info { display: none; }
+  .hist-del.armed { margin: 0 0 0 auto; color: #ff8a65; border-color: rgba(255,138,101,0.4); font-size: 11px; letter-spacing: 1px; }
+  .hist-clear {
+    display: block; margin: 10px auto 0; background: none; border: none; cursor: pointer;
+    color: var(--muted); font-family: 'DM Mono', monospace; font-size: 11px;
+    letter-spacing: 1px; text-transform: uppercase; padding: 8px;
+  }
+  .hist-clear.armed { color: #ff8a65; }
 
   /* ── POOP POOL ── */
   .pool-card {
@@ -524,6 +540,10 @@
     font-size: 14px; padding: 6px; cursor: pointer;
   }
   .sheet-open .app-bar { display: none; }
+  .throne-check { z-index: 31; flex-wrap: wrap; }
+  .throne-check .app-bar-text { flex-basis: 100%; }
+  .throne-check .app-bar-btn { flex: 1; }
+  .throne-check .throne-stay { background: transparent; color: var(--cream); border: 1px solid var(--border); }
 </style>
 </head>
 <body>
@@ -612,7 +632,7 @@
     <div class="stats-body" id="statsBody">
       <div class="stats-inner">
         <div class="stats-part" id="historyPart">
-          <span class="section-label stats-sub">Your Bog History</span>
+          <span class="section-label stats-sub">Bog Log</span>
           <div class="lifetime-grid">
             <div>
               <div class="lt-val" id="histTime">0m</div>
@@ -670,6 +690,12 @@
   <div class="app-bar-text" id="appBarText"></div>
   <button type="button" class="app-bar-btn" id="appBarBtn" hidden></button>
   <button type="button" class="app-bar-x" id="appBarX" aria-label="Dismiss">✕</button>
+</div>
+
+<div class="app-bar throne-check" id="throneCheck" role="alertdialog" aria-labelledby="throneText" hidden>
+  <div class="app-bar-text" id="throneText"></div>
+  <button type="button" class="app-bar-btn" id="throneFinish" onclick="throneFinish()">Finish up</button>
+  <button type="button" class="app-bar-btn throne-stay" onclick="throneStay()">Still going</button>
 </div>
 
 <script>
@@ -804,6 +830,10 @@
     const now = segmentStartSeconds + Math.floor((Date.now() - segmentStartMs) / 1000);
     if (now === seconds) return;
     seconds = now;
+    renderTimer();
+  }
+
+  function renderTimer() {
     const m = String(Math.floor(seconds / 60)).padStart(2, '0');
     const s = String(seconds % 60).padStart(2, '0');
     document.getElementById('timerDisplay').textContent = `${m}:${s}`;
@@ -826,12 +856,16 @@
     document.getElementById('dashEarned').classList.add('ticking');
     document.getElementById('startBtn').style.display = 'none';
     document.getElementById('stopBtn').style.display = 'block';
+    startMotion();
   }
 
-  function stopTimer() {
+  // atSeconds: end the bog at an earlier point, e.g. when they left the app
+  function stopTimer(atSeconds) {
     if (!running) return;
     updateTimer();
+    if (atSeconds != null && atSeconds < seconds) { seconds = atSeconds; renderTimer(); }
     running = false;
+    hideThrone();
     clearInterval(timerInterval);
     document.getElementById('timerDot').classList.remove('live');
     document.getElementById('dashEarned').classList.remove('ticking');
@@ -847,6 +881,72 @@
     document.getElementById('timerDisplay').textContent = '00:00';
     document.getElementById('funFact').classList.remove('visible');
     refreshAll();
+  }
+
+  // ── THRONE CHECK ──
+  // Catches bogs left running. The web only sees motion while the app is open
+  // on screen, so we also ask when they come back after being away a while.
+  const AWAY_PROMPT_SECS = 180;
+  let hiddenAtSecs = null;
+  let throneEndSecs = null;
+  let motionQuietUntil = 0;
+  let steps = [];
+  let lastStep = 0;
+  let motionOn = false;
+
+  function askThrone(text, endSecs) {
+    throneEndSecs = endSecs;
+    document.getElementById('throneText').innerHTML = text;
+    document.getElementById('throneFinish').textContent = endSecs == null ? 'Finish up' : 'Finish at ' + fmtClock(endSecs);
+    document.getElementById('throneCheck').hidden = false;
+  }
+
+  function hideThrone() { document.getElementById('throneCheck').hidden = true; }
+
+  function throneFinish() { stopTimer(throneEndSecs); }
+
+  function throneStay() {
+    hideThrone();
+    motionQuietUntil = Date.now() + 5 * 60000;
+  }
+
+  function fmtClock(secs) {
+    return String(Math.floor(secs / 60)).padStart(2, '0') + ':' + String(secs % 60).padStart(2, '0');
+  }
+
+  document.addEventListener('visibilitychange', () => {
+    if (!running) return;
+    updateTimer();
+    if (document.visibilityState === 'hidden') { hiddenAtSecs = seconds; return; }
+    if (hiddenAtSecs != null && seconds - hiddenAtSecs >= AWAY_PROMPT_SECS) {
+      askThrone(`<b>You left ${fmtDuration(seconds - hiddenAtSecs)} ago.</b> Did you get off the throne?`, hiddenAtSecs);
+    }
+    hiddenAtSecs = null;
+  });
+
+  // Called from the Start tap: iPhones only allow the motion permission prompt from a tap.
+  function startMotion() {
+    if (motionOn || typeof DeviceMotionEvent === 'undefined') return;
+    const listen = () => { motionOn = true; window.addEventListener('devicemotion', onMotion); };
+    if (typeof DeviceMotionEvent.requestPermission === 'function') {
+      DeviceMotionEvent.requestPermission().then(r => { if (r === 'granted') listen(); }).catch(() => {});
+    } else listen();
+  }
+
+  // Walking shows up as a steady run of sharp jolts; sitting and scrolling doesn't.
+  function onMotion(e) {
+    const a = e.accelerationIncludingGravity;
+    if (!running || !a || a.x == null) return;
+    const now = Date.now();
+    const jolt = Math.abs(Math.hypot(a.x, a.y, a.z) - 9.81);
+    if (jolt < 3 || now - lastStep < 300) return;
+    lastStep = now;
+    steps = steps.filter(t => now - t < 8000);
+    steps.push(now);
+    if (steps.length < 10 || now < motionQuietUntil) return;
+    if (seconds - segmentStartSeconds < 60 || !document.getElementById('throneCheck').hidden) return;
+    steps = [];
+    askThrone('<b>Looks like you\'re on the move.</b> Did you get off the throne?', null);
   }
 
   // ── LIFETIME REVEAL ──
@@ -1068,9 +1168,17 @@
       });
       const row = document.createElement('div');
       row.className = 'history-row';
-      row.innerHTML = `<span>${when}</span><span>${fmtDuration(s.secs)} · <b>${fmtExact(s.earned)}</b></span>`;
+      row.innerHTML = `<span>${when}</span><span class="row-info">${fmtDuration(s.secs)} · <b>${fmtExact(s.earned)}</b></span>` +
+        `<button type="button" class="hist-del" data-start="${s.start}" aria-label="Delete this bog">×</button>`;
       list.appendChild(row);
     });
+    if (sessions.length) {
+      const clear = document.createElement('button');
+      clear.type = 'button';
+      clear.className = 'hist-clear';
+      clear.textContent = 'Clear all history';
+      list.appendChild(clear);
+    }
 
     part.hidden = false;
     const card = document.getElementById('lifetimeCard');
@@ -1078,6 +1186,37 @@
       card.style.display = 'block';
       card.classList.add('revealed');
     }
+  }
+
+  // ── DELETE BOGS ──
+  function deleteSessions(starts) {
+    writeJSON(SESSIONS_KEY, loadSessions().filter(s => !starts.includes(s.start)));
+    renderHistory();
+    if (window.poolOnDelete) window.poolOnDelete(starts);
+  }
+
+  let armTimer = null;
+  document.getElementById('historyList').addEventListener('click', e => {
+    const btn = e.target.closest('.hist-del, .hist-clear');
+    if (!btn) return;
+    if (!btn.classList.contains('armed')) {
+      document.querySelectorAll('#historyList .armed').forEach(disarm);
+      btn.classList.add('armed');
+      btn.dataset.label = btn.textContent;
+      btn.textContent = btn.classList.contains('hist-clear') ? 'Tap again to delete all' : 'DELETE?';
+      clearTimeout(armTimer);
+      armTimer = setTimeout(() => disarm(btn), 3000);
+      return;
+    }
+    clearTimeout(armTimer);
+    deleteSessions(btn.classList.contains('hist-clear')
+      ? loadSessions().map(s => s.start)
+      : [btn.dataset.start]);
+  });
+
+  function disarm(btn) {
+    btn.classList.remove('armed');
+    if (btn.dataset.label) btn.textContent = btn.dataset.label;
   }
 
   // ── STATS CARD COLLAPSE ──
@@ -1127,6 +1266,8 @@
   // visit while fresh numbers load. Cleared on sign out.
   const POOL_CACHE_KEY = 'gi.poolCache.v1';
   const POOL_SYNCED_KEY = 'gi.poolSynced.v1';
+  // Bogs deleted locally that still need removing from Supabase (survives being offline or signed out)
+  const POOL_DELETED_KEY = 'gi.poolDeleted.v1';
 
   const pool = {
     sb: null, user: null, profile: null, pools: [], board: [], boards: {},
@@ -1173,6 +1314,12 @@
   // ── DATA ──
   async function syncSessions() {
     if (!pool.user || !pool.profile) return;
+    const deleted = readJSON(POOL_DELETED_KEY, []);
+    if (deleted.length) {
+      const { error } = await pool.sb.from('sessions').delete().eq('user_id', pool.user.id).in('local_id', deleted);
+      if (error) console.warn('Poop Pool delete failed', error);
+      else writeJSON(POOL_DELETED_KEY, []);
+    }
     const rows = loadSessions()
       .filter(s => s.start && s.secs >= MIN_SESSION_SECS)
       .map(s => ({
@@ -1588,6 +1735,11 @@
       await syncSessions();
       if (pool.view && pool.view.name === 'board') { await loadBoard(); renderPool(); }
     } catch (e) { console.warn('Poop Pool refresh failed', e); }
+  };
+
+  window.poolOnDelete = starts => {
+    writeJSON(POOL_DELETED_KEY, [...new Set([...readJSON(POOL_DELETED_KEY, []), ...starts])]);
+    window.poolOnSession();
   };
 
   // ── BOOT ──
