@@ -219,18 +219,25 @@
     width: 100%; height: 130px; opacity: 0.45; pointer-events: none;
   }
 
-  .dashboard-top { padding: 24px 24px 16px; position: relative; z-index: 2; }
+  .dashboard-top { padding: 20px 20px 0; position: relative; z-index: 2; }
 
-  .dash-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+  /* Earnings and time side by side, same size. .long shrinks both once the numbers get wide. */
+  .dash-header { display: flex; align-items: flex-start; gap: 40px; margin-bottom: 10px; }
+  .dash-header > div { min-width: 0; }
+  .dash-header .timer-digits { font-size: 64px; line-height: 1; }
+  .dash-header.long { gap: 24px; }
+  .dash-header.long .dash-earned-amount, .dash-header.long .timer-digits { font-size: 48px; }
+  .dash-time-row { display: flex; align-items: center; gap: 6px; height: 64px; }
+  .dash-header.long .dash-time-row { height: 48px; }
 
   .dash-earned-label {
-    font-family: 'DM Mono', monospace; font-size: 13px;
+    font-family: 'DM Mono', monospace; font-size: 13px; white-space: nowrap;
     letter-spacing: 2px; text-transform: uppercase;
     color: var(--heading); margin-bottom: 4px; font-weight: 500;
   }
 
   .dash-earned-amount {
-    font-family: 'Bebas Neue', sans-serif; font-size: 64px;
+    font-family: 'Bebas Neue', sans-serif; font-size: 64px; white-space: nowrap;
     letter-spacing: 2px; line-height: 1; color: var(--green);
     text-shadow: 0 0 40px rgba(76,175,110,0.4); transition: all 0.3s;
   }
@@ -243,22 +250,15 @@
   .dash-earned-amount.ticking { animation: pulse-green 1s ease-in-out infinite; }
 
   .rate-badge {
-    background: rgba(245,200,66,0.08); border: 1px solid rgba(245,200,66,0.2);
-    border-radius: 10px; padding: 10px 14px; text-align: right;
+    display: flex; align-items: baseline; justify-content: center; gap: 6px;
+    background: var(--paper); border: 1px solid var(--border);
+    border-radius: 10px; padding: 8px 12px;
   }
 
   .rate-badge-val { font-family: 'Bebas Neue', sans-serif; font-size: 24px; color: var(--gold); letter-spacing: 1px; }
   .rate-badge-lbl {
     font-family: 'DM Mono', monospace; font-size: 10px;
     color: var(--heading); letter-spacing: 1.5px; text-transform: uppercase;
-  }
-
-  .dash-timer-row { display: flex; align-items: center; gap: 10px; }
-
-  .timer-pill {
-    background: var(--paper); border: 1px solid var(--border);
-    border-radius: 10px; padding: 10px 16px;
-    display: flex; align-items: center; gap: 12px; flex: 1;
   }
 
   .timer-dot {
@@ -271,14 +271,13 @@
   @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
 
   .timer-digits { font-family: 'Bebas Neue', sans-serif; font-size: 38px; letter-spacing: 3px; color: var(--cream); line-height: 1; }
-  .timer-sub {
-    font-family: 'DM Mono', monospace; font-size: 10px;
-    color: var(--heading); letter-spacing: 2px; text-transform: uppercase; margin-top: 2px;
-  }
 
 
   /* ── BUTTONS ── */
-  .dash-btns { display: flex; gap: 8px; padding: 16px 24px 22px; position: relative; z-index: 2; }
+  .dash-btns { display: flex; gap: 8px; padding: 20px 20px 20px; position: relative; z-index: 2; }
+  .dash-btns .btn { min-height: 56px; }
+  .dash-btns .btn-stop { border-width: 2px; }
+  .dash-btns .btn-reset { width: 60px; border-width: 2px; }
 
   .btn {
     flex: 1; border: none; border-radius: 12px;
@@ -560,12 +559,19 @@
   .bog-running .arcade-card { display: block; }
   .arcade-head { font-size: 14px; line-height: 1.4; color: var(--cream); }
   .arcade-head b { display: block; font-family: 'Bebas Neue', sans-serif; font-size: 24px; font-weight: 400; letter-spacing: 1.5px; color: var(--gold); line-height: 1.1; }
-  .arcade-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); gap: 12px; margin-top: 14px; }
+  /* One sideways-scrolling row so any number of games fits; the next tile peeks in at the edge. */
+  .arcade-tiles {
+    display: flex; gap: 10px; margin: 10px -18px -16px; padding: 4px 18px 16px; /* room for the icon shadows */
+    overflow-x: auto; scroll-snap-type: x proximity; scroll-padding: 0 18px;
+    scrollbar-width: none; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain;
+  }
+  .arcade-tiles::-webkit-scrollbar { display: none; }
   .arcade-tile {
     display: flex; flex-direction: column; align-items: center; gap: 7px;
     background: none; border: none; padding: 0; cursor: pointer; color: var(--cream);
     -webkit-tap-highlight-color: transparent;
   }
+  .arcade-tiles .arcade-tile { flex: 0 0 64px; scroll-snap-align: start; }
   .arcade-icon {
     width: 64px; height: 64px; border-radius: 18px; display: flex; align-items: center; justify-content: center;
     font-size: 34px; line-height: 1; box-shadow: 0 6px 18px rgba(0,0,0,0.35), inset 0 0 0 1px rgba(255,255,255,0.12);
@@ -649,25 +655,23 @@
   <div class="dashboard">
     <canvas id="waveCanvas"></canvas>
     <div class="dashboard-top">
-      <div class="dash-header">
+      <div class="dash-header" id="dashHeader">
         <div>
-          <div class="dash-earned-label">Session Earnings</div>
+          <div class="dash-earned-label">Earnings</div>
           <div class="dash-earned-amount" id="dashEarned">$0.00</div>
         </div>
-        <div class="rate-badge">
-          <div class="rate-badge-val" id="ratePerMin">$0.00</div>
-          <div class="rate-badge-lbl">/ minute</div>
+        <div>
+          <div class="dash-earned-label">Time</div>
+          <div class="dash-time-row">
+            <div class="timer-dot" id="timerDot"></div>
+            <div class="timer-digits" id="timerDisplay">00:00</div>
+          </div>
         </div>
       </div>
 
-      <div class="dash-timer-row">
-        <div class="timer-pill">
-          <div class="timer-dot" id="timerDot"></div>
-          <div>
-            <div class="timer-digits" id="timerDisplay">00:00</div>
-            <div class="timer-sub">Session Time</div>
-          </div>
-        </div>
+      <div class="rate-badge">
+        <div class="rate-badge-val" id="ratePerMin">$0.00</div>
+        <div class="rate-badge-lbl">/ minute</div>
       </div>
     </div>
 
@@ -1111,7 +1115,10 @@
 
     document.getElementById('dashEarned').textContent = fmtExact(earned);
     document.getElementById('miniTimerEarned').textContent = fmtExact(earned);
-    document.getElementById('ratePerMin').textContent = fmt(perMin);
+    document.getElementById('ratePerMin').textContent = perMin >= 10 ? fmt(perMin) : fmtExact(perMin);
+    // $10.00+ or 100+ minutes no longer fit side by side at 64px
+    document.getElementById('dashHeader').classList.toggle('long',
+      document.getElementById('dashEarned').textContent.length + document.getElementById('timerDisplay').textContent.length > 10);
 
     // Don't stomp on the skeleton / count-up while the reveal is running
     if (revealing) return;
