@@ -386,8 +386,9 @@
     color: inherit; cursor: pointer; text-align: left; position: relative; z-index: 1;
   }
   .stats-toggle .section-label { margin-bottom: 0; }
-  .stats-chevron { color: var(--gold); font-size: 24px; line-height: 1; padding: 4px; transition: transform 0.25s ease; }
-  .lifetime-card.collapsed .stats-chevron { transform: rotate(-90deg); }
+  .stats-chevron { color: var(--gold); font-family: 'DM Mono', monospace; font-size: 28px; line-height: 1; padding: 0 4px; }
+  .stats-chevron::before { content: '−'; }
+  .lifetime-card.collapsed .stats-chevron::before { content: '+'; }
   /* 0fr → 1fr grid rows animate height without measuring it */
   .stats-body { display: grid; grid-template-rows: 1fr; transition: grid-template-rows 0.3s ease; }
   .lifetime-card.collapsed .stats-body { grid-template-rows: 0fr; }
@@ -399,7 +400,7 @@
   body:not(.has-salary) #portfolioPart { display: none; }
   #historyPart .lt-val { color: var(--gold); }
   @media (prefers-reduced-motion: reduce) {
-    .stats-chevron, .stats-body { transition: none; }
+    .stats-body { transition: none; }
   }
   .history-list { margin-top: 18px; border-top: 1px solid var(--border); }
   .history-row {
@@ -606,7 +607,7 @@
   <div class="lifetime-card" id="lifetimeCard" style="display:none">
     <button type="button" class="stats-toggle" id="statsToggle" aria-expanded="true" aria-controls="statsBody" onclick="toggleStats()">
       <span class="section-label">🧻 Bog History &amp; Portfolio</span>
-      <span class="stats-chevron" aria-hidden="true">▼</span>
+      <span class="stats-chevron" aria-hidden="true"></span>
     </button>
     <div class="stats-body" id="statsBody">
       <div class="stats-inner">
