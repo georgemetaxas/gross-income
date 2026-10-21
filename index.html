@@ -600,6 +600,11 @@
   .app-bar[hidden] { display: none; }
   .app-bar-text { flex: 1; }
   .app-bar-text b { color: var(--gold); font-weight: 600; }
+  .app-bar-icon {
+    width: 44px; height: 44px; border-radius: 10px; flex-shrink: 0; align-self: flex-start;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.4), 0 0 0 1px rgba(245,200,66,0.25);
+  }
+  .app-bar-icon[hidden] { display: none; }
   .app-bar-title {
     display: block; margin-bottom: 4px;
     font-size: 16px; font-weight: 600; line-height: 1.3; color: var(--gold);
@@ -851,6 +856,7 @@
 </div>
 
 <div class="app-bar" id="appBar" role="status" hidden>
+  <img class="app-bar-icon" id="appBarIcon" src="icons/apple-touch-icon.png" alt="" width="44" height="44" hidden>
   <div class="app-bar-text" id="appBarText"></div>
   <button type="button" class="app-bar-btn" id="appBarBtn" hidden></button>
   <button type="button" class="app-bar-x" id="appBarX" aria-label="Dismiss">✕</button>
@@ -2213,6 +2219,7 @@
 
     function showBar(kind, html, btnLabel) {
       barKind = kind;
+      document.getElementById('appBarIcon').hidden = kind !== 'install';
       text.innerHTML = html;
       btn.hidden = !btnLabel;
       btn.textContent = btnLabel || '';
