@@ -80,7 +80,6 @@
   .dr-title { font-family: 'Bebas Neue', sans-serif; font-size: 72px; line-height: 0.95; color: var(--gold, #f5c842); margin-top: 6px; }
   .dr-title.amber { color: var(--amber, #e07b00); }
   .dr-sub { font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; opacity: 0.85; margin: 8px 0 16px; }
-  .dr-instr { font-family: 'Bebas Neue', sans-serif; font-size: 22px; font-weight: 400; letter-spacing: 2px; line-height: 1; color: var(--gold, #f5c842); margin: 0 0 8px; }
   .dr-instr-text { font-size: 14px; line-height: 1.5; margin: 0 0 10px; }
   .dr-box { width: 100%; background: var(--surface, #231a0a); border: 1px solid rgba(224,123,0,0.25); border-radius: 20px;
     padding: 14px 16px; text-align: left; margin-bottom: 12px; }
@@ -490,7 +489,7 @@
         <div class="dr-title">Dung Run</div>
         <div class="dr-sub">Catch every poo. Dodge the Clean Squad.</div>
         <div class="dr-box">
-          <div class="dr-instr">Instructions</div>
+          <div class="dr-lbl" style="margin-bottom:6px">Instructions</div>
           <div class="dr-instr-text">Swipe to steer the toilet and catch every poo to clear the bowl. Don't let the Clean Squad get you. You've got 3 lives.</div>
           <div class="dr-lbl" style="margin-bottom:6px">The Clean Squad</div>
           ${SQUAD.map(s => `<div class="dr-squad"><div class="dr-av" style="background:${s.color}33">${s.emoji}</div>

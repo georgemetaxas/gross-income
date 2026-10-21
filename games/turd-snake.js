@@ -58,7 +58,6 @@
   .ts-title { font-family: 'Bebas Neue', sans-serif; font-size: 72px; line-height: 0.95; color: var(--gold, #f5c842); margin-top: 6px; }
   .ts-title.amber { color: var(--amber, #e07b00); }
   .ts-sub { font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; opacity: 0.85; margin: 8px 0 16px; }
-  .ts-instr { font-family: 'Bebas Neue', sans-serif; font-size: 22px; font-weight: 400; letter-spacing: 2px; line-height: 1; color: var(--gold, #f5c842); margin: 0 0 8px; }
   .ts-instr-text { font-size: 14px; line-height: 1.5; margin: 0 0 10px; }
   .ts-box { width: 100%; background: var(--surface, #231a0a); border: 1px solid rgba(224,123,0,0.25); border-radius: 20px;
     padding: 14px 16px; text-align: left; margin-bottom: 12px; }
@@ -467,7 +466,7 @@
         <div class="ts-title">Turd Snake</div>
         <div class="ts-sub">Eat. Grow. Don't touch the bowl.</div>
         <div class="ts-box">
-          <div class="ts-instr">Instructions</div>
+          <div class="ts-lbl" style="margin-bottom:6px">Instructions</div>
           <div class="ts-instr-text">Swipe to turn. Eat everything to grow your log.</div>
           <div class="ts-row"><div class="ts-av">🌽</div><div><b>Corn &amp; mates</b><span>+${CM_PER_SEG} cm each. Corn stays in, obviously.</span></div></div>
           <div class="ts-row"><div class="ts-av">🌶️</div><div><b>Chilli</b><span>+${CM_PER_SEG * 2} cm and ring of fire speed</span></div></div>
