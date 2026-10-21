@@ -17,7 +17,7 @@ The leaderboard runs on Supabase. The site itself stays static.
    - Authentication → Emails → SMTP Settings: host `smtp.mx.cloudflare.net`, port `465`, username `api_token`, password a Cloudflare API token with Email Sending: Edit. Sender `Gross Income BogBot <bogbot@grossincome.com.au>`.
    - Templates (Magic link and Confirm sign up) show the login code `{{ .Token }}`, which people type into the app. This is what makes login work in the iPhone home screen app, because a tapped link opens in Safari, and Safari doesn't share its login with the installed app.
    - Below the code, the templates can still link to `{{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=email` rather than `{{ .ConfirmationURL }}`, for people using the website. The app finishes either kind of login with `verifyOtp`, and keeping the link on our own domain helps the email stay out of spam.
-   - Example body: `<h2>Your Poop Pool code: {{ .Token }}</h2><p>Type it into Gross Income. Or <a href="{{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=email">tap here</a> if you're in your browser.</p>`
+   - The branded templates and subject lines are in `../emails/`.
 
 ## Turning the beta on
 
