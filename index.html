@@ -1483,6 +1483,8 @@
   // Previews, localhost and ?paywall show it now.
   const PAYWALL_FROM = null; // e.g. '2026-12-01'
   const UNLOCK_KEY = 'gi.unlock.v1';
+  // The locked game someone tapped before signing in, so login brings them back to it
+  const PENDING_UNLOCK_KEY = 'gi.pendingUnlock';
   if (new URLSearchParams(location.search).has('paywall')) writeJSON('gi.paywallPreview', true);
 
   function paywallOn() {
@@ -1512,7 +1514,7 @@
     const action = user
       ? `<button class="btn btn-start" data-pay="buy">👑 Unlock for ${UNLOCK_PRICE}</button>
          <p class="paywall-small">Already paid? <button data-pay="check">Check again</button></p>`
-      : `<button class="btn btn-start" data-pay="signin">Sign in to unlock</button>
+      : `<button class="btn btn-start" data-pay="signin" data-game="${gm.id}">Sign in to unlock</button>
          <p class="paywall-small">Your unlock is saved to your Poop Pool login, so it follows you to any phone.</p>`;
     return `<div class="paywall">
       <div class="paywall-icon" style="background:${gm.bg}">${gm.icon}</div>
@@ -1531,6 +1533,7 @@
     if (!el) return;
     const msg = document.getElementById('paywallMsg');
     if (el.dataset.pay === 'signin') {
+      writeJSON(PENDING_UNLOCK_KEY, { id: el.dataset.game, at: Date.now() });
       closeGame();
       setTimeout(() => {
         document.getElementById('poolCard').scrollIntoView({ block: 'start', behavior: 'smooth' });
@@ -1758,12 +1761,23 @@
   }
   window.loadUnlock = loadUnlock;
 
+  // Signed in from a locked game's paywall: reopen that game, which now shows
+  // the pay button (or just plays, for Founding Flushers and past buyers)
+  function resumeUnlock() {
+    const p = readJSON(PENDING_UNLOCK_KEY, null);
+    if (!p || !pool.user) return;
+    writeJSON(PENDING_UNLOCK_KEY, null);
+    if (Date.now() - p.at > 30 * 60 * 1000) return;
+    if (readJSON(POOL_INVITE_KEY, null)) return; // let them deal with the invite first
+    openGame(p.id);
+  }
+
   async function loadPool() {
     const { data: { session } } = await pool.sb.auth.getSession();
     pool.user = session ? session.user : null;
     const code = readJSON(POOL_INVITE_KEY, null);
     renderArcade();
-    if (pool.user) loadUnlock().catch(() => {});
+    const unlockCheck = pool.user ? loadUnlock().catch(() => {}) : null;
 
     if (!pool.user) {
       pool.profile = null; pool.pools = []; pool.boards = {};
@@ -1782,6 +1796,8 @@
     pool.pools = pools || [];
     saveCache();
     if (!profile) { pool.view = { name: 'profile', emoji: '💩' }; return renderPool(); }
+    // New sign-ups pick a throne name first, then land back here
+    unlockCheck.then(resumeUnlock);
 
     await syncSessions();
 
