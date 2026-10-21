@@ -68,6 +68,7 @@
   .ss-title { font-family: 'Bebas Neue', sans-serif; font-size: 68px; line-height: 0.95; color: var(--gold, #f5c842); margin-top: 6px; }
   .ss-title.amber { color: var(--amber, #e07b00); }
   .ss-sub { font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; opacity: 0.85; margin: 8px 0 14px; }
+  .ss-instr-text { font-size: 14px; line-height: 1.5; margin: 0 0 10px; }
   .ss-box { width: 100%; background: var(--surface, #231a0a); border: 1px solid rgba(224,123,0,0.25); border-radius: 20px;
     padding: 12px 14px; text-align: left; margin-bottom: 12px; }
   .ss-pieces { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; }
@@ -757,6 +758,8 @@
           </button>`).join('')}
         </div>
         <div class="ss-box" style="margin-top:8px">
+          <div class="ss-lbl" style="margin-bottom:6px">Instructions</div>
+          <div class="ss-instr-text">Swipe a piece onto its neighbour to make 3 or more in a row. Hit the level's target before your moves run out.</div>
           <div class="ss-lbl" style="margin-bottom:8px">What's in the bowl</div>
           <div class="ss-pieces">
             ${PIECES.map((pc, k) => pieceRow(k, pc.name, pc.desc)).join('')}
