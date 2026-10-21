@@ -220,3 +220,24 @@ grant execute on function public.pool_preview(text) to anon, authenticated;
 grant execute on function public.create_pool(text), public.join_pool(text),
   public.regenerate_invite_code(uuid), public.pool_leaderboard(uuid, timestamptz)
   to authenticated;
+
+-- ── GOLDEN THRONE (arcade unlock) ──
+-- One row per person who has unlocked the Bog Arcade. People can read their own
+-- row; only server code (the stripe-webhook function, using the service role)
+-- writes. Sources: stripe (web), apple / google (store apps, later),
+-- founder (signed up before the paywall launched), gift.
+
+create table if not exists public.entitlements (
+  user_id    uuid not null references auth.users on delete cascade,
+  product    text not null default 'golden_throne',
+  source     text not null check (source in ('stripe', 'apple', 'google', 'founder', 'gift')),
+  txn_id     text unique,
+  created_at timestamptz not null default now(),
+  primary key (user_id, product)
+);
+
+alter table public.entitlements enable row level security;
+
+drop policy if exists "entitlements: read own" on public.entitlements;
+create policy "entitlements: read own" on public.entitlements
+  for select to authenticated using (user_id = auth.uid());

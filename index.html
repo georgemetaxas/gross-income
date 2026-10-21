@@ -680,6 +680,31 @@
   }
   .game-root { flex: 1; min-height: 0; width: 100%; max-width: 520px; margin: 0 auto; }
   .game-loading { text-align: center; font-family: 'DM Mono', monospace; font-size: 12px; color: var(--muted); padding-top: 40px; }
+  /* ── GOLDEN THRONE: lock badge on arcade tiles + paywall in the game layer ── */
+  .arcade-icon { position: relative; }
+  .arcade-lock {
+    position: absolute; top: -5px; right: -5px; width: 22px; height: 22px; border-radius: 50%;
+    background: var(--bg); border: 1px solid var(--gold); font-size: 11px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .arcade-note { margin-top: 8px; font-size: 12px; color: var(--muted); line-height: 1.4; }
+  .arcade-note[hidden] { display: none; }
+  .paywall { height: 100%; overflow-y: auto; text-align: center; padding: 18px 6px 24px; }
+  .paywall-icon {
+    width: 84px; height: 84px; border-radius: 24px; margin: 6px auto 14px;
+    display: flex; align-items: center; justify-content: center; font-size: 44px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4), inset 0 0 0 1px rgba(255,255,255,0.12);
+  }
+  .paywall-kicker { font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 3px; color: var(--amber); }
+  .paywall h2 { font-family: 'Bebas Neue', sans-serif; font-weight: 400; font-size: 38px; letter-spacing: 2px; color: var(--gold); line-height: 1; margin: 6px 0 10px; }
+  .paywall p { font-size: 14px; line-height: 1.5; color: var(--cream); margin: 0 auto 14px; max-width: 340px; }
+  .paywall-games { list-style: none; padding: 0; margin: 0 auto 18px; max-width: 300px; text-align: left; }
+  .paywall-games li { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+  .paywall-games li span:last-child { margin-left: auto; font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 1px; color: var(--muted); }
+  .paywall .btn { width: 100%; max-width: 340px; }
+  .paywall-small { font-size: 12px !important; color: var(--muted) !important; margin-top: 14px !important; }
+  .paywall-small a, .paywall-small button { color: var(--gold); background: none; border: none; padding: 0; font: inherit; text-decoration: underline; cursor: pointer; }
+  .paywall-msg { min-height: 18px; font-size: 13px; color: #ff8a65; margin-top: 10px; }
 </style>
 </head>
 <body>
@@ -779,6 +804,7 @@
   <div class="arcade-card" id="arcadeCard">
     <div class="arcade-head"><b>Don't go off for a doom scroll!</b>Play the Bog Arcade while the clock pays you.</div>
     <div class="arcade-tiles" id="arcadeTiles"></div>
+    <div class="arcade-note" id="arcadeNote" hidden></div>
   </div>
 
   <!-- BOG HISTORY + LIFETIME PROJECTOR (one collapsible card) -->
@@ -860,6 +886,11 @@
   <div class="app-bar-text" id="appBarText"></div>
   <button type="button" class="app-bar-btn" id="appBarBtn" hidden></button>
   <button type="button" class="app-bar-x" id="appBarX" aria-label="Dismiss">✕</button>
+</div>
+
+<div class="app-bar" id="unlockBar" role="status" hidden>
+  <div class="app-bar-text"><b>👑 Golden Throne unlocked.</b> Every Bog Arcade game is yours, on any device you sign in on.</div>
+  <button type="button" class="app-bar-x" onclick="this.parentNode.hidden = true" aria-label="Dismiss">✕</button>
 </div>
 
 <div class="app-bar throne-check" id="throneCheck" role="alertdialog" aria-labelledby="throneText" hidden>
@@ -1441,11 +1472,85 @@
   let game = null;
   const gameScripts = {};
 
-  document.getElementById('arcadeTiles').innerHTML = GAMES.map(gm => `
-    <button type="button" class="arcade-tile" onclick="openGame('${gm.id}')">
-      <span class="arcade-icon" style="background:${gm.bg}" aria-hidden="true">${gm.icon}</span>
-      <span class="arcade-name">${gm.name}</span>
-    </button>`).join('');
+  // ── GOLDEN THRONE (arcade unlock) ──
+  // A one-off purchase opens every game; Turd Snake stays free as a taster.
+  // On the web it's bought through a Stripe Payment Link, and the stripe-webhook
+  // function writes the row to entitlements. Setup: supabase/README.md.
+  const FREE_GAMES = ['turd-snake'];
+  const UNLOCK_PRICE = 'A$4.99';
+  const STRIPE_LINK = ''; // Stripe Payment Link URL, filled in once Stripe is set up
+  // Off on the live site until launch day (also the Founding Flusher cut-off).
+  // Previews, localhost and ?paywall show it now.
+  const PAYWALL_FROM = null; // e.g. '2026-12-01'
+  const UNLOCK_KEY = 'gi.unlock.v1';
+  if (new URLSearchParams(location.search).has('paywall')) writeJSON('gi.paywallPreview', true);
+
+  function paywallOn() {
+    return /\.pages\.dev$|^localhost$/.test(location.hostname) || readJSON('gi.paywallPreview', false) === true
+      || (PAYWALL_FROM !== null && Date.now() >= Date.parse(PAYWALL_FROM));
+  }
+  function unlocked() { return !!readJSON(UNLOCK_KEY, null); }
+  function gameLocked(gm) { return paywallOn() && !unlocked() && !FREE_GAMES.includes(gm.id); }
+
+  function renderArcade() {
+    document.getElementById('arcadeTiles').innerHTML = GAMES.map(gm => `
+      <button type="button" class="arcade-tile" onclick="openGame('${gm.id}')">
+        <span class="arcade-icon" style="background:${gm.bg}" aria-hidden="true">${gm.icon}${gameLocked(gm) ? '<span class="arcade-lock">🔒</span>' : ''}</span>
+        <span class="arcade-name">${gm.name}</span>
+      </button>`).join('');
+    // Before launch: people who sign in now become Founding Flushers and keep the arcade free
+    const note = document.getElementById('arcadeNote');
+    const soon = PAYWALL_FROM !== null && Date.now() < Date.parse(PAYWALL_FROM);
+    note.hidden = !(soon && !unlocked() && !(typeof pool !== 'undefined' && pool.user));
+    if (!note.hidden) note.textContent = `Sign in to Poop Pool before ${new Date(PAYWALL_FROM).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })} to keep the whole arcade free forever.`;
+  }
+  renderArcade();
+
+  function paywallHtml(gm) {
+    const user = typeof pool !== 'undefined' && pool.user;
+    const list = GAMES.map(x => `<li><span>${x.icon}</span><span>${x.name}</span><span>${FREE_GAMES.includes(x.id) ? 'FREE' : '🔒'}</span></li>`).join('');
+    const action = user
+      ? `<button class="btn btn-start" data-pay="buy">👑 Unlock for ${UNLOCK_PRICE}</button>
+         <p class="paywall-small">Already paid? <button data-pay="check">Check again</button></p>`
+      : `<button class="btn btn-start" data-pay="signin">Sign in to unlock</button>
+         <p class="paywall-small">Your unlock is saved to your Poop Pool login, so it follows you to any phone.</p>`;
+    return `<div class="paywall">
+      <div class="paywall-icon" style="background:${gm.bg}">${gm.icon}</div>
+      <div class="paywall-kicker">GOLDEN THRONE</div>
+      <h2>Unlock the Bog Arcade</h2>
+      <p>${gm.name} and every other game, forever. Pay once, no subscription.</p>
+      <ul class="paywall-games">${list}</ul>
+      ${action}
+      <div class="paywall-msg" id="paywallMsg"></div>
+      <p class="paywall-small"><a href="privacy.html">Privacy &amp; terms</a></p>
+    </div>`;
+  }
+
+  document.getElementById('gameRoot').addEventListener('click', async (e) => {
+    const el = e.target.closest('[data-pay]');
+    if (!el) return;
+    const msg = document.getElementById('paywallMsg');
+    if (el.dataset.pay === 'signin') {
+      closeGame();
+      setTimeout(() => {
+        document.getElementById('poolCard').scrollIntoView({ block: 'start', behavior: 'smooth' });
+        const email = document.getElementById('poolEmail');
+        if (email) email.focus({ preventScroll: true });
+      }, 50);
+    } else if (el.dataset.pay === 'buy') {
+      if (!STRIPE_LINK) { msg.textContent = "Payments aren't switched on yet. Hang tight."; return; }
+      // Stripe sends people back to ?unlocked=1 (set on the Payment Link)
+      location.href = STRIPE_LINK + '?client_reference_id=' + encodeURIComponent(pool.user.id)
+        + (pool.user.email ? '&prefilled_email=' + encodeURIComponent(pool.user.email) : '');
+    } else if (el.dataset.pay === 'check') {
+      el.disabled = true;
+      msg.textContent = '';
+      const ok = window.loadUnlock && await window.loadUnlock();
+      el.disabled = false;
+      if (ok) closeGame();
+      else msg.textContent = "No unlock on this login yet. Paid with a different email? Sign in with that one.";
+    }
+  });
 
   function loadGame(gm) {
     if (window[gm.global]) return Promise.resolve();
@@ -1468,6 +1573,7 @@
     document.getElementById('gameLayer').hidden = false;
     document.body.classList.add('game-open');
     history.pushState({ game: true }, '');
+    if (gameLocked(gm)) { root.innerHTML = paywallHtml(gm); return; }
     root.innerHTML = '<div class="game-loading">Unblocking the pipes…</div>';
     try { await loadGame(gm); } catch (e) {
       root.innerHTML = `<div class="game-loading">${gm.name} didn't load. Check your signal and try again.</div>`;
@@ -1638,10 +1744,26 @@
     return poolRefresh;
   }
 
+  // Golden Throne: is there an entitlements row for this login? Cached on the
+  // device so the arcade doesn't flash locked while Supabase loads.
+  async function loadUnlock() {
+    if (!pool.user) return unlocked();
+    const { data, error } = await pool.sb.from('entitlements')
+      .select('source').eq('user_id', pool.user.id).eq('product', 'golden_throne').maybeSingle();
+    if (error) return unlocked(); // offline, or the table isn't set up yet: keep what we had
+    writeJSON(UNLOCK_KEY, data ? { user: pool.user.id, source: data.source } : null);
+    renderArcade();
+    renderProfile();
+    return !!data;
+  }
+  window.loadUnlock = loadUnlock;
+
   async function loadPool() {
     const { data: { session } } = await pool.sb.auth.getSession();
     pool.user = session ? session.user : null;
     const code = readJSON(POOL_INVITE_KEY, null);
+    renderArcade();
+    if (pool.user) loadUnlock().catch(() => {});
 
     if (!pool.user) {
       pool.profile = null; pool.pools = []; pool.boards = {};
@@ -1746,7 +1868,12 @@
     const pools = pool.pools.map(x => x.id === (cur && cur.id)
       ? `<div class="sheet-pool on"><b>${esc(x.name)}</b><span class="pool-sub">CODE ${esc(x.invite_code)}</span></div>`
       : `<button class="sheet-pool" data-act="switch-pool" data-id="${x.id}"><b>${esc(x.name)}</b><span class="pool-sub" style="color:var(--muted)">SWITCH</span></button>`).join('');
+    const unlock = readJSON(UNLOCK_KEY, null);
+    const throne = unlock
+      ? `<p class="pool-text">👑 Unlocked${unlock.source === 'founder' ? ' · <b>Founding Flusher</b>' : ''}. Every Bog Arcade game is yours.</p>`
+      : `<p class="pool-text">Unlock every Bog Arcade game for ${UNLOCK_PRICE}, once. Open a locked game while you're on the bog to buy.</p>`;
     panel.innerHTML = `
+      ${unlock || paywallOn() ? `<div class="sheet-section"><span class="section-label">Golden Throne</span>${throne}</div>` : ''}
       <div class="sheet-section">
         <span class="section-label">Privacy</span>
         <label class="switch-row">
@@ -2042,6 +2169,7 @@
       await pool.sb.auth.signOut();
       pool.profile = null; pool.pools = []; pool.sheetEdit = false;
       writeJSON(POOL_SYNCED_KEY, null);
+      writeJSON(UNLOCK_KEY, null);
       await refreshPool(); return 'done';
     },
   };
@@ -2188,6 +2316,17 @@
         if (error) pool.msg = 'That login link has expired. Ask for a new one.';
       }
       try { await refreshPool(); } catch (e) { pool.msg = errText(e); renderPool(); }
+      // Back from Stripe Checkout. The webhook can take a few seconds to land.
+      if (new URLSearchParams(location.search).has('unlocked')) {
+        const q3 = new URLSearchParams(location.search);
+        q3.delete('unlocked');
+        const qs3 = q3.toString();
+        history.replaceState(null, '', location.pathname + (qs3 ? '?' + qs3 : '') + location.hash);
+        for (let i = 0; i < 8; i++) {
+          if (await loadUnlock().catch(() => false)) { document.getElementById('unlockBar').hidden = false; break; }
+          await new Promise(r => setTimeout(r, 2000));
+        }
+      }
     };
     s.onerror = () => { sbReadyResolve(false); pool.msg = 'Poop Pool is offline right now.'; renderPool(); };
     document.body.appendChild(s);
