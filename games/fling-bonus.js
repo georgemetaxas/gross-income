@@ -87,6 +87,8 @@
   .fb-title { font-family: 'Bebas Neue', sans-serif; font-size: 72px; line-height: 0.95; color: var(--gold, #f5c842); margin-top: 6px; }
   .fb-title.amber { color: var(--amber, #e07b00); }
   .fb-sub { font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; opacity: 0.85; margin: 8px 0 16px; }
+  .fb-instr { font-family: 'Bebas Neue', sans-serif; font-size: 22px; font-weight: 400; letter-spacing: 2px; line-height: 1; color: var(--gold, #f5c842); margin: 0 0 8px; }
+  .fb-instr-text { font-size: 14px; line-height: 1.5; margin: 0 0 10px; }
   .fb-box { width: 100%; background: var(--surface, #231a0a); border: 1px solid rgba(224,123,0,0.25); border-radius: 20px;
     padding: 14px 16px; text-align: left; margin-bottom: 12px; }
   .fb-lvl { display: flex; align-items: center; gap: 12px; width: 100%; padding: 8px 0; background: none; border: none;
@@ -677,9 +679,10 @@
           ${levelRows()}
           <div class="fb-soon">Coming soon: ${SOON.join(', ')}</div>
         </div>
-        <div class="fb-box" style="font-size:14px;line-height:1.5">
-          Pull back anywhere on the screen and let go. Three turds a round, your longest counts.
-          Hit the green flag to get your bonus and unlock the next level.
+        <div class="fb-box">
+          <div class="fb-instr">Instructions</div>
+          <div class="fb-instr-text" style="margin:0">Pull back anywhere on the screen and let go. Three turds a round, your longest counts.
+          Hit the green flag to get your bonus and unlock the next level.</div>
         </div>`;
       el.screen.hidden = false;
       bindLevels();
