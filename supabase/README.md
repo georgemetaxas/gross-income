@@ -48,7 +48,7 @@ How it fits together:
 ### One-time setup
 
 1. **Database:** re-run `schema.sql` (adds `entitlements`).
-2. **Stripe:** create an account, then a Product "Golden Throne" with a one-off A$4.99 price, and a **Payment Link** for it.
+2. **Stripe:** create an account, then a Product "Golden Throne" with a one-off A$4.69 price, and a **Payment Link** for it.
    - After payment: "Don't show confirmation page" → redirect to `https://grossincome.com.au/?unlocked=1`.
    - Paste the link into `STRIPE_LINK` in `index.html`.
 3. **Webhook function:** with the Supabase CLI:
