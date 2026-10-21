@@ -253,7 +253,7 @@
     color: var(--heading); letter-spacing: 1.5px; text-transform: uppercase;
   }
 
-  .dash-timer-row { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .dash-timer-row { display: flex; align-items: center; gap: 10px; }
 
   .timer-pill {
     background: var(--paper); border: 1px solid var(--border);
@@ -276,14 +276,6 @@
     color: var(--heading); letter-spacing: 2px; text-transform: uppercase; margin-top: 2px;
   }
 
-  .mini-metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-
-  .mini-metric { background: var(--paper); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; }
-  .mini-val { font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 1px; color: var(--amber); line-height: 1; }
-  .mini-lbl {
-    font-family: 'DM Mono', monospace; font-size: 10px;
-    color: var(--heading); letter-spacing: 1px; text-transform: uppercase; margin-top: 3px;
-  }
 
   /* ── BUTTONS ── */
   .dash-btns { display: flex; gap: 8px; padding: 16px 24px 22px; position: relative; z-index: 2; }
@@ -387,13 +379,29 @@
   .fun-fact.visible { opacity: 1; }
   .fun-fact span { color: var(--gold); }
 
-  /* ── BOG HISTORY ── */
-  .history-card {
-    background: var(--surface); border: 1px solid var(--border); border-radius: 20px;
-    padding: 24px; margin-bottom: 12px; display: none;
+  /* ── BOG HISTORY (top half of the lifetime card) ── */
+  .stats-toggle {
+    display: flex; justify-content: space-between; align-items: center; gap: 12px;
+    width: 100%; background: none; border: none; padding: 0; margin: 0;
+    color: inherit; cursor: pointer; text-align: left; position: relative; z-index: 1;
   }
-  .history-card.visible { display: block; }
-  .history-card .lt-val { color: var(--gold); }
+  .stats-toggle .section-label { margin-bottom: 0; }
+  .stats-chevron { color: var(--gold); font-family: 'DM Mono', monospace; font-size: 28px; line-height: 1; padding: 0 4px; }
+  .stats-chevron::before { content: '−'; }
+  .lifetime-card.collapsed .stats-chevron::before { content: '+'; }
+  /* 0fr → 1fr grid rows animate height without measuring it */
+  .stats-body { display: grid; grid-template-rows: 1fr; transition: grid-template-rows 0.3s ease; }
+  .lifetime-card.collapsed .stats-body { grid-template-rows: 0fr; }
+  .stats-inner { overflow: hidden; min-height: 0; }
+  .stats-part { padding-top: 20px; }
+  .stats-part[hidden] { display: none; }
+  .stats-part + .stats-part { margin-top: 20px; border-top: 1px solid rgba(245,200,66,0.16); }
+  .stats-sub { margin-bottom: 0; font-size: 11px; }
+  body:not(.has-salary) #portfolioPart { display: none; }
+  #historyPart .lt-val { color: var(--gold); }
+  @media (prefers-reduced-motion: reduce) {
+    .stats-body { transition: none; }
+  }
   .history-list { margin-top: 18px; border-top: 1px solid var(--border); }
   .history-row {
     display: flex; justify-content: space-between; gap: 12px; padding: 10px 0;
@@ -586,21 +594,6 @@
           </div>
         </div>
       </div>
-
-      <div class="mini-metrics">
-        <div class="mini-metric">
-          <div class="mini-val" id="miniPerHour">$0</div>
-          <div class="mini-lbl">Per Hour</div>
-        </div>
-        <div class="mini-metric">
-          <div class="mini-val" id="miniDaily">$0</div>
-          <div class="mini-lbl">Daily 💩</div>
-        </div>
-        <div class="mini-metric">
-          <div class="mini-val" id="miniYearly">$0</div>
-          <div class="mini-lbl">Yearly 💩</div>
-        </div>
-      </div>
     </div>
 
     <div class="dash-btns">
@@ -610,51 +603,59 @@
     </div>
   </div>
 
-  <!-- LIFETIME PROJECTOR -->
-  <div class="lifetime-card" id="lifetimeCard" style="display:none">
-    <span class="section-label">🚀 Lifetime Poop Portfolio</span>
-    <div class="lifetime-grid">
-      <div>
-        <div class="lt-val" id="ltWeekly">$0</div>
-        <div class="lt-lbl">This Week</div>
-      </div>
-      <div>
-        <div class="lt-val" id="ltMonthly">$0</div>
-        <div class="lt-lbl">This Month</div>
-      </div>
-      <div>
-        <div class="lt-val" id="ltYearly">$0</div>
-        <div class="lt-lbl">This Year</div>
-      </div>
-      <div>
-        <div class="lt-val" id="ltCareer">$0</div>
-        <div class="lt-lbl">40yr Career</div>
+  <!-- BOG HISTORY + LIFETIME PROJECTOR (one collapsible card) -->
+  <div class="lifetime-card collapsed" id="lifetimeCard" style="display:none">
+    <button type="button" class="stats-toggle" id="statsToggle" aria-expanded="false" aria-controls="statsBody" onclick="toggleStats()">
+      <span class="section-label">🧻 Bog Stats</span>
+      <span class="stats-chevron" aria-hidden="true"></span>
+    </button>
+    <div class="stats-body" id="statsBody">
+      <div class="stats-inner">
+        <div class="stats-part" id="historyPart">
+          <span class="section-label stats-sub">Your Bog History</span>
+          <div class="lifetime-grid">
+            <div>
+              <div class="lt-val" id="histTime">0m</div>
+              <div class="lt-lbl">Total Bog Time</div>
+            </div>
+            <div>
+              <div class="lt-val" id="histEarned">$0</div>
+              <div class="lt-lbl">Total Earned</div>
+            </div>
+            <div>
+              <div class="lt-val" id="histCount">0</div>
+              <div class="lt-lbl">Sessions</div>
+            </div>
+            <div>
+              <div class="lt-val" id="histLongest">0m</div>
+              <div class="lt-lbl">Longest Sesh</div>
+            </div>
+          </div>
+          <div class="history-list" id="historyList"></div>
+        </div>
+        <div class="stats-part" id="portfolioPart">
+          <span class="section-label stats-sub">🚀 Lifetime Poop Portfolio</span>
+          <div class="lifetime-grid">
+            <div>
+              <div class="lt-val" id="ltWeekly">$0</div>
+              <div class="lt-lbl">This Week</div>
+            </div>
+            <div>
+              <div class="lt-val" id="ltMonthly">$0</div>
+              <div class="lt-lbl">This Month</div>
+            </div>
+            <div>
+              <div class="lt-val" id="ltYearly">$0</div>
+              <div class="lt-lbl">This Year</div>
+            </div>
+            <div>
+              <div class="lt-val" id="ltCareer">$0</div>
+              <div class="lt-lbl">40yr Career</div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
-  </div>
-
-  <!-- BOG HISTORY -->
-  <div class="history-card" id="historyCard">
-    <span class="section-label">🧻 Your Bog History</span>
-    <div class="lifetime-grid">
-      <div>
-        <div class="lt-val" id="histTime">0m</div>
-        <div class="lt-lbl">Total Bog Time</div>
-      </div>
-      <div>
-        <div class="lt-val" id="histEarned">$0</div>
-        <div class="lt-lbl">Total Earned</div>
-      </div>
-      <div>
-        <div class="lt-val" id="histCount">0</div>
-        <div class="lt-lbl">Sessions</div>
-      </div>
-      <div>
-        <div class="lt-val" id="histLongest">0m</div>
-        <div class="lt-lbl">Longest Sesh</div>
-      </div>
-    </div>
-    <div class="history-list" id="historyList"></div>
   </div>
 
   <!-- POOP POOL (beta) -->
@@ -856,7 +857,7 @@
   function revealLifetime() {
     const card = document.getElementById('lifetimeCard');
     const vals = ['ltWeekly','ltMonthly','ltYearly','ltCareer'];
-    const lbls = card.querySelectorAll('.lt-lbl');
+    const lbls = document.querySelectorAll('#portfolioPart .lt-lbl');
 
     // Cancel any reveal still in flight so a quick re-save restarts cleanly
     clearTimeout(revealTimeout);
@@ -927,9 +928,6 @@
 
     document.getElementById('dashEarned').textContent = fmtExact(earned);
     document.getElementById('ratePerMin').textContent = fmt(perMin);
-    document.getElementById('miniPerHour').textContent = fmt(hourly);
-    document.getElementById('miniDaily').textContent = fmt(daily);
-    document.getElementById('miniYearly').textContent = fmt(yearly);
 
     // Don't stomp on the skeleton / count-up while the reveal is running
     if (revealing) return;
@@ -1050,12 +1048,11 @@
 
   function renderHistory() {
     const sessions = loadSessions();
-    const card = document.getElementById('historyCard');
-    if (sessions.length === 0) { card.classList.remove('visible'); return; }
+    const part = document.getElementById('historyPart');
 
     const totalSecs = sessions.reduce((t, s) => t + s.secs, 0);
     const totalEarned = sessions.reduce((t, s) => t + s.earned, 0);
-    const longest = Math.max(...sessions.map(s => s.secs));
+    const longest = sessions.length ? Math.max(...sessions.map(s => s.secs)) : 0;
 
     document.getElementById('histTime').textContent = fmtDuration(totalSecs);
     document.getElementById('histEarned').textContent = totalEarned >= 1000 ? fmt(totalEarned) : fmtExact(totalEarned);
@@ -1063,7 +1060,8 @@
     document.getElementById('histLongest').textContent = fmtDuration(longest);
 
     const list = document.getElementById('historyList');
-    list.innerHTML = '';
+    list.innerHTML = sessions.length ? '' :
+      '<div class="history-row"><span>No bogs logged yet. Hit Start a Bog.</span></div>';
     sessions.slice(-5).reverse().forEach(s => {
       const when = new Date(s.start).toLocaleString('en-AU', {
         weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit',
@@ -1074,11 +1072,31 @@
       list.appendChild(row);
     });
 
-    card.classList.add('visible');
+    part.hidden = false;
+    const card = document.getElementById('lifetimeCard');
+    if (card.style.display === 'none') {
+      card.style.display = 'block';
+      card.classList.add('revealed');
+    }
+  }
+
+  // ── STATS CARD COLLAPSE ──
+  const STATS_COLLAPSED_KEY = 'gi.statsCollapsed.v1';
+
+  function setStatsCollapsed(collapsed) {
+    document.getElementById('lifetimeCard').classList.toggle('collapsed', collapsed);
+    document.getElementById('statsToggle').setAttribute('aria-expanded', String(!collapsed));
+  }
+
+  function toggleStats() {
+    const collapsed = !document.getElementById('lifetimeCard').classList.contains('collapsed');
+    setStatsCollapsed(collapsed);
+    writeJSON(STATS_COLLAPSED_KEY, collapsed);
   }
 
   // ── RESTORE SAVED STATE ──
   (function restore() {
+    setStatsCollapsed(readJSON(STATS_COLLAPSED_KEY, true) !== false);
     const saved = readJSON(SALARY_KEY, null);
     if (saved && saved.amount > 0 && ['year', 'month', 'hour'].includes(saved.period)) {
       currentPeriod = saved.period;
