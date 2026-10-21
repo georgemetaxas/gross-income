@@ -32,13 +32,19 @@
 <meta name="apple-mobile-web-app-title" content="Gross Income">
 <link rel="icon" href="icons/logo.svg?v=2" type="image/svg+xml">
 <link rel="icon" href="icons/favicon-32.png?v=2" sizes="32x32" type="image/png">
-<!-- Open connections early: fonts, the Supabase library for Poop Pool, and Supabase itself -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- Fonts are served from our own domain (Latin subset from Google Fonts, OFL), so first paint
+     doesn't wait on two other servers and the home screen app has them offline. -->
+<link rel="preload" as="font" type="font/woff2" href="fonts/bebas-neue-400.woff2" crossorigin>
+<link rel="preload" as="font" type="font/woff2" href="fonts/dm-mono-400.woff2" crossorigin>
+<!-- Open the Supabase connection early for Poop Pool. The library itself loads from the pool script. -->
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="preconnect" href="https://pngsoygqbvhlfkzdghtr.supabase.co" crossorigin>
-<link rel="preload" as="script" href="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js">
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;600&display=swap" rel="stylesheet">
 <style>
+  @font-face { font-family: 'Bebas Neue'; font-style: normal; font-weight: 400; font-display: swap; src: url(fonts/bebas-neue-400.woff2) format('woff2'); }
+  @font-face { font-family: 'DM Mono'; font-style: normal; font-weight: 400; font-display: swap; src: url(fonts/dm-mono-400.woff2) format('woff2'); }
+  @font-face { font-family: 'DM Mono'; font-style: normal; font-weight: 500; font-display: swap; src: url(fonts/dm-mono-500.woff2) format('woff2'); }
+  @font-face { font-family: 'DM Sans'; font-style: normal; font-weight: 300 600; font-display: swap; src: url(fonts/dm-sans-var.woff2) format('woff2'); }
+
   :root {
     --bg: #1a1208;
     --surface: #231a0a;
@@ -182,7 +188,7 @@
     background: var(--surface2);
     border-radius: 24px 24px 0 0;
     padding-bottom: calc(34px + env(safe-area-inset-bottom));
-    max-height: 90vh; overflow-y: auto; overscroll-behavior: contain;
+    max-height: 90vh; max-height: 90dvh; overflow-y: auto; overscroll-behavior: contain;
   }
 
   /* ── PROFILE SHEET: account, salary, privacy, pools, sign out ── */
@@ -513,11 +519,13 @@
   .pool-text { font-size: 14px; color: var(--cream); line-height: 1.5; margin: 12px 0; }
   .pool-input, .pool-select {
     width: 100%; background: var(--paper); border: 1px solid var(--border); border-radius: 12px;
-    padding: 13px 14px; color: var(--cream); font-family: 'DM Mono', monospace; font-size: 14px; margin-top: 10px;
+    padding: 13px 14px; color: var(--cream); font-family: 'DM Mono', monospace; font-size: 16px; margin-top: 10px;
   }
   .code-row { margin-top: 10px; }
   .code-row input { letter-spacing: 6px; }
   .pool-select { padding: 8px 10px; font-size: 11px; width: auto; margin-top: 0; letter-spacing: 1px; }
+  .pool-head .section-label { white-space: nowrap; }
+  .pool-head .pool-select { min-width: 0; max-width: 60%; text-overflow: ellipsis; }
   /* Pool switcher: gold border and a clear ▾ so it reads as a dropdown. */
   #poolPicker {
     -webkit-appearance: none; appearance: none; cursor: pointer;
@@ -661,6 +669,8 @@
   }
   .game-layer[hidden] { display: none; }
   .game-open { overflow: hidden; }
+  /* The game covers the home screen: stop painting it (wave, glow, logo) so the game gets the phone's full speed */
+  .game-open .wrapper { visibility: hidden; }
   .game-open .app-bar { display: none; }
   .game-open .throne-check:not([hidden]) { display: flex; z-index: 41; }
   .mini-timer {
@@ -886,6 +896,8 @@
   // so every read/write is guarded and the app still works without it.
   const SESSIONS_KEY = 'gi.sessions.v1';
   const SALARY_KEY = 'gi.salary.v1';
+  // A bog in progress, so it survives the phone closing the app in the background
+  const RUNNING_KEY = 'gi.running.v1';
   const MIN_SESSION_SECS = 5;
 
   function readJSON(key, fallback) {
@@ -931,10 +943,12 @@
     return parseFloat(salaryInput.value.replace(/,/g, '')) || 0;
   }
 
+  // Uses the saved period: tapping a period tab in the sheet shouldn't change a running bog
+  // until they save.
   function getHourlyRate() {
     const raw = savedSalary;
-    if (currentPeriod === 'year') return raw / 52 / 40;
-    if (currentPeriod === 'month') return raw / 4 / 40;
+    if (savedPeriod === 'year') return raw / 52 / 40;
+    if (savedPeriod === 'month') return raw * 12 / 52 / 40;
     return raw;
   }
 
@@ -1021,10 +1035,16 @@
       salaryInput.focus();
       return;
     }
+    beginTimer(seconds, Date.now());
+    startMotion();
+  }
+
+  function beginTimer(fromSeconds, startMs, hiddenAtSecs) {
     running = true;
-    segmentStartSeconds = seconds;
-    segmentStartMs = Date.now();
+    segmentStartSeconds = fromSeconds;
+    segmentStartMs = startMs;
     segmentStartedAt = new Date(segmentStartMs).toISOString();
+    saveRunning(hiddenAtSecs);
     timerInterval = setInterval(updateTimer, 250);
     document.getElementById('timerDot').classList.add('live');
     document.getElementById('miniTimerDot').classList.add('live');
@@ -1032,7 +1052,10 @@
     document.getElementById('dashEarned').classList.add('ticking');
     document.getElementById('startBtn').style.display = 'none';
     document.getElementById('stopBtn').style.display = 'block';
-    startMotion();
+  }
+
+  function saveRunning(hiddenAtSecs) {
+    writeJSON(RUNNING_KEY, running ? { from: segmentStartSeconds, startMs: segmentStartMs, hiddenAtSecs } : null);
   }
 
   // atSeconds: end the bog at an earlier point, e.g. when they left the app
@@ -1041,6 +1064,7 @@
     updateTimer();
     if (atSeconds != null && atSeconds < seconds) { seconds = atSeconds; renderTimer(); }
     running = false;
+    saveRunning();
     hideThrone();
     clearInterval(timerInterval);
     document.getElementById('timerDot').classList.remove('live');
@@ -1099,7 +1123,9 @@
   document.addEventListener('visibilitychange', () => {
     if (!running) return;
     updateTimer();
-    if (document.visibilityState === 'hidden') { hiddenAtSecs = seconds; return; }
+    // Saved too: the phone may close the app while it's in the background
+    if (document.visibilityState === 'hidden') { hiddenAtSecs = seconds; saveRunning(hiddenAtSecs); return; }
+    saveRunning();
     if (hiddenAtSecs != null && seconds - hiddenAtSecs >= AWAY_PROMPT_SECS) {
       askThrone(`<b>You left ${fmtDuration(seconds - hiddenAtSecs)} ago.</b> Did you get off the throne?`, hiddenAtSecs);
     }
@@ -1267,27 +1293,39 @@
       ctx.fillStyle = grad;
       ctx.fill();
     });
-    waveT++;
   }
 
   // ── ANIMATION LOOP ──
-  // Paused while the dashboard is scrolled out of view. Reduced motion gets one still frame.
-  (function () {
+  // Paused while the dashboard is scrolled out of view or a game covers it. Reduced motion
+  // gets one still frame. Drawn at 30fps and moved by the clock, so 120Hz phones don't
+  // run it twice as fast or burn twice the battery.
+  const wave = (function () {
     const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     let onScreen = true;
     let frame = null;
-    function loop() {
+    let last = 0;
+    function loop(now) {
+      frame = null;
+      if (still || !onScreen || document.body.classList.contains('game-open')) return;
+      frame = requestAnimationFrame(loop);
+      if (now - last < 32) return;
+      // waveT counts 60ths of a second, which the wave speeds were tuned for
+      waveT += Math.min(now - last, 100) * 0.06;
+      last = now;
       drawMainWave();
-      frame = still || !onScreen ? null : requestAnimationFrame(loop);
+    }
+    function resume() {
+      if (frame === null) { drawMainWave(); frame = requestAnimationFrame(loop); }
     }
     if ('IntersectionObserver' in window) {
       new IntersectionObserver(([e]) => {
         onScreen = e.isIntersecting;
-        if (onScreen && frame === null) loop();
+        if (onScreen) resume();
       }).observe(waveCanvas);
     }
     window.addEventListener('resize', () => { if (frame === null) drawMainWave(); });
-    loop();
+    resume();
+    return { resume };
   })();
 
   refreshAll();
@@ -1482,6 +1520,7 @@
     document.getElementById('gameRoot').innerHTML = '';
     document.getElementById('gameLayer').hidden = true;
     document.body.classList.remove('game-open');
+    wave.resume();
   }
 
   // Closing goes through history so the phone's back gesture closes the game too
@@ -1515,6 +1554,16 @@
       saveSalary();
     }
     renderHistory();
+
+    // Pick up a bog the phone closed the app on, and check they're still on the throne
+    const bog = readJSON(RUNNING_KEY, null);
+    if (bog && savedSalary > 0 && bog.startMs > 0 && bog.startMs <= Date.now()) {
+      beginTimer(bog.from || 0, bog.startMs);
+      updateTimer();
+      if (bog.hiddenAtSecs != null && seconds - bog.hiddenAtSecs >= AWAY_PROMPT_SECS) {
+        askThrone(`<b>You left ${fmtDuration(seconds - bog.hiddenAtSecs)} ago.</b> Did you get off the throne?`, bog.hiddenAtSecs);
+      }
+    } else if (bog) writeJSON(RUNNING_KEY, null);
   })();
 </script>
 
@@ -2190,7 +2239,17 @@
       try { await refreshPool(); } catch (e) { pool.msg = errText(e); renderPool(); }
     };
     s.onerror = () => { sbReadyResolve(false); pool.msg = 'Poop Pool is offline right now.'; renderPool(); };
-    document.body.appendChild(s);
+    // Signed in, or arriving from an invite or login link: load Supabase straight away.
+    // Otherwise it waits until the page has settled, so first paint doesn't pay for it.
+    const loadSb = () => { if (!s.isConnected) document.body.appendChild(s); };
+    if (pool.user || readJSON(POOL_INVITE_KEY, null) || q.has('token_hash')) loadSb();
+    else {
+      const idle = window.requestIdleCallback || (fn => setTimeout(fn, 1500));
+      const later = () => idle(loadSb, { timeout: 3000 });
+      if (document.readyState === 'complete') later(); else window.addEventListener('load', later, { once: true });
+      // A tap on the pool card (e.g. the email box) shouldn't wait for idle time
+      poolCard.addEventListener('pointerdown', loadSb, { once: true });
+    }
   })();
 </script>
 <script>
