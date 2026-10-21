@@ -544,6 +544,49 @@
   .throne-check .app-bar-text { flex-basis: 100%; }
   .throne-check .app-bar-btn { flex: 1; }
   .throne-check .throne-stay { background: transparent; color: var(--cream); border: 1px solid var(--border); }
+  /* ── DUNG RUN: card while the timer runs, full screen game with a mini timer ── */
+  .game-card {
+    display: none; align-items: center; gap: 14px;
+    background: linear-gradient(135deg, rgba(127,211,245,0.10), rgba(245,200,66,0.08));
+    border: 1px solid rgba(245,200,66,0.35); border-radius: 20px;
+    padding: 16px 16px 16px 18px; margin-bottom: 12px;
+    width: 100%; text-align: left; color: var(--cream); cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .bog-running .game-card { display: flex; }
+  .game-card-emoji { font-size: 40px; line-height: 1; filter: drop-shadow(0 0 14px rgba(127,211,245,0.5)); }
+  .game-card-text { flex: 1; font-size: 14px; line-height: 1.4; }
+  .game-card-text b { display: block; font-family: 'Bebas Neue', sans-serif; font-size: 24px; font-weight: 400; letter-spacing: 1.5px; color: var(--gold); line-height: 1.1; }
+  .game-card-go {
+    background: var(--gold); color: var(--bg); border-radius: 10px; padding: 10px 14px;
+    font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 2px; white-space: nowrap;
+  }
+  .game-layer {
+    position: fixed; inset: 0; z-index: 40; background: var(--bg);
+    display: flex; flex-direction: column;
+    padding: calc(10px + env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) calc(12px + env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+  }
+  .game-layer[hidden] { display: none; }
+  .game-open { overflow: hidden; }
+  .game-open .app-bar { display: none; }
+  .game-open .throne-check:not([hidden]) { display: flex; z-index: 41; }
+  .mini-timer {
+    display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+    width: 100%; max-width: 520px; margin: 0 auto 10px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 8px 8px 8px 12px;
+  }
+  .mini-timer .timer-digits { font-size: 26px; letter-spacing: 2px; }
+  .mini-timer-earned { font-family: 'Bebas Neue', sans-serif; font-size: 26px; color: var(--green); letter-spacing: 1px; flex: 1; }
+  .mini-timer-btn {
+    background: transparent; color: #ff8a65; border: 1px solid rgba(255,138,101,0.4); border-radius: 10px;
+    font-family: 'Bebas Neue', sans-serif; font-size: 16px; letter-spacing: 1.5px; padding: 8px 10px; cursor: pointer; white-space: nowrap;
+  }
+  .mini-timer-x {
+    width: 36px; height: 36px; border-radius: 50%; background: var(--paper); border: 1px solid var(--border);
+    color: var(--muted); font-size: 14px; cursor: pointer; flex-shrink: 0;
+  }
+  .game-root { flex: 1; min-height: 0; width: 100%; max-width: 520px; margin: 0 auto; }
+  .game-loading { text-align: center; font-family: 'DM Mono', monospace; font-size: 12px; color: var(--muted); padding-top: 40px; }
 </style>
 </head>
 <body>
@@ -623,6 +666,13 @@
     </div>
   </div>
 
+  <!-- DUNG RUN CARD (only while the timer runs) -->
+  <button type="button" class="game-card" id="gameCard" onclick="openGame()">
+    <span class="game-card-emoji" aria-hidden="true">🚽</span>
+    <span class="game-card-text"><b>Don't go off for a doom scroll!</b>Play Dung Run while the clock pays you.</span>
+    <span class="game-card-go">Play ▶</span>
+  </button>
+
   <!-- BOG HISTORY + LIFETIME PROJECTOR (one collapsible card) -->
   <div class="lifetime-card collapsed" id="lifetimeCard" style="display:none">
     <button type="button" class="stats-toggle" id="statsToggle" aria-expanded="false" aria-controls="statsBody" onclick="toggleStats()">
@@ -684,6 +734,17 @@
 
   <div class="fun-fact" id="funFact"></div>
   <footer>© Gross Income Inc. · All rights earned</footer>
+</div>
+
+<div class="game-layer" id="gameLayer" hidden>
+  <div class="mini-timer">
+    <div class="timer-dot" id="miniTimerDot"></div>
+    <div class="timer-digits" id="miniTimerTime">00:00</div>
+    <div class="mini-timer-earned" id="miniTimerEarned">$0.00</div>
+    <button type="button" class="mini-timer-btn" id="miniTimerStop" onclick="finishFromGame()">■ Finish Up</button>
+    <button type="button" class="mini-timer-x" onclick="closeGame()" aria-label="Close game">✕</button>
+  </div>
+  <div class="game-root" id="gameRoot"></div>
 </div>
 
 <div class="app-bar" id="appBar" role="status" hidden>
@@ -837,6 +898,7 @@
     const m = String(Math.floor(seconds / 60)).padStart(2, '0');
     const s = String(seconds % 60).padStart(2, '0');
     document.getElementById('timerDisplay').textContent = `${m}:${s}`;
+    document.getElementById('miniTimerTime').textContent = `${m}:${s}`;
     refreshAll();
   }
 
@@ -853,6 +915,8 @@
     segmentStartedAt = new Date(segmentStartMs).toISOString();
     timerInterval = setInterval(updateTimer, 250);
     document.getElementById('timerDot').classList.add('live');
+    document.getElementById('miniTimerDot').classList.add('live');
+    document.body.classList.add('bog-running');
     document.getElementById('dashEarned').classList.add('ticking');
     document.getElementById('startBtn').style.display = 'none';
     document.getElementById('stopBtn').style.display = 'block';
@@ -868,6 +932,8 @@
     hideThrone();
     clearInterval(timerInterval);
     document.getElementById('timerDot').classList.remove('live');
+    document.getElementById('miniTimerDot').classList.remove('live');
+    document.body.classList.remove('bog-running');
     document.getElementById('dashEarned').classList.remove('ticking');
     document.getElementById('startBtn').style.display = 'block';
     document.getElementById('stopBtn').style.display = 'none';
@@ -879,6 +945,7 @@
     stopTimer();
     seconds = 0;
     document.getElementById('timerDisplay').textContent = '00:00';
+    document.getElementById('miniTimerTime').textContent = '00:00';
     document.getElementById('funFact').classList.remove('visible');
     refreshAll();
   }
@@ -903,7 +970,10 @@
 
   function hideThrone() { document.getElementById('throneCheck').hidden = true; }
 
-  function throneFinish() { stopTimer(throneEndSecs); }
+  function throneFinish() {
+    stopTimer(throneEndSecs);
+    if (document.body.classList.contains('game-open')) closeGame();
+  }
 
   function throneStay() {
     hideThrone();
@@ -937,6 +1007,8 @@
   function onMotion(e) {
     const a = e.accelerationIncludingGravity;
     if (!running || !a || a.x == null) return;
+    // Swiping and tilting during a game isn't walking off
+    if (document.body.classList.contains('game-open')) { steps = []; return; }
     const now = Date.now();
     const jolt = Math.abs(Math.hypot(a.x, a.y, a.z) - 9.81);
     if (jolt < 3 || now - lastStep < 300) return;
@@ -1027,6 +1099,7 @@
     const yearly = daily * 250;
 
     document.getElementById('dashEarned').textContent = fmtExact(earned);
+    document.getElementById('miniTimerEarned').textContent = fmtExact(earned);
     document.getElementById('ratePerMin').textContent = fmt(perMin);
 
     // Don't stomp on the skeleton / count-up while the reveal is running
@@ -1233,9 +1306,70 @@
     writeJSON(STATS_COLLAPSED_KEY, collapsed);
   }
 
+  // ── DUNG RUN ──
+  // The game lives in games/dung-run.js and only loads when someone opens it.
+  // The bog timer keeps running underneath, shrunk to a bar at the top.
+  let game = null;
+  let gameScript = null;
+
+  function loadGame() {
+    if (window.DungRun) return Promise.resolve();
+    if (!gameScript) {
+      gameScript = new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = 'games/dung-run.js';
+        s.onload = resolve;
+        s.onerror = () => { gameScript = null; reject(); };
+        document.body.appendChild(s);
+      });
+    }
+    return gameScript;
+  }
+
+  async function openGame() {
+    if (game) return;
+    const root = document.getElementById('gameRoot');
+    document.getElementById('gameLayer').hidden = false;
+    document.body.classList.add('game-open');
+    history.pushState({ game: true }, '');
+    root.innerHTML = '<div class="game-loading">Unblocking the pipes…</div>';
+    try { await loadGame(); } catch (e) {
+      root.innerHTML = '<div class="game-loading">Dung Run didn\'t load. Check your signal and try again.</div>';
+      return;
+    }
+    if (document.getElementById('gameLayer').hidden) return;
+    game = window.DungRun.mount(root, { hourly: getHourlyRate, onExit: closeGame });
+  }
+
+  function hideGame() {
+    if (game) { game.destroy(); game = null; }
+    document.getElementById('gameRoot').innerHTML = '';
+    document.getElementById('gameLayer').hidden = true;
+    document.body.classList.remove('game-open');
+  }
+
+  // Closing goes through history so the phone's back gesture closes the game too
+  function closeGame() {
+    if (history.state && history.state.game) history.back();
+    else hideGame();
+  }
+  window.addEventListener('popstate', () => {
+    if (!document.getElementById('gameLayer').hidden) hideGame();
+  });
+
+  function finishFromGame() {
+    closeGame();
+    stopTimer();
+  }
+
   // ── RESTORE SAVED STATE ──
   (function restore() {
     setStatsCollapsed(readJSON(STATS_COLLAPSED_KEY, true) !== false);
+    // Branch previews start with a test salary so testing skips the setup step.
+    // Live (grossincome.com.au) and the main pages.dev site are untouched.
+    if (location.hostname.endsWith('.gross-income.pages.dev') && !readJSON(SALARY_KEY, null)) {
+      writeJSON(SALARY_KEY, { amount: 80000, period: 'year' });
+    }
     const saved = readJSON(SALARY_KEY, null);
     if (saved && saved.amount > 0 && ['year', 'month', 'hour'].includes(saved.period)) {
       currentPeriod = saved.period;
