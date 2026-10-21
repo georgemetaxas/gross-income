@@ -155,6 +155,7 @@
   }
   .settings-btn:hover { background: rgba(245,200,66,0.2); }
   .has-salary .settings-btn { display: flex; }
+  .settings-btn .profile-emoji { font-size: 22px; line-height: 1; }
 
   /* ── SALARY CARD: hidden once set, reopens as a sheet ── */
   .has-salary #salaryCard { display: none; }
@@ -181,7 +182,47 @@
     background: var(--surface2);
     border-radius: 24px 24px 0 0;
     padding-bottom: calc(34px + env(safe-area-inset-bottom));
+    max-height: 90vh; overflow-y: auto; overscroll-behavior: contain;
   }
+
+  /* ── PROFILE SHEET: account, salary, privacy, pools, sign out ── */
+  .profile-head, .profile-panel { display: none; }
+  .sheet-open .profile-head, .sheet-open .profile-panel { display: block; }
+  .profile-head { margin-bottom: 22px; }
+  .profile-id { display: flex; align-items: center; gap: 12px; }
+  .profile-av {
+    width: 48px; height: 48px; border-radius: 50%; flex-shrink: 0;
+    background: rgba(245,200,66,0.12); border: 1px solid rgba(245,200,66,0.4);
+    display: flex; align-items: center; justify-content: center; font-size: 26px; color: var(--gold);
+  }
+  .profile-who { flex: 1; min-width: 0; }
+  .profile-who b { display: block; font-size: 16px; color: var(--cream); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .profile-who span { display: block; font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sheet-section { margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--border); }
+  .switch-row { display: flex; align-items: center; gap: 14px; cursor: pointer; }
+  .switch-row > span { flex: 1; font-size: 14px; color: var(--cream); line-height: 1.4; }
+  .switch-row small { display: block; font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .switch-row input { position: absolute; opacity: 0; pointer-events: none; }
+  .switch {
+    width: 46px; height: 28px; border-radius: 14px; flex-shrink: 0; position: relative;
+    background: var(--paper); border: 1px solid var(--border); transition: background 0.2s, border-color 0.2s;
+  }
+  .switch::after {
+    content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%;
+    background: var(--muted); transition: transform 0.2s, background 0.2s;
+  }
+  .switch-row input:checked + .switch { background: rgba(76,175,110,0.25); border-color: var(--green); }
+  .switch-row input:checked + .switch::after { transform: translateX(18px); background: var(--green); }
+  .switch-row input:focus-visible + .switch { outline: 2px solid var(--gold); outline-offset: 2px; }
+  .sheet-pool {
+    display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
+    background: var(--paper); border: 1px solid var(--border); border-radius: 12px;
+    padding: 12px 14px; margin-top: 8px; color: var(--cream); font-size: 14px; cursor: pointer;
+  }
+  .sheet-pool b { flex: 1; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sheet-pool.on { border-color: var(--gold); background: rgba(245,200,66,0.08); cursor: default; }
+  .sheet-pool .pool-sub { color: var(--gold); }
+  .profile-panel .btn:disabled, .profile-head .btn:disabled { opacity: 0.7; cursor: progress; }
 
   /* ── SALARY FORM (expanded) ── */
 
@@ -636,9 +677,7 @@
 <div class="wrapper">
 
   <!-- HEADER -->
-  <button class="settings-btn" id="settingsBtn" onclick="openSettings()" title="Settings and crap" aria-label="Settings">
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-  </button>
+  <button class="settings-btn" id="settingsBtn" onclick="openSettings()" title="Profile and crap" aria-label="Profile and settings"></button>
 
   <header>
     <svg class="logo-mark" viewBox="0 0 200 200" role="img" aria-label="Gross Income">
@@ -666,9 +705,12 @@
 
     <!-- Sheet header (only when reopened from settings) -->
     <div class="sheet-head">
-      <div class="sheet-title">Settings &amp; Crap</div>
+      <div class="sheet-title">Profile &amp; Crap</div>
       <button type="button" class="sheet-close" onclick="closeSettings()" aria-label="Close">✕</button>
     </div>
+
+    <!-- Who's signed in (filled by the Poop Pool script) -->
+    <div class="profile-head" id="profileHead"></div>
 
     <!-- Form (shown until a salary is saved) -->
     <div class="salary-form" id="salaryForm">
@@ -686,6 +728,9 @@
         <button type="submit" class="save-btn" id="saveBtn">Drop Your Log 💩</button>
       </form>
     </div>
+
+    <!-- Earnings privacy, pools and sign out (filled by the Poop Pool script) -->
+    <div class="profile-panel" id="profilePanel"></div>
   </div>
 
   <div class="sheet-backdrop" onclick="closeSettings()"></div>
@@ -910,7 +955,10 @@
   function openSettings() {
     document.getElementById('saveBtn').textContent = 'Save & Flush 💩';
     document.body.classList.add('sheet-open');
-    salaryInput.focus();
+    document.getElementById('salaryCard').scrollTop = 0;
+    // Desktop only: on a phone the keyboard would cover the rest of the sheet
+    if (matchMedia('(hover: hover) and (pointer: fine)').matches) salaryInput.focus();
+    if (window.renderProfile) window.renderProfile(true);
   }
 
   function closeSettings() {
@@ -1627,9 +1675,9 @@
     const html = {
       loading: () => `<span class="section-label">👑 Poop Pool</span><p class="pool-sub">Warming up the seat…</p>`,
       pitch: viewPitch, sent: viewSent, invite: viewInvite, profile: viewProfile,
-      create: viewCreate, board: viewBoard, settings: viewSettings,
+      create: viewCreate, board: viewBoard,
     }[v.name](v);
-    poolCard.innerHTML = html + `<div class="pool-msg" id="poolMsg">${esc(pool.msg)}</div>`;
+    poolCard.innerHTML = html + `<div class="pool-msg">${esc(pool.msg)}</div>`;
     poolCard.hidden = false;
     poolCard.classList.toggle('stale', pool.stale);
     if (v.name !== pool.shown) {
@@ -1638,6 +1686,89 @@
       void poolCard.offsetWidth; // restart the fade
       poolCard.classList.add('pool-enter');
     }
+    renderProfile();
+  }
+
+  // ── PROFILE SHEET (opened from the top-right button) ──
+  const PERSON_SVG = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg>';
+
+  function renderProfile(fresh) {
+    if (fresh === true) { pool.sheetEdit = false; pool.msg = ''; }
+    const me = pool.user && pool.profile;
+    document.getElementById('settingsBtn').innerHTML = me
+      ? `<span class="profile-emoji">${esc(pool.profile.emoji || '💩')}</span>` : PERSON_SVG;
+    if (!document.body.classList.contains('sheet-open')) return;
+
+    const head = document.getElementById('profileHead');
+    const panel = document.getElementById('profilePanel');
+    if (!pool.user) {
+      head.innerHTML = `<div class="profile-id"><div class="profile-av">${PERSON_SVG}</div>
+        <div class="profile-who"><b>Not signed in</b><span>Sign in to race your mates in a Poop Pool</span></div>
+        <button class="pool-link" data-act="sheet-signin">Sign in</button></div>`;
+      panel.innerHTML = '';
+      return;
+    }
+    if (!pool.profile) {
+      head.innerHTML = `<div class="profile-id"><div class="profile-av">💩</div>
+        <div class="profile-who"><b>${esc(pool.user.email || '')}</b><span>Pick a throne name to finish signing up</span></div>
+        <button class="pool-link" data-act="sheet-setup">Set up</button></div>`;
+      panel.innerHTML = signOutHtml();
+      return;
+    }
+
+    const p = pool.profile;
+    head.innerHTML = pool.sheetEdit ? `
+      <span class="section-label">Your Throne Name</span>
+      <input class="pool-input js-name" maxlength="24" placeholder="Display name" value="${esc(p.display_name || '')}">
+      <div class="emoji-row">${POOL_EMOJIS.map(e =>
+        `<button type="button" class="emoji-opt ${e === p.emoji ? 'on' : ''}" data-act="emoji" data-emoji="${e}">${e}</button>`).join('')}</div>
+      <div class="pool-btns">
+        <button class="btn btn-ghost" data-act="sheet-cancel">Cancel</button>
+        <button class="btn btn-start" data-act="save-profile" data-busy="Saving…">Save</button>
+      </div>
+      <div class="pool-msg">${esc(pool.msg)}</div>` : `
+      <div class="profile-id"><div class="profile-av">${esc(p.emoji || '💩')}</div>
+        <div class="profile-who"><b>${esc(p.display_name)}</b><span>${esc(pool.user.email || '')}</span></div>
+        <button class="pool-link" data-act="sheet-edit">Edit</button></div>`;
+
+    const cur = currentPool();
+    const owner = cur && cur.owner_id === pool.user.id;
+    const pools = pool.pools.map(x => x.id === (cur && cur.id)
+      ? `<div class="sheet-pool on"><b>${esc(x.name)}</b><span class="pool-sub">CODE ${esc(x.invite_code)}</span></div>`
+      : `<button class="sheet-pool" data-act="switch-pool" data-id="${x.id}"><b>${esc(x.name)}</b><span class="pool-sub" style="color:var(--muted)">SWITCH</span></button>`).join('');
+    panel.innerHTML = `
+      <div class="sheet-section">
+        <span class="section-label">Privacy</span>
+        <label class="switch-row">
+          <span>Share minutes only<small>Your pools see your bog time, not your $. Dollars per minute gives away your pay.</small></span>
+          <input type="checkbox" id="shareMinutes" ${p.share_money ? '' : 'checked'}><i class="switch" aria-hidden="true"></i>
+        </label>
+      </div>
+      <div class="sheet-section">
+        <span class="section-label">👑 Your Poop Pools</span>
+        ${pools || '<p class="pool-text">You\'re not in a pool yet.</p>'}
+        ${cur ? `<div class="pool-btns"><button class="btn btn-start" data-act="invite">+ Invite mates</button></div>
+        <div class="pool-btns">
+          ${owner ? '<button class="btn btn-ghost" data-act="new-code" data-busy="Flushing…">New invite code</button>' : ''}
+          <button class="btn btn-stop" data-act="leave" data-busy="Leaving…">Leave pool</button>
+        </div>` : ''}
+        <div class="pool-foot"><button class="pool-link" data-act="sheet-new-pool">+ Start a new pool</button></div>
+      </div>
+      ${signOutHtml()}`;
+  }
+  window.renderProfile = renderProfile;
+
+  function signOutHtml() {
+    return `<div class="sheet-section">
+      <div class="pool-btns" style="margin-top:0"><button class="btn btn-ghost" data-act="signout" data-busy="Signing out…">Sign out</button></div>
+      ${pool.sheetEdit ? '' : `<div class="pool-msg">${esc(pool.msg)}</div>`}
+    </div>`;
+  }
+
+  // Close the sheet and take them to the pool card
+  function toPoolCard() {
+    closeSettings();
+    poolCard.scrollIntoView({ block: 'start', behavior: 'smooth' });
   }
 
   function viewPitch(v) {
@@ -1694,10 +1825,10 @@
     const emoji = v.emoji || p.emoji || '💩';
     return `
       <span class="section-label">👑 Poop Pool · Your Throne Name</span>
-      <input class="pool-input" id="poolName" maxlength="24" placeholder="Display name" value="${esc(p.display_name || '')}">
+      <input class="pool-input js-name" maxlength="24" placeholder="Display name" value="${esc(p.display_name || '')}">
       <div class="emoji-row">${POOL_EMOJIS.map(e =>
         `<button type="button" class="emoji-opt ${e === emoji ? 'on' : ''}" data-act="emoji" data-emoji="${e}">${e}</button>`).join('')}</div>
-      <label class="pool-check"><input type="checkbox" id="poolMoney" ${p.share_money ? 'checked' : ''}>
+      <label class="pool-check"><input type="checkbox" class="js-money" ${p.share_money ? 'checked' : ''}>
         <span>Show my $ earned to my pools. Off by default, because dollars per minute gives away your pay.</span></label>
       <div class="pool-btns"><button class="btn btn-start" data-act="save-profile" data-busy="Saving…">Save</button></div>`;
   }
@@ -1787,24 +1918,6 @@
       </div>`;
   }
 
-  function viewSettings() {
-    const p = currentPool();
-    const owner = p && p.owner_id === pool.user.id;
-    return `
-      <span class="section-label">👑 Poop Pool · Settings</span>
-      <p class="pool-text">Signed in as ${esc(pool.user.email || '')}</p>
-      <div class="pool-btns"><button class="btn btn-ghost" data-act="edit-profile">Edit name, emoji and $ sharing</button></div>
-      ${p ? `<p class="pool-sub" style="margin-top:16px">${esc(p.name.toUpperCase())} · INVITE CODE ${esc(p.invite_code)}</p>
-        <div class="pool-btns">
-          ${owner ? '<button class="btn btn-ghost" data-act="new-code" data-busy="Flushing…">New invite code</button>' : ''}
-          <button class="btn btn-stop" data-act="leave" data-busy="Leaving…">Leave pool</button>
-        </div>` : ''}
-      <div class="pool-foot">
-        <button class="pool-link" data-act="cancel">Back to the board</button>
-        <button class="pool-link" data-act="signout">Sign out</button>
-      </div>`;
-  }
-
   // ── ACTIONS ──
   const actions = {
     async login() {
@@ -1846,25 +1959,24 @@
       if (pid) writeJSON(POOL_CURRENT_KEY, pid);
       await refreshPool(); return 'done';
     },
-    async emoji(el) {
-      pool.view = { name: 'profile', emoji: el.dataset.emoji };
-      pool.profile = Object.assign({}, pool.profile, {
-        display_name: document.getElementById('poolName').value,
-        share_money: document.getElementById('poolMoney').checked,
-      });
+    async emoji(el, root) {
+      root.querySelectorAll('.emoji-opt').forEach(b => b.classList.toggle('on', b === el));
+      return 'done';
     },
-    async 'save-profile'() {
-      const name = document.getElementById('poolName').value.trim();
+    async 'save-profile'(el, root) {
+      const name = root.querySelector('.js-name').value.trim();
       if (!name) throw new Error('Pick a throne name first.');
-      const on = poolCard.querySelector('.emoji-opt.on');
+      const on = root.querySelector('.emoji-opt.on');
+      const money = root.querySelector('.js-money');
       const row = {
         id: pool.user.id, display_name: name.slice(0, 24),
         emoji: on ? on.dataset.emoji : '💩',
-        share_money: document.getElementById('poolMoney').checked,
+        share_money: money ? money.checked : !!(pool.profile && pool.profile.share_money),
       };
       const { error } = await pool.sb.from('profiles').upsert(row);
       if (error) throw error;
       pool.profile = row;
+      pool.sheetEdit = false;
       await refreshPool(); return 'done';
     },
     async 'create-pool'() {
@@ -1889,9 +2001,19 @@
       catch (e) { pool.msg = 'Send your mates this link: ' + url; }
     },
     async 'new-pool'() { pool.view = { name: 'create' }; },
-    async settings() { pool.view = { name: 'settings' }; },
+    async settings() { openSettings(); return 'done'; },
     async cancel() { pool.view = { name: 'board' }; await showBoard(); },
-    async 'edit-profile'() { pool.view = { name: 'profile' }; },
+    async 'sheet-edit'() { pool.sheetEdit = true; },
+    async 'sheet-cancel'() { pool.sheetEdit = false; },
+    async 'sheet-signin'() {
+      toPoolCard();
+      const email = document.getElementById('poolEmail');
+      if (email) email.focus({ preventScroll: true });
+      return 'done';
+    },
+    async 'sheet-setup'() { toPoolCard(); return 'done'; },
+    async 'sheet-new-pool'() { pool.view = { name: 'create' }; renderPool(); toPoolCard(); return 'done'; },
+    async 'switch-pool'(el) { writeJSON(POOL_CURRENT_KEY, el.dataset.id); await showBoard(); },
     async 'new-code'() {
       const p = currentPool();
       const { data, error } = await pool.sb.rpc('regenerate_invite_code', { p_pool: p.id });
@@ -1906,10 +2028,44 @@
       writeJSON(POOL_CURRENT_KEY, null);
       await refreshPool(); return 'done';
     },
-    async signout() { await pool.sb.auth.signOut(); pool.profile = null; pool.pools = []; await refreshPool(); return 'done'; },
+    async signout() {
+      await pool.sb.auth.signOut();
+      pool.profile = null; pool.pools = []; pool.sheetEdit = false;
+      writeJSON(POOL_SYNCED_KEY, null);
+      await refreshPool(); return 'done';
+    },
   };
 
-  poolCard.addEventListener('click', async (e) => {
+  // Turning on "share minutes only" re-uploads every bog with earned blanked out, so
+  // the $ is gone from Supabase, not just hidden on screen.
+  async function setShareMinutes(box) {
+    const share_money = !box.checked;
+    box.disabled = true;
+    pool.msg = '';
+    try {
+      if (!(await sbReady)) throw new Error('Poop Pool is offline right now.');
+      const { error } = await pool.sb.from('profiles').update({ share_money }).eq('id', pool.user.id);
+      if (error) throw error;
+      pool.profile = Object.assign({}, pool.profile, { share_money });
+      pool.boards = {};
+      saveCache();
+      await syncSessions();
+      pool.msg = share_money ? 'Your pools can now see your $ earned.' : 'Your $ is hidden. Pools only see your minutes.';
+      if (pool.view && pool.view.name === 'board') await showBoard();
+      renderPool();
+    } catch (err) {
+      box.checked = !box.checked;
+      box.disabled = false;
+      const m = document.querySelector('#profilePanel .pool-msg');
+      if (m) m.textContent = errText(err);
+    }
+  }
+
+  // Taps that only change the screen, so they work before Supabase has loaded
+  const LOCAL_ACTS = new Set(['emoji', 'settings', 'sheet-edit', 'sheet-cancel', 'sheet-signin', 'sheet-setup', 'sheet-new-pool']);
+
+  async function onPoolClick(e) {
+    const root = e.currentTarget;
     const el = e.target.closest('[data-act]');
     if (!el || pool.busy) return;
     pool.busy = true;
@@ -1919,19 +2075,23 @@
     pool.msg = '';
     try {
       // A tap on the saved board can land before Supabase has loaded
-      if (!pool.sb && !(await sbReady)) throw new Error('Poop Pool is offline right now.');
+      if (!LOCAL_ACTS.has(el.dataset.act) && !pool.sb && !(await sbReady)) throw new Error('Poop Pool is offline right now.');
       if (poolRefresh) await poolRefresh.catch(() => {});
-      const r = await actions[el.dataset.act](el);
+      const r = await actions[el.dataset.act](el, root);
       if (r !== 'done') renderPool();
     } catch (err) {
       pool.msg = errText(err);
-      const m = document.getElementById('poolMsg');
-      if (m) m.textContent = pool.msg;
+      root.querySelectorAll('.pool-msg').forEach(m => { m.textContent = pool.msg; });
       el.disabled = false;
       if (label !== null) el.textContent = label;
     } finally {
       pool.busy = false;
     }
+  }
+  ['poolCard', 'profileHead', 'profilePanel'].forEach(id =>
+    document.getElementById(id).addEventListener('click', onPoolClick));
+  document.getElementById('profilePanel').addEventListener('change', (e) => {
+    if (e.target.id === 'shareMinutes') setShareMinutes(e.target);
   });
 
   // Six digits in (typed, pasted or iOS autofill) logs straight in
