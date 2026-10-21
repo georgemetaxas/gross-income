@@ -1359,6 +1359,11 @@
   // ── RESTORE SAVED STATE ──
   (function restore() {
     setStatsCollapsed(readJSON(STATS_COLLAPSED_KEY, true) !== false);
+    // Branch previews start with a test salary so testing skips the setup step.
+    // Live (grossincome.com.au) and the main pages.dev site are untouched.
+    if (location.hostname.endsWith('.gross-income.pages.dev') && !readJSON(SALARY_KEY, null)) {
+      writeJSON(SALARY_KEY, { amount: 80000, period: 'year' });
+    }
     const saved = readJSON(SALARY_KEY, null);
     if (saved && saved.amount > 0 && ['year', 'month', 'hour'].includes(saved.period)) {
       currentPeriod = saved.period;
