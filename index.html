@@ -705,6 +705,7 @@
     background: var(--green); color: #fff; border-radius: 999px; padding: 3px 8px;
     font-size: 10px; font-weight: 500; letter-spacing: 1.5px; line-height: 1;
   }
+  .paywall-games li.paywall-soon { color: var(--muted); font-style: italic; border-bottom: none; }
   .paywall .btn { width: 100%; max-width: 340px; }
   .paywall-small { font-size: 12px !important; color: var(--muted) !important; margin-top: 14px !important; }
   .paywall-small a, .paywall-small button { color: var(--gold); background: none; border: none; padding: 0; font: inherit; text-decoration: underline; cursor: pointer; }
@@ -1528,7 +1529,7 @@
       <div class="paywall-kicker">GOLDEN THRONE</div>
       <h2>Unlock the Bog Arcade</h2>
       <p>${gm.name} and every other game, forever. Pay once, no subscription.</p>
-      <ul class="paywall-games">${list}</ul>
+      <ul class="paywall-games">${list}<li class="paywall-soon"><span>⏳</span><span>More games dropping soon...</span><span></span></li></ul>
       ${action}
       <div class="paywall-msg" id="paywallMsg"></div>
       <p class="paywall-small"><a href="privacy.html">Privacy &amp; terms</a></p>
