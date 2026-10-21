@@ -1773,7 +1773,10 @@
       const from = pool.view;
       pool.view = { name: 'sent', email, sending: true };
       renderPool();
-      document.getElementById('poolCode').focus();
+      // On phones, don't pop the keyboard: it covers the screen and they're off to Mail first.
+      // Desktop keeps the focus so the code can be typed or pasted straight in.
+      if (matchMedia('(hover: hover) and (pointer: fine)').matches) document.getElementById('poolCode').focus();
+      else if (document.activeElement) document.activeElement.blur();
       const { error } = await pool.sb.auth.signInWithOtp({
         email, options: { emailRedirectTo: location.origin + location.pathname },
       });
@@ -1888,6 +1891,18 @@
     } finally {
       pool.busy = false;
     }
+  });
+
+  // Six digits in (typed, pasted or iOS autofill) logs straight in
+  poolCard.addEventListener('input', (e) => {
+    if (e.target.id !== 'poolCode' || e.target.value.replace(/\D/g, '').length !== 6) return;
+    const btn = poolCard.querySelector('[data-act="verify"]');
+    if (btn && !btn.disabled) btn.click();
+  });
+
+  // Keep the code box visible above the phone keyboard
+  poolCard.addEventListener('focusin', (e) => {
+    if (e.target.id === 'poolCode') setTimeout(() => e.target.scrollIntoView({ block: 'center', behavior: 'smooth' }), 300);
   });
 
   poolCard.addEventListener('change', async (e) => {
