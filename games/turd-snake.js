@@ -345,7 +345,7 @@
       const s = sample(pts, 0.2);
       const n = s.length;
       // Thicker as it grows, tapered tail, a lumpy wobble along its length
-      const girth = T * Math.min(0.46, 0.3 + g.body.length * 0.004);
+      const girth = T * Math.min(0.5, 0.24 + g.body.length * 0.006);
       const radius = i => {
         const fromTail = (n - 1 - i) / 5;
         const taper = Math.min(1, 0.45 + fromTail * 0.55);
