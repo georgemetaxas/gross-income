@@ -610,7 +610,7 @@
     </button>
     <div class="stats-body" id="statsBody">
       <div class="stats-inner">
-        <div class="stats-part" id="historyPart" hidden>
+        <div class="stats-part" id="historyPart">
           <span class="section-label stats-sub">Your Bog History</span>
           <div class="lifetime-grid">
             <div>
@@ -1048,11 +1048,10 @@
   function renderHistory() {
     const sessions = loadSessions();
     const part = document.getElementById('historyPart');
-    if (sessions.length === 0) { part.hidden = true; return; }
 
     const totalSecs = sessions.reduce((t, s) => t + s.secs, 0);
     const totalEarned = sessions.reduce((t, s) => t + s.earned, 0);
-    const longest = Math.max(...sessions.map(s => s.secs));
+    const longest = sessions.length ? Math.max(...sessions.map(s => s.secs)) : 0;
 
     document.getElementById('histTime').textContent = fmtDuration(totalSecs);
     document.getElementById('histEarned').textContent = totalEarned >= 1000 ? fmt(totalEarned) : fmtExact(totalEarned);
@@ -1060,7 +1059,8 @@
     document.getElementById('histLongest').textContent = fmtDuration(longest);
 
     const list = document.getElementById('historyList');
-    list.innerHTML = '';
+    list.innerHTML = sessions.length ? '' :
+      '<div class="history-row"><span>No bogs logged yet. Hit Start a Bog.</span></div>';
     sessions.slice(-5).reverse().forEach(s => {
       const when = new Date(s.start).toLocaleString('en-AU', {
         weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit',
