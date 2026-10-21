@@ -893,6 +893,8 @@
     return {
       destroy() {
         alive = false;
+        // Let the phone power the audio down; the next tap on Play wakes it
+        if (sound.ac && sound.ac.state === 'running') sound.ac.suspend().catch(() => {});
         if (frame) cancelAnimationFrame(frame);
         clearTimeout(msgTimer);
         window.removeEventListener('keydown', onKey);
