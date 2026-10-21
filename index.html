@@ -604,9 +604,9 @@
   </div>
 
   <!-- BOG HISTORY + LIFETIME PROJECTOR (one collapsible card) -->
-  <div class="lifetime-card" id="lifetimeCard" style="display:none">
-    <button type="button" class="stats-toggle" id="statsToggle" aria-expanded="true" aria-controls="statsBody" onclick="toggleStats()">
-      <span class="section-label">🧻 Bog History &amp; Portfolio</span>
+  <div class="lifetime-card collapsed" id="lifetimeCard" style="display:none">
+    <button type="button" class="stats-toggle" id="statsToggle" aria-expanded="false" aria-controls="statsBody" onclick="toggleStats()">
+      <span class="section-label">🧻 Bog Stats</span>
       <span class="stats-chevron" aria-hidden="true"></span>
     </button>
     <div class="stats-body" id="statsBody">
@@ -1096,7 +1096,7 @@
 
   // ── RESTORE SAVED STATE ──
   (function restore() {
-    setStatsCollapsed(readJSON(STATS_COLLAPSED_KEY, false) === true);
+    setStatsCollapsed(readJSON(STATS_COLLAPSED_KEY, true) !== false);
     const saved = readJSON(SALARY_KEY, null);
     if (saved && saved.amount > 0 && ['year', 'month', 'hour'].includes(saved.period)) {
       currentPeriod = saved.period;
