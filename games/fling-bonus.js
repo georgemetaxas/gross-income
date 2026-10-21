@@ -99,6 +99,9 @@
   .fb-lvl b { display: block; font-family: 'Bebas Neue', sans-serif; font-size: 20px; font-weight: 400; letter-spacing: 1px; line-height: 1.1; color: var(--gold, #f5c842); }
   .fb-lvl span { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--muted, #a08060); }
   .fb-lvl-best { font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 1px; white-space: nowrap; }
+  .fb-play { flex-shrink: 0; min-width: 64px; text-align: center; background: var(--gold, #f5c842); color: #1a1208; border-radius: 10px;
+    padding: 8px 12px; font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 2px; line-height: 1; white-space: nowrap; }
+  .fb-play.locked { background: none; color: var(--muted, #a08060); border: 1px solid rgba(224,123,0,0.35); letter-spacing: 0; font-size: 15px; }
   .fb-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 16px; }
   .fb-grid .fb-val { font-size: 34px; }
   .fb-note { font-size: 14px; opacity: 0.8; margin-top: 12px; }
@@ -650,9 +653,10 @@
         const open = unlocked(i), best = b[i] || 0;
         const sub = open ? `${lv.turd.name} · bonus at ${lv.target}m` : `Fling ${LEVELS[i - 1].target}m on level ${i} to unlock`;
         return `<button type="button" class="fb-lvl" data-lvl="${i}" ${open ? '' : 'disabled'}>
-          <div class="fb-num">${open ? i + 1 : '🔒'}</div>
+          <div class="fb-num">${i + 1}</div>
           <div class="fb-lvl-text"><b>${lv.name}</b><span>${sub}</span></div>
           <div class="fb-lvl-best" style="color:${best >= lv.target ? '#4caf6e' : '#a08060'}">${best ? metres(best) : '—'}</div>
+          ${open ? '<div class="fb-play">Play ▶</div>' : '<div class="fb-play locked" aria-label="Locked">🔒</div>'}
         </button>`;
       }).join('');
     }

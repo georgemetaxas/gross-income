@@ -80,10 +80,13 @@
     background: var(--surface, #231a0a); border: 1.5px solid rgba(245,200,66,0.45); border-radius: 16px; padding: 10px 14px; color: inherit; }
   .ss-level:disabled { opacity: 0.4; cursor: default; border-color: rgba(224,123,0,0.25); }
   .ss-level-n { font-family: 'Bebas Neue', sans-serif; font-size: 34px; color: var(--gold, #f5c842); width: 26px; text-align: center; }
-  .ss-level-t { flex: 1; }
+  .ss-level-t { flex: 1; min-width: 0; }
   .ss-level-t b { display: block; font-family: 'Bebas Neue', sans-serif; font-size: 21px; font-weight: 400; letter-spacing: 1px; line-height: 1.1; }
   .ss-level-t span { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--muted, #a08060); }
-  .ss-stars { font-size: 16px; letter-spacing: 1px; white-space: nowrap; }
+  .ss-stars { font-size: 14px; letter-spacing: 0; white-space: nowrap; }
+  .ss-play { flex-shrink: 0; min-width: 64px; text-align: center; background: var(--gold, #f5c842); color: #1a1208; border-radius: 10px;
+    padding: 8px 12px; font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 2px; line-height: 1; white-space: nowrap; }
+  .ss-play.locked { background: none; color: var(--muted, #a08060); border: 1px solid rgba(224,123,0,0.35); letter-spacing: 0; font-size: 15px; }
   .ss-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 16px; }
   .ss-grid .ss-val { font-size: 32px; }
   .ss-bigstars { font-size: 40px; letter-spacing: 6px; margin: 2px 0 10px; }
@@ -750,6 +753,7 @@
             <div class="ss-level-t"><b>${L.name}</b><span>${i > p.unlocked ? '🔒 Beat level ' + i + ' first' :
               L.moves + ' moves · ' + L.score.toLocaleString('en-US') + ' pts' + (L.collect ? ' · ' + L.collect[1] + ' ' + PIECES[L.collect[0]].name.toLowerCase() : '')}</span></div>
             <div class="ss-stars">${p.stars[i] ? starStr(p.stars[i]) : ''}</div>
+            ${i > p.unlocked ? '<div class="ss-play locked" aria-label="Locked">🔒</div>' : '<div class="ss-play">Play ▶</div>'}
           </button>`).join('')}
         </div>
         <div class="ss-box" style="margin-top:8px">
