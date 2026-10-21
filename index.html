@@ -600,6 +600,15 @@
   .app-bar[hidden] { display: none; }
   .app-bar-text { flex: 1; }
   .app-bar-text b { color: var(--gold); font-weight: 600; }
+  .app-bar-icon {
+    width: 44px; height: 44px; border-radius: 10px; flex-shrink: 0; align-self: flex-start;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.4), 0 0 0 1px rgba(245,200,66,0.25);
+  }
+  .app-bar-icon[hidden] { display: none; }
+  .app-bar-title {
+    display: block; margin-bottom: 4px;
+    font-size: 16px; font-weight: 600; line-height: 1.3; color: var(--gold);
+  }
   .app-bar-btn {
     background: var(--gold); color: var(--bg); border: none; border-radius: 8px;
     font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 1px;
@@ -847,6 +856,7 @@
 </div>
 
 <div class="app-bar" id="appBar" role="status" hidden>
+  <img class="app-bar-icon" id="appBarIcon" src="icons/apple-touch-icon.png" alt="" width="44" height="44" hidden>
   <div class="app-bar-text" id="appBarText"></div>
   <button type="button" class="app-bar-btn" id="appBarBtn" hidden></button>
   <button type="button" class="app-bar-x" id="appBarX" aria-label="Dismiss">✕</button>
@@ -2199,9 +2209,17 @@
     const isIOSSafari = isIOS && !/CriOS|FxiOS|EdgiOS|OPiOS/.test(ua);
     let barKind = null;
     let installPrompt = null;
+    // Dismissing the install hint snoozes it for two weeks. ?installhint shows it now.
+    const HINT_SNOOZE_MS = 14 * 24 * 3600 * 1000;
+    if (new URLSearchParams(location.search).has('installhint')) writeJSON(INSTALL_HINT_KEY, null);
+    function hintSnoozed() {
+      const t = readJSON(INSTALL_HINT_KEY, null);
+      return t === 'installed' || (typeof t === 'number' && Date.now() - t < HINT_SNOOZE_MS);
+    }
 
     function showBar(kind, html, btnLabel) {
       barKind = kind;
+      document.getElementById('appBarIcon').hidden = kind !== 'install';
       text.innerHTML = html;
       btn.hidden = !btnLabel;
       btn.textContent = btnLabel || '';
@@ -2210,7 +2228,7 @@
     function hideBar() { bar.hidden = true; barKind = null; }
 
     document.getElementById('appBarX').addEventListener('click', () => {
-      if (barKind === 'install') writeJSON(INSTALL_HINT_KEY, true);
+      if (barKind === 'install') writeJSON(INSTALL_HINT_KEY, Date.now());
       hideBar();
     });
     btn.addEventListener('click', async () => {
@@ -2224,13 +2242,14 @@
     });
 
     // Install hint: only after the first salary save, so first visits stay clean.
+    const INSTALL_TITLE = '<span class="app-bar-title">Put Gross Income on your home screen for easy on the bog access!</span>';
     function maybeShowInstallHint() {
-      if (standalone || barKind || readJSON(INSTALL_HINT_KEY, false)) return;
+      if (standalone || barKind || hintSnoozed()) return;
       if (!document.body.classList.contains('has-salary')) return;
       if (installPrompt) {
-        showBar('install', '<b>Get the app.</b> Add Gross Income to your home screen.', 'Install');
+        showBar('install', INSTALL_TITLE + 'Tap Install to add it.', 'Install');
       } else if (isIOSSafari) {
-        showBar('install', '<b>Get the app.</b> Tap Share, then <b>Add to Home Screen</b>.');
+        showBar('install', INSTALL_TITLE + 'Tap Share (or ⋯ then Share), then <b>Add to Home Screen</b>.');
       }
     }
     window.addEventListener('beforeinstallprompt', (e) => {
@@ -2239,7 +2258,7 @@
       maybeShowInstallHint();
     });
     window.addEventListener('appinstalled', () => {
-      writeJSON(INSTALL_HINT_KEY, true);
+      writeJSON(INSTALL_HINT_KEY, 'installed');
       if (barKind === 'install') hideBar();
     });
     new MutationObserver(maybeShowInstallHint).observe(document.body, { attributes: true, attributeFilter: ['class'] });
