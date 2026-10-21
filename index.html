@@ -2199,6 +2199,13 @@
     const isIOSSafari = isIOS && !/CriOS|FxiOS|EdgiOS|OPiOS/.test(ua);
     let barKind = null;
     let installPrompt = null;
+    // Dismissing the install hint snoozes it for two weeks. ?installhint shows it now.
+    const HINT_SNOOZE_MS = 14 * 24 * 3600 * 1000;
+    if (new URLSearchParams(location.search).has('installhint')) writeJSON(INSTALL_HINT_KEY, null);
+    function hintSnoozed() {
+      const t = readJSON(INSTALL_HINT_KEY, null);
+      return t === 'installed' || (typeof t === 'number' && Date.now() - t < HINT_SNOOZE_MS);
+    }
 
     function showBar(kind, html, btnLabel) {
       barKind = kind;
@@ -2210,7 +2217,7 @@
     function hideBar() { bar.hidden = true; barKind = null; }
 
     document.getElementById('appBarX').addEventListener('click', () => {
-      if (barKind === 'install') writeJSON(INSTALL_HINT_KEY, true);
+      if (barKind === 'install') writeJSON(INSTALL_HINT_KEY, Date.now());
       hideBar();
     });
     btn.addEventListener('click', async () => {
@@ -2225,12 +2232,12 @@
 
     // Install hint: only after the first salary save, so first visits stay clean.
     function maybeShowInstallHint() {
-      if (standalone || barKind || readJSON(INSTALL_HINT_KEY, false)) return;
+      if (standalone || barKind || hintSnoozed()) return;
       if (!document.body.classList.contains('has-salary')) return;
       if (installPrompt) {
         showBar('install', '<b>Get the app.</b> Add Gross Income to your home screen.', 'Install');
       } else if (isIOSSafari) {
-        showBar('install', '<b>Get the app.</b> Tap Share, then <b>Add to Home Screen</b>.');
+        showBar('install', '<b>Get the app.</b> Tap Share (or ⋯ then Share), then <b>Add to Home Screen</b>.');
       }
     }
     window.addEventListener('beforeinstallprompt', (e) => {
@@ -2239,7 +2246,7 @@
       maybeShowInstallHint();
     });
     window.addEventListener('appinstalled', () => {
-      writeJSON(INSTALL_HINT_KEY, true);
+      writeJSON(INSTALL_HINT_KEY, 'installed');
       if (barKind === 'install') hideBar();
     });
     new MutationObserver(maybeShowInstallHint).observe(document.body, { attributes: true, attributeFilter: ['class'] });
