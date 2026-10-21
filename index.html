@@ -550,23 +550,29 @@
   .throne-check .app-bar-text { flex-basis: 100%; }
   .throne-check .app-bar-btn { flex: 1; }
   .throne-check .throne-stay { background: transparent; color: var(--cream); border: 1px solid var(--border); }
-  /* ── DUNG RUN: card while the timer runs, full screen game with a mini timer ── */
-  .game-card {
-    display: none; align-items: center; gap: 14px;
+  /* ── BOG ARCADE: card while the timer runs, full screen game with a mini timer ── */
+  .arcade-card {
+    display: none;
     background: linear-gradient(135deg, rgba(127,211,245,0.10), rgba(245,200,66,0.08));
     border: 1px solid rgba(245,200,66,0.35); border-radius: 20px;
-    padding: 16px 16px 16px 18px; margin-bottom: 12px;
-    width: 100%; text-align: left; color: var(--cream); cursor: pointer;
-    font-family: 'DM Sans', sans-serif;
+    padding: 16px 18px 18px; margin-bottom: 12px; width: 100%;
   }
-  .bog-running .game-card { display: flex; }
-  .game-card-emoji { font-size: 40px; line-height: 1; filter: drop-shadow(0 0 14px rgba(127,211,245,0.5)); }
-  .game-card-text { flex: 1; font-size: 14px; line-height: 1.4; }
-  .game-card-text b { display: block; font-family: 'Bebas Neue', sans-serif; font-size: 24px; font-weight: 400; letter-spacing: 1.5px; color: var(--gold); line-height: 1.1; }
-  .game-card-go {
-    background: var(--gold); color: var(--bg); border-radius: 10px; padding: 10px 14px;
-    font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 2px; white-space: nowrap;
+  .bog-running .arcade-card { display: block; }
+  .arcade-head { font-size: 14px; line-height: 1.4; color: var(--cream); }
+  .arcade-head b { display: block; font-family: 'Bebas Neue', sans-serif; font-size: 24px; font-weight: 400; letter-spacing: 1.5px; color: var(--gold); line-height: 1.1; }
+  .arcade-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); gap: 12px; margin-top: 14px; }
+  .arcade-tile {
+    display: flex; flex-direction: column; align-items: center; gap: 7px;
+    background: none; border: none; padding: 0; cursor: pointer; color: var(--cream);
+    -webkit-tap-highlight-color: transparent;
   }
+  .arcade-icon {
+    width: 64px; height: 64px; border-radius: 18px; display: flex; align-items: center; justify-content: center;
+    font-size: 34px; line-height: 1; box-shadow: 0 6px 18px rgba(0,0,0,0.35), inset 0 0 0 1px rgba(255,255,255,0.12);
+    transition: transform 0.12s ease;
+  }
+  .arcade-tile:active .arcade-icon { transform: scale(0.92); }
+  .arcade-name { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; text-align: center; line-height: 1.2; }
   .game-layer {
     position: fixed; inset: 0; z-index: 40; background: var(--bg);
     display: flex; flex-direction: column;
@@ -672,12 +678,11 @@
     </div>
   </div>
 
-  <!-- DUNG RUN CARD (only while the timer runs) -->
-  <button type="button" class="game-card" id="gameCard" onclick="openGame()">
-    <span class="game-card-emoji" aria-hidden="true">🚽</span>
-    <span class="game-card-text"><b>Don't go off for a doom scroll!</b>Play Dung Run while the clock pays you.</span>
-    <span class="game-card-go">Play ▶</span>
-  </button>
+  <!-- BOG ARCADE CARD (only while the timer runs); tiles come from GAMES below -->
+  <div class="arcade-card" id="arcadeCard">
+    <div class="arcade-head"><b>Don't go off for a doom scroll!</b>Play the Bog Arcade while the clock pays you.</div>
+    <div class="arcade-tiles" id="arcadeTiles"></div>
+  </div>
 
   <!-- BOG HISTORY + LIFETIME PROJECTOR (one collapsible card) -->
   <div class="lifetime-card collapsed" id="lifetimeCard" style="display:none">
@@ -1312,39 +1317,54 @@
     writeJSON(STATS_COLLAPSED_KEY, collapsed);
   }
 
-  // ── DUNG RUN ──
-  // The game lives in games/dung-run.js and only loads when someone opens it.
+  // ── BOG ARCADE ──
+  // Each game lives in its own file under games/ and only loads when someone opens it.
+  // A game file sets window[global] = { mount(el, { hourly, onExit }) } and
+  // mount returns { destroy() }. Add a game by adding a line here.
   // The bog timer keeps running underneath, shrunk to a bar at the top.
+  const GAMES = [
+    { id: 'dung-run', name: 'Dung Run', icon: '🚽', file: 'games/dung-run.js', global: 'DungRun',
+      bg: 'linear-gradient(145deg,#2a6f8f,#123447)' },
+    { id: 'turd-snake', name: 'Turd Snake', icon: '💩', file: 'games/turd-snake.js', global: 'TurdSnake',
+      bg: 'linear-gradient(145deg,#4caf6e,#1f5a34)' },
+  ];
   let game = null;
-  let gameScript = null;
+  const gameScripts = {};
 
-  function loadGame() {
-    if (window.DungRun) return Promise.resolve();
-    if (!gameScript) {
-      gameScript = new Promise((resolve, reject) => {
+  document.getElementById('arcadeTiles').innerHTML = GAMES.map(gm => `
+    <button type="button" class="arcade-tile" onclick="openGame('${gm.id}')">
+      <span class="arcade-icon" style="background:${gm.bg}" aria-hidden="true">${gm.icon}</span>
+      <span class="arcade-name">${gm.name}</span>
+    </button>`).join('');
+
+  function loadGame(gm) {
+    if (window[gm.global]) return Promise.resolve();
+    if (!gameScripts[gm.id]) {
+      gameScripts[gm.id] = new Promise((resolve, reject) => {
         const s = document.createElement('script');
-        s.src = 'games/dung-run.js';
+        s.src = gm.file;
         s.onload = resolve;
-        s.onerror = () => { gameScript = null; reject(); };
+        s.onerror = () => { delete gameScripts[gm.id]; reject(); };
         document.body.appendChild(s);
       });
     }
-    return gameScript;
+    return gameScripts[gm.id];
   }
 
-  async function openGame() {
-    if (game) return;
+  async function openGame(id) {
+    const gm = GAMES.find(x => x.id === id) || GAMES[0];
+    if (game || !document.getElementById('gameLayer').hidden) return;
     const root = document.getElementById('gameRoot');
     document.getElementById('gameLayer').hidden = false;
     document.body.classList.add('game-open');
     history.pushState({ game: true }, '');
     root.innerHTML = '<div class="game-loading">Unblocking the pipes…</div>';
-    try { await loadGame(); } catch (e) {
-      root.innerHTML = '<div class="game-loading">Dung Run didn\'t load. Check your signal and try again.</div>';
+    try { await loadGame(gm); } catch (e) {
+      root.innerHTML = `<div class="game-loading">${gm.name} didn't load. Check your signal and try again.</div>`;
       return;
     }
     if (document.getElementById('gameLayer').hidden) return;
-    game = window.DungRun.mount(root, { hourly: getHourlyRate, onExit: closeGame });
+    game = window[gm.global].mount(root, { hourly: getHourlyRate, onExit: closeGame });
   }
 
   function hideGame() {
