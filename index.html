@@ -541,8 +541,7 @@
   .emoji-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
   .emoji-opt { width: 40px; height: 40px; border-radius: 50%; background: var(--paper); border: 1px solid var(--border); font-size: 20px; cursor: pointer; }
   .emoji-opt.on { border-color: var(--gold); background: rgba(245,200,66,0.14); }
-  .pool-check { display: flex; gap: 10px; align-items: flex-start; margin-top: 14px; font-size: 13px; color: var(--cream); line-height: 1.4; }
-  .pool-check input { margin-top: 3px; accent-color: #F5C842; }
+  .pool-switch { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); }
   .pool-list { list-style: none; margin: 12px 0 0; padding: 0; font-size: 13px; line-height: 1.9; color: var(--cream); }
   .pool-tabs { display: flex; gap: 8px; margin-top: 16px; }
   /* Same look as .tab, separate class so the salary tab handler leaves these alone */
@@ -1858,10 +1857,30 @@
       : `We emailed a login code to <b>${esc(v.email)}</b>. Type it in here to get on the board. Not there? Check your spam.`;
   }
 
+  // "Share minutes only" is one setting on the profile, so it covers every pool you're in.
+  // On the join/create cards it only changes the screen until you tap Join or Create.
+  function minutesOn(v) { return v.minutes != null ? v.minutes : !(pool.profile && pool.profile.share_money); }
+
+  function minutesSwitch(on, sub) {
+    return `<label class="switch-row pool-switch">
+        <span>Share minutes only<small>${sub}</small></span>
+        <input type="checkbox" class="js-minutes" ${on ? 'checked' : ''}><i class="switch" aria-hidden="true"></i>
+      </label>`;
+  }
+
+  function moneyLine(v) {
+    if (!pool.user) return '◐ $ earned on the bog, only if you opt in';
+    return minutesOn(v) ? '✗ Your $ earned. Share minutes only is on.' : '✓ Your $ earned on the bog';
+  }
+
+  function moneyColor(v) { return pool.user && minutesOn(v) ? 'var(--muted)' : 'var(--amber)'; }
+
   function viewInvite(v) {
     const p = v.preview;
+    const minutes = minutesOn(v);
     const action = pool.user
-      ? `<div class="pool-btns"><button class="btn btn-start" data-act="join" data-busy="Joining…">Join the pool</button></div>`
+      ? `${minutesSwitch(minutes, 'Your pools see your bog time, not your $. Applies to all your pools. Change it anytime in Profile &amp; Crap.')}
+         <div class="pool-btns"><button class="btn btn-start" data-act="join" data-busy="Joining…">Join the pool</button></div>`
       : `<input class="pool-input" id="poolEmail" type="email" inputmode="email" autocomplete="email" placeholder="you@email.com" value="${esc(v.email || '')}">
          <div class="pool-btns"><button class="btn btn-start" data-act="login">Email me a login code to join</button></div>`;
     return `
@@ -1872,7 +1891,7 @@
       <ul class="pool-list">
         <li>✓ Your bog time and session count</li>
         <li>✓ Your rank (and crown, if you earn it)</li>
-        <li style="color:var(--amber)">◐ $ earned on the bog, only if you opt in</li>
+        <li class="js-money-line" style="color:${moneyColor(v)}">${moneyLine(v)}</li>
         <li style="color:var(--muted)">✗ Your salary. It never leaves your phone.</li>
       </ul>
       ${action}
@@ -1887,8 +1906,7 @@
       <input class="pool-input js-name" maxlength="24" placeholder="Display name" value="${esc(p.display_name || '')}">
       <div class="emoji-row">${POOL_EMOJIS.map(e =>
         `<button type="button" class="emoji-opt ${e === emoji ? 'on' : ''}" data-act="emoji" data-emoji="${e}">${e}</button>`).join('')}</div>
-      <label class="pool-check"><input type="checkbox" class="js-money" ${p.share_money ? 'checked' : ''}>
-        <span>Show my $ earned to my pools. Off by default, because dollars per minute gives away your pay.</span></label>
+      ${minutesSwitch(minutesOn(v), 'Your pools see your bog time, not your $. Dollars per minute gives away your pay.')}
       <div class="pool-btns"><button class="btn btn-start" data-act="save-profile" data-busy="Saving…">Save</button></div>`;
   }
 
@@ -1897,7 +1915,8 @@
       <span class="section-label">👑 Poop Pool</span>
       <div class="pool-title">Start a Poop Pool</div>
       <p class="pool-text">Name it, then send the invite link to your mates.</p>
-      <input class="pool-input" id="poolNewName" maxlength="40" placeholder="e.g. Office Throne Room">
+      <input class="pool-input" id="poolNewName" maxlength="40" placeholder="e.g. Office Throne Room" value="${esc(v.newName || '')}">
+      ${minutesSwitch(minutesOn(v), 'Your pools see your bog time, not your $. Applies to all your pools.')}
       <div class="pool-btns">
         ${pool.pools.length ? '<button class="btn btn-ghost" data-act="cancel">Cancel</button>' : ''}
         <button class="btn btn-start" data-act="create-pool" data-busy="Creating…">Create pool</button>
@@ -2011,7 +2030,8 @@
     },
     async back() { pool.view = { name: 'pitch' }; },
     async decline() { writeJSON(POOL_INVITE_KEY, null); await refreshPool(); return 'done'; },
-    async join() {
+    async join(el, root) {
+      await saveShareMoney(!root.querySelector('.js-minutes').checked);
       const { data: pid, error } = await pool.sb.rpc('join_pool', { p_code: pool.view.code });
       if (error) throw error;
       writeJSON(POOL_INVITE_KEY, null);
@@ -2026,11 +2046,11 @@
       const name = root.querySelector('.js-name').value.trim();
       if (!name) throw new Error('Pick a throne name first.');
       const on = root.querySelector('.emoji-opt.on');
-      const money = root.querySelector('.js-money');
+      const minutes = root.querySelector('.js-minutes');
       const row = {
         id: pool.user.id, display_name: name.slice(0, 24),
         emoji: on ? on.dataset.emoji : '💩',
-        share_money: money ? money.checked : !!(pool.profile && pool.profile.share_money),
+        share_money: minutes ? !minutes.checked : !!(pool.profile && pool.profile.share_money),
       };
       const { error } = await pool.sb.from('profiles').upsert(row);
       if (error) throw error;
@@ -2038,9 +2058,10 @@
       pool.sheetEdit = false;
       await refreshPool(); return 'done';
     },
-    async 'create-pool'() {
+    async 'create-pool'(el, root) {
       const name = document.getElementById('poolNewName').value.trim();
       if (!name) throw new Error('Give your pool a name.');
+      await saveShareMoney(!root.querySelector('.js-minutes').checked);
       const { data, error } = await pool.sb.rpc('create_pool', { p_name: name });
       if (error) throw error;
       writeJSON(POOL_CURRENT_KEY, data.id);
@@ -2097,18 +2118,23 @@
 
   // Turning on "share minutes only" re-uploads every bog with earned blanked out, so
   // the $ is gone from Supabase, not just hidden on screen.
+  async function saveShareMoney(share_money) {
+    if (pool.profile && !!pool.profile.share_money === share_money) return;
+    const { error } = await pool.sb.from('profiles').update({ share_money }).eq('id', pool.user.id);
+    if (error) throw error;
+    pool.profile = Object.assign({}, pool.profile, { share_money });
+    pool.boards = {};
+    saveCache();
+    await syncSessions();
+  }
+
   async function setShareMinutes(box) {
     const share_money = !box.checked;
     box.disabled = true;
     pool.msg = '';
     try {
       if (!(await sbReady)) throw new Error('Poop Pool is offline right now.');
-      const { error } = await pool.sb.from('profiles').update({ share_money }).eq('id', pool.user.id);
-      if (error) throw error;
-      pool.profile = Object.assign({}, pool.profile, { share_money });
-      pool.boards = {};
-      saveCache();
-      await syncSessions();
+      await saveShareMoney(share_money);
       pool.msg = share_money ? 'Your pools can now see your $ earned.' : 'Your $ is hidden. Pools only see your minutes.';
       if (pool.view && pool.view.name === 'board') await showBoard();
       renderPool();
@@ -2151,6 +2177,18 @@
     document.getElementById(id).addEventListener('click', onPoolClick));
   document.getElementById('profilePanel').addEventListener('change', (e) => {
     if (e.target.id === 'shareMinutes') setShareMinutes(e.target);
+  });
+
+  // The join/create switch is remembered on the view (so a re-render keeps it) and
+  // flips the "$ earned" line on the invite straight away.
+  poolCard.addEventListener('change', (e) => {
+    if (!e.target.classList.contains('js-minutes') || !pool.view) return;
+    pool.view.minutes = e.target.checked;
+    const line = poolCard.querySelector('.js-money-line');
+    if (line) { line.textContent = moneyLine(pool.view); line.style.color = moneyColor(pool.view); }
+  });
+  poolCard.addEventListener('input', (e) => {
+    if (e.target.id === 'poolNewName' && pool.view) pool.view.newName = e.target.value;
   });
 
   // Six digits in (typed, pasted or iOS autofill) logs straight in
