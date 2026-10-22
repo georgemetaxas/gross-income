@@ -613,6 +613,14 @@
   }
   .app-bar-icon[hidden] { display: none; }
   .app-bar-text .app-bar-btn { display: block; margin-top: 10px; }
+  /* Install hint: gold card so it stands out, ✕ in the top right corner */
+  .app-bar.is-install { background: var(--gold); border-color: var(--gold); color: var(--bg); padding-right: 40px; }
+  .app-bar.is-install .app-bar-title,
+  .app-bar.is-install .app-bar-text b { color: var(--bg); }
+  .app-bar.is-install .app-bar-title { font-weight: 700; }
+  .app-bar.is-install .app-bar-btn { background: var(--bg); color: var(--gold); }
+  .app-bar.is-install .app-bar-x { position: absolute; top: 6px; right: 6px; color: var(--bg); opacity: 0.7; }
+  .app-bar.is-install .app-bar-icon { box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
 
   /* ── iPhone add to home screen guide ── */
   .a2hs { position: fixed; inset: 0; z-index: 40; }
@@ -2424,6 +2432,7 @@
     function showBar(kind, html, btnLabel) {
       barKind = kind;
       document.getElementById('appBarIcon').hidden = kind !== 'install';
+      bar.classList.toggle('is-install', kind === 'install');
       text.innerHTML = html;
       btn.hidden = !btnLabel;
       btn.textContent = btnLabel || '';
