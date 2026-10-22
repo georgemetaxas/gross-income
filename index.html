@@ -612,6 +612,55 @@
     box-shadow: 0 2px 8px rgba(0,0,0,0.4), 0 0 0 1px rgba(245,200,66,0.25);
   }
   .app-bar-icon[hidden] { display: none; }
+  .app-bar-text .app-bar-btn { display: block; margin-top: 10px; }
+
+  /* ── iPhone add to home screen guide ── */
+  .a2hs { position: fixed; inset: 0; z-index: 40; }
+  .a2hs[hidden] { display: none; }
+  .a2hs-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.62); }
+  .a2hs-sheet {
+    position: absolute; left: 0; right: 0; bottom: 0; max-width: 520px; margin: 0 auto;
+    max-height: 90vh; overflow-y: auto;
+    background: var(--surface2); border-radius: 24px 24px 0 0;
+    padding: 24px 20px calc(24px + env(safe-area-inset-bottom));
+  }
+  .a2hs-steps { list-style: none; display: grid; gap: 18px; margin: 4px 0 20px; counter-reset: a2hs; }
+  .a2hs-steps li { counter-increment: a2hs; }
+  .a2hs-num::before { content: counter(a2hs); }
+  /* iOS 26 Safari hides Share behind the menu button in the address bar */
+  .a2hs.ios26 [data-v="old"], .a2hs:not(.ios26) [data-v="26"] { display: none; }
+  .a2hs-pill { flex: 1; display: flex; align-items: center; gap: 8px; background: var(--surface); border-radius: 999px; padding: 4px 12px 4px 4px; }
+  .a2hs-pill .a2hs-url { background: none; padding: 0; }
+  .a2hs-pill .a2hs-hit { display: flex; padding: 6px; border-radius: 999px; }
+  .a2hs-steps li { display: grid; grid-template-columns: 28px 1fr; gap: 8px 12px; align-items: start; }
+  .a2hs-num {
+    width: 28px; height: 28px; border-radius: 50%; background: var(--gold); color: var(--bg);
+    font-family: 'Bebas Neue', sans-serif; font-size: 18px; line-height: 28px; text-align: center;
+  }
+  .a2hs-copy { font-size: 14px; line-height: 1.45; color: var(--cream); padding-top: 4px; }
+  .a2hs-copy b { color: var(--gold); font-weight: 600; }
+  .a2hs-pic {
+    grid-column: 2; display: flex; align-items: center; gap: 10px;
+    background: var(--paper); border: 1px solid var(--border); border-radius: 14px;
+    padding: 10px 12px; color: var(--muted); font-size: 13px;
+  }
+  .a2hs-hit {
+    color: var(--gold); border-radius: 10px;
+    box-shadow: 0 0 0 2px var(--gold), 0 0 16px rgba(245,200,66,0.35);
+    animation: a2hsPulse 1.6s ease-in-out infinite;
+  }
+  @keyframes a2hsPulse { 50% { box-shadow: 0 0 0 2px var(--gold), 0 0 4px rgba(245,200,66,0.1); } }
+  @media (prefers-reduced-motion: reduce) { .a2hs-hit { animation: none; } }
+  .a2hs-url { flex: 1; background: var(--surface); border-radius: 999px; padding: 7px 12px; font-family: 'DM Mono', monospace; font-size: 11px; }
+  .a2hs-safari .a2hs-hit { display: flex; padding: 5px; }
+  .a2hs-dots { font-size: 18px; padding: 0 4px; }
+  .a2hs-menu { flex-direction: column; align-items: stretch; gap: 0; padding: 4px; }
+  .a2hs-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 10px; }
+  .a2hs-row + .a2hs-row { border-top: 1px solid var(--border); }
+  .a2hs-add img { border-radius: 9px; }
+  .a2hs-add span:first-of-type { flex: 1; color: var(--cream); }
+  .a2hs-addbtn { padding: 5px 12px; font-weight: 600; }
+  .a2hs-done { width: 100%; }
   .app-bar-title {
     display: block; margin-bottom: 4px;
     font-size: 16px; font-weight: 600; line-height: 1.3; color: var(--gold);
@@ -869,6 +918,62 @@
   <div class="app-bar-text" id="appBarText"></div>
   <button type="button" class="app-bar-btn" id="appBarBtn" hidden></button>
   <button type="button" class="app-bar-x" id="appBarX" aria-label="Dismiss">✕</button>
+</div>
+
+<!-- iPhone "Show me" guide: Safari has no install button, so we show the three taps -->
+<div class="a2hs" id="a2hs" role="dialog" aria-modal="true" aria-labelledby="a2hsTitle" hidden>
+  <div class="a2hs-backdrop" data-close></div>
+  <div class="a2hs-sheet">
+    <div class="sheet-head" style="display:flex">
+      <div class="sheet-title" id="a2hsTitle">Add to Home Screen</div>
+      <button type="button" class="sheet-close" data-close aria-label="Close">✕</button>
+    </div>
+    <ol class="a2hs-steps">
+      <li data-v="26">
+        <span class="a2hs-num"></span>
+        <div class="a2hs-copy">Tap the <b>menu button</b> at the left of Safari's address bar.</div>
+        <div class="a2hs-pic a2hs-safari">
+          <span class="a2hs-pill"><span class="a2hs-hit"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h12M4 17h8"/></svg></span><span class="a2hs-url">grossincome.com.au</span><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 4v5h-5"/></svg></span>
+        </div>
+      </li>
+      <li data-v="26">
+        <span class="a2hs-num"></span>
+        <div class="a2hs-copy">Tap <b>Share</b>.</div>
+        <div class="a2hs-pic a2hs-menu">
+          <div class="a2hs-row">Add Bookmark</div>
+          <div class="a2hs-row a2hs-hit">Share <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="M8 7l4-4 4 4"/><path d="M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1"/></svg></div>
+        </div>
+      </li>
+      <li data-v="old">
+        <span class="a2hs-num"></span>
+        <div class="a2hs-copy">At the bottom of Safari, tap <b>Share</b>. If you don't see it, tap <b>⋯</b> first.</div>
+        <div class="a2hs-pic a2hs-safari">
+          <span class="a2hs-url">grossincome.com.au</span>
+          <span class="a2hs-hit"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="M8 7l4-4 4 4"/><path d="M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1"/></svg></span>
+          <span class="a2hs-dots">⋯</span>
+        </div>
+      </li>
+      <li>
+        <span class="a2hs-num"></span>
+        <div class="a2hs-copy">Scroll down and tap <b>Add to Home Screen</b>. Can't see it? Tap <b>View More</b>.</div>
+        <div class="a2hs-pic a2hs-menu">
+          <div class="a2hs-row">Copy</div>
+          <div class="a2hs-row">Add to Favourites</div>
+          <div class="a2hs-row a2hs-hit">Add to Home Screen <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="4"/><path d="M12 8v8M8 12h8"/></svg></div>
+        </div>
+      </li>
+      <li>
+        <span class="a2hs-num"></span>
+        <div class="a2hs-copy">Tap <b>Add</b>. Gross Income lands on your home screen, ready for your next bog.</div>
+        <div class="a2hs-pic a2hs-add">
+          <img src="icons/apple-touch-icon.png" alt="" width="40" height="40">
+          <span>Gross Income</span>
+          <span class="a2hs-hit a2hs-addbtn">Add</span>
+        </div>
+      </li>
+    </ol>
+    <button type="button" class="btn btn-start a2hs-done" data-close>Got it</button>
+  </div>
 </div>
 
 <div class="app-bar throne-check" id="throneCheck" role="alertdialog" aria-labelledby="throneText" hidden>
@@ -2304,6 +2409,8 @@
     const ua = navigator.userAgent;
     const isIOS = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
     const isIOSSafari = isIOS && !/CriOS|FxiOS|EdgiOS|OPiOS/.test(ua);
+    const safariVersion = +((ua.match(/Version\/(\d+)/) || [])[1] || 0);
+    const isIOS26 = safariVersion >= 26;
     let barKind = null;
     let installPrompt = null;
     // Dismissing the install hint snoozes it for two weeks. ?installhint shows it now.
@@ -2338,6 +2445,15 @@
       }
     });
 
+    const guide = document.getElementById('a2hs');
+    guide.classList.toggle('ios26', isIOS26);
+    text.addEventListener('click', (e) => {
+      if (e.target.id === 'a2hsOpen') guide.hidden = false;
+    });
+    guide.addEventListener('click', (e) => {
+      if (e.target.closest('[data-close]')) guide.hidden = true;
+    });
+
     // Install hint: only after the first salary save, so first visits stay clean.
     const INSTALL_TITLE = '<span class="app-bar-title">Put Gross Income on your home screen for easy on the bog access!</span>';
     function maybeShowInstallHint() {
@@ -2346,7 +2462,10 @@
       if (installPrompt) {
         showBar('install', INSTALL_TITLE + 'Tap Install to add it.', 'Install');
       } else if (isIOSSafari) {
-        showBar('install', INSTALL_TITLE + 'Tap Share (or ⋯ then Share), then <b>Add to Home Screen</b>.');
+        showBar('install', INSTALL_TITLE + (isIOS26
+          ? 'Tap the menu button in the address bar, then Share, then <b>Add to Home Screen</b>.'
+          : 'Tap Share (or ⋯ then Share), then <b>Add to Home Screen</b>.') +
+          '<button type="button" class="app-bar-btn" id="a2hsOpen">Show me how</button>');
       }
     }
     window.addEventListener('beforeinstallprompt', (e) => {
