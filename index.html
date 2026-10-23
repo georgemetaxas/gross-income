@@ -1483,7 +1483,8 @@
   // function writes the row to entitlements. Setup: supabase/README.md.
   const FREE_GAMES = ['turd-snake'];
   const UNLOCK_PRICE = 'A$4.69';
-  const STRIPE_LINK = ''; // Stripe Payment Link URL, filled in once Stripe is set up
+  // Test-mode link for now (redirects to the branch preview); swap for the live link at launch
+  const STRIPE_LINK = 'https://buy.stripe.com/test_dRmfZj66XcYf7tr5yR6EU00';
   // Off on the live site until launch day (also the Founding Flusher cut-off).
   // Previews, localhost and ?paywall show it now.
   const PAYWALL_FROM = null; // e.g. '2026-12-01'
