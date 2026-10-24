@@ -65,7 +65,7 @@ How it fits together:
 2. On launch day, make everyone who signed up before it a Founding Flusher (SQL Editor; change the date):
    ```sql
    insert into public.entitlements (user_id, source)
-   select id, 'founder' from public.profiles where created_at < '2026-12-01'
+   select id, 'founder' from public.profiles where created_at < '2026-10-26T00:00:00+11:00'
    on conflict do nothing;
    ```
 3. Swap the test Payment Link for the live one.
