@@ -241,8 +241,8 @@
         g.dir = d; break;
       }
       const [hx, hy] = g.body[0];
-      const nx = hx + g.dir[0], ny = hy + g.dir[1];
-      if (nx < 0 || ny < 0 || nx >= COLS || ny >= ROWS) return die('bowl');
+      // No walls: go out one side and come back in the other, like the old Nokia
+      const nx = (hx + g.dir[0] + COLS) % COLS, ny = (hy + g.dir[1] + ROWS) % ROWS;
       // Moving into the tail's cell is fine unless it's about to grow
       const hitsSelf = g.body.some(([x, y], i) => x === nx && y === ny && (i < g.body.length - 1 || g.grow > 0));
       if (hitsSelf) return die('self');
@@ -324,13 +324,26 @@
     // The log is drawn one step behind the game and slid forward, so it moves
     // smoothly even though the game moves a whole cell at a time.
     function bodyPoints(f) {
-      const b = g.body, pts = [];
+      const b = unwrap(g.body), pts = [];
       if (b.length < 2) return b.map(([x, y]) => [x + 0.5, y + 0.5]);
+      const tail = g.lastTail && near(g.lastTail, b[b.length - 1]);
       const lerp = (a, c, t) => [a[0] + (c[0] - a[0]) * t + 0.5, a[1] + (c[1] - a[1]) * t + 0.5];
       pts.push(lerp(b[1], b[0], f));
       for (let i = 1; i < b.length; i++) pts.push([b[i][0] + 0.5, b[i][1] + 0.5]);
-      if (g.lastTail) pts[pts.length - 1] = lerp(g.lastTail, b[b.length - 1], f);
+      if (tail) pts[pts.length - 1] = lerp(tail, b[b.length - 1], f);
       return pts;
+    }
+
+    // Cells that crossed the edge are shifted so the log is one unbroken path
+    // (it may hang off the bowl; draw() repeats it on the other side)
+    function near([x, y], [rx, ry]) {
+      const dx = x - rx, dy = y - ry;
+      return [x - Math.round(dx / COLS) * COLS, y - Math.round(dy / ROWS) * ROWS];
+    }
+    function unwrap(b) {
+      const out = b.length ? [b[0]] : [];
+      for (let i = 1; i < b.length; i++) out.push(near(b[i], out[i - 1]));
+      return out;
     }
 
     // Walks the path from head to tail and returns evenly spaced points
@@ -348,8 +361,7 @@
       return out;
     }
 
-    function drawLog(f) {
-      const pts = bodyPoints(f);
+    function drawLog(pts, main) {
       const s = sample(pts, 0.2);
       const n = s.length;
       // Thicker as it grows, tapered tail, a lumpy wobble along its length
@@ -404,6 +416,7 @@
       }
 
       // Long logs attract flies
+      if (!main) return;
       const flies = Math.min(4, Math.floor(g.body.length / 12));
       for (let i = 0; i < flies; i++) {
         const tp = pts[Math.min(pts.length - 1, Math.floor(pts.length * (0.5 + i * 0.15)))];
@@ -433,7 +446,17 @@
       }
       ctx.globalAlpha = 1;
       const f = g.state === 'play' ? Math.min(1, g.acc / stepTime()) : 1;
-      drawLog(f);
+      const pts = bodyPoints(f);
+      // Draw a copy for each side of the bowl the log pokes through
+      let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+      for (const [x, y] of pts) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); }
+      for (const oy of [0, -1, 1]) for (const ox of [0, -1, 1]) {
+        const sx = ox * COLS, sy = oy * ROWS;
+        if (x1 + sx < -1 || x0 + sx > COLS + 1 || y1 + sy < -1 || y0 + sy > ROWS + 1) continue;
+        ctx.save(); ctx.translate(sx * T, sy * T);
+        drawLog(pts, !ox && !oy);
+        ctx.restore();
+      }
     }
 
     const cm = segs => (segs * CM_PER_SEG).toLocaleString('en-US') + ' cm';
@@ -471,14 +494,14 @@
       el.screen.innerHTML = `
         <div class="ts-hero">💩</div>
         <div class="ts-title">Turd Snake</div>
-        <div class="ts-sub">Eat. Grow. Don't touch the bowl.</div>
+        <div class="ts-sub">Eat. Grow. Don't bite your tail.</div>
         <div class="ts-box">
           <div class="ts-lbl" style="margin-bottom:6px">Instructions</div>
           <div class="ts-instr-text">Swipe to turn. Eat everything to grow your log.</div>
           <div class="ts-row"><div class="ts-av">🌽</div><div><b>Corn &amp; mates</b><span>+${CM_PER_SEG} cm each. Corn stays in, obviously.</span></div></div>
           <div class="ts-row"><div class="ts-av">🌶️</div><div><b>Chilli</b><span>+${CM_PER_SEG * 2} cm and ring of fire speed</span></div></div>
           <div class="ts-row"><div class="ts-av">🪰</div><div><b>Flies</b><span>harmless. They just like you.</span></div></div>
-          <div class="ts-row"><div class="ts-av">🚽</div><div><b>The bowl</b><span>hit the edge or bite your own tail and it's over</span></div></div>
+          <div class="ts-row"><div class="ts-av">🚽</div><div><b>The bowl</b><span>no walls: slide off one side and come back on the other. Bite your own tail and it's over</span></div></div>
         </div>
         <div class="ts-box ts-grid">
           <div><div class="ts-lbl">Longest log</div><div class="ts-val gold">${cm(g.best)}</div></div>

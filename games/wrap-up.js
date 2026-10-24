@@ -25,6 +25,9 @@
     { n: 3, name: 'Quick one' },
     { n: 4, name: 'Standard sit' },
     { n: 5, name: 'Long haul' },
+    { n: 6, name: 'Two-flusher' },
+    { n: 7, name: 'Legs gone numb' },
+    { n: 8, name: 'Bog marathon' },
   ];
   const PROGRESS_KEY = 'gi.wrapup.v1';
   const MUTE_KEY = 'gi.wrapup.muted';
@@ -759,7 +762,8 @@
       g.moves++;
       const [x, y] = pos(p);
       const tx = board.x + p.c * cell() - pad(), ty = board.y + p.r * cell() - pad();
-      if (Math.hypot(x - tx, y - ty) < cell() * 0.3) {
+      // Small pieces on the big sizes still get a finger-sized snap zone
+      if (Math.hypot(x - tx, y - ty) < Math.max(14, cell() * 0.3)) {
         p.locked = true; p.flash = performance.now();
         g.placed++;
         sound.snap(); buzz(12);

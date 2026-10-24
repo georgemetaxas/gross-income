@@ -344,7 +344,7 @@
       if (ch === '.') { g.score += 10; sound.plop(); }
       else {
         g.score += 50; sound.golden(); buzz(30);
-        g.fright = Math.max(3, 6.5 - g.level * 0.5); g.combo = 0;
+        g.fright = Math.max(4.5, 9.75 - g.level * 0.75); g.combo = 0;
         for (const e of g.enemies) if (e.mode !== 'house') {
           e.scared = true;
           if (e.dx || e.dy) { e.tx -= e.dx; e.ty -= e.dy; e.dx = -e.dx; e.dy = -e.dy; }
