@@ -33,3 +33,39 @@ The Poop Pool card is hidden unless one of these is true:
 - `$ earned` is only uploaded when a person turns on sharing, and is removed from the server if they turn it off.
 - Salary never leaves the device.
 - A single session counts for at most 60 minutes on the board. Longer ones get a 🚩.
+
+## Golden Throne (arcade unlock)
+
+A one-off purchase that opens every Bog Arcade game. Turd Snake stays free. Poop Pool stays free.
+
+How it fits together:
+
+- `entitlements` table (in `schema.sql`): one row per unlocked person. People can only read their own row; only the webhook writes.
+- The app (`index.html`, `GOLDEN THRONE` section) locks the other games and shows a paywall. Buying needs a Poop Pool login, so the unlock follows the person to any device.
+- **Buy** opens a Stripe Payment Link with `?client_reference_id=<user id>`. Stripe calls `functions/stripe-webhook`, which writes the row. A full refund deletes it.
+- The paywall only shows on `*.pages.dev` previews, `localhost` and `?paywall` until `PAYWALL_FROM` is set in `index.html`. Live users see no change until then.
+
+### One-time setup
+
+1. **Database:** re-run `schema.sql` (adds `entitlements`).
+2. **Stripe:** create an account, then a Product "Golden Throne" with a one-off A$4.69 price, and a **Payment Link** for it.
+   - After payment: "Don't show confirmation page" → redirect to `https://grossincome.com.au/?unlocked=1`.
+   - Paste the link into `STRIPE_LINK` in `index.html`.
+3. **Webhook function:** with the Supabase CLI:
+   ```
+   supabase functions deploy stripe-webhook --no-verify-jwt
+   supabase secrets set STRIPE_SECRET_KEY=sk_... STRIPE_WEBHOOK_SECRET=whsec_...
+   ```
+   In Stripe → Developers → Webhooks, add `https://pngsoygqbvhlfkzdghtr.supabase.co/functions/v1/stripe-webhook` with the events `checkout.session.completed`, `checkout.session.async_payment_succeeded` and `charge.refunded`. Its signing secret is `STRIPE_WEBHOOK_SECRET`.
+4. **Test** in Stripe test mode first (test Payment Link, card 4242 4242 4242 4242) on a pages.dev preview.
+
+### Launch day
+
+1. Set `PAYWALL_FROM` in `index.html` to the launch date a week ahead. Signed-out people then see "Sign in before … to keep the arcade free" under the arcade.
+2. On launch day, make everyone who signed up before it a Founding Flusher (SQL Editor; change the date):
+   ```sql
+   insert into public.entitlements (user_id, source)
+   select id, 'founder' from public.profiles where created_at < '2026-11-02T00:00:00+11:00'
+   on conflict do nothing;
+   ```
+3. Swap the test Payment Link for the live one.
