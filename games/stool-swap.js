@@ -178,20 +178,44 @@
   const DRAW = [
     // Soft serve
     (x, s) => drawPoo(x, s, '#A0652F', '#5A3414'),
-    // Corn kernel: wide flat top, tapering to a point
+    // Corn on the cob: a tilted ear of kernels with green husk leaves
     (x, s) => {
-      const cx = s / 2;
-      x.fillStyle = '#F5C842'; x.strokeStyle = '#B8860B'; x.lineWidth = Math.max(1, s * 0.04);
+      x.save();
+      x.translate(s / 2, s / 2); x.rotate(-0.55);
+      const w = 0.2 * s, h = 0.4 * s, top = -h, bot = 0.24 * s;
+      const cob = new Path2D();
+      cob.moveTo(-w, bot);
+      cob.lineTo(-w, top + w); cob.quadraticCurveTo(-w, top, 0, top);
+      cob.quadraticCurveTo(w, top, w, top + w); cob.lineTo(w, bot); cob.closePath();
+      x.fillStyle = '#C9961A'; x.fill(cob);
+      x.save(); x.clip(cob);
+      // Kernels in staggered rows, lighter in the middle so it reads round
+      const kw = (2 * w) / 3, kh = kw * 0.78;
+      x.strokeStyle = '#A8740C'; x.lineWidth = Math.max(0.6, s * 0.012);
+      for (let r = 0; top + r * kh < bot; r++) {
+        const off = (r % 2) * kw / 2;
+        for (let c = -2; c <= 2; c++) {
+          const kx = -w + kw / 2 + c * kw + off, ky = top + kh / 2 + r * kh;
+          x.fillStyle = Math.abs(kx) < kw * 0.6 ? '#FFE27A' : '#F5C842';
+          x.beginPath(); x.ellipse(kx, ky, kw * 0.42, kh * 0.42, 0, 0, Math.PI * 2); x.fill(); x.stroke();
+        }
+      }
+      x.restore();
+      x.strokeStyle = '#8A5A06'; x.lineWidth = Math.max(1, s * 0.03); x.stroke(cob);
+      // Husk leaves peeled back round the base
+      x.fillStyle = '#5DBB63'; x.strokeStyle = '#2E7D32'; x.lineWidth = Math.max(1, s * 0.03);
+      for (const d of [-1, 1]) {
+        x.beginPath();
+        x.moveTo(0, 0.42 * s);
+        x.quadraticCurveTo(d * 0.34 * s, 0.24 * s, d * 0.26 * s, -0.12 * s);
+        x.quadraticCurveTo(d * 0.14 * s, 0.1 * s, d * 0.02 * s, 0.2 * s);
+        x.closePath(); x.fill(); x.stroke();
+      }
       x.beginPath();
-      x.moveTo(cx - 0.3 * s, 0.28 * s);
-      x.quadraticCurveTo(cx, 0.1 * s, cx + 0.3 * s, 0.28 * s);
-      x.quadraticCurveTo(cx + 0.34 * s, 0.55 * s, cx + 0.08 * s, 0.86 * s);
-      x.quadraticCurveTo(cx, 0.9 * s, cx - 0.08 * s, 0.86 * s);
-      x.quadraticCurveTo(cx - 0.34 * s, 0.55 * s, cx - 0.3 * s, 0.28 * s);
+      x.moveTo(-0.07 * s, 0.42 * s); x.lineTo(0.07 * s, 0.42 * s); x.lineTo(0.03 * s, 0.2 * s); x.lineTo(-0.03 * s, 0.2 * s);
       x.closePath(); x.fill(); x.stroke();
-      x.fillStyle = '#FFF2B3';
-      x.beginPath(); x.ellipse(cx, 0.28 * s, 0.2 * s, 0.07 * s, 0, 0, Math.PI * 2); x.fill();
-      shine(x, cx - 0.12 * s, 0.48 * s, 0.05 * s);
+      x.restore();
+      shine(x, s * 0.42, s * 0.34, 0.04 * s);
     },
     // Pea
     (x, s) => {

@@ -1641,9 +1641,15 @@
   const UNLOCK_KEY = 'gi.unlock.v1';
   // The locked game someone tapped before signing in, so login brings them back to it
   const PENDING_UNLOCK_KEY = 'gi.pendingUnlock';
-  if (new URLSearchParams(location.search).has('paywall')) writeJSON('gi.paywallPreview', true);
+  const qs = new URLSearchParams(location.search);
+  if (qs.has('paywall')) writeJSON('gi.paywallPreview', true);
+  // Branch previews only: ?nopaywall opens the whole arcade for testing (?paywall turns it back on).
+  // Never on the live site or gross-income.pages.dev, so it can't be used to skip paying.
+  const testHost = /\.gross-income\.pages\.dev$|^localhost$/.test(location.hostname);
+  if (testHost && qs.has('nopaywall')) writeJSON('gi.paywallPreview', 'off');
 
   function paywallOn() {
+    if (testHost && readJSON('gi.paywallPreview', null) === 'off') return false;
     return /\.pages\.dev$|^localhost$/.test(location.hostname) || readJSON('gi.paywallPreview', false) === true
       || (PAYWALL_FROM !== null && Date.now() >= Date.parse(PAYWALL_FROM));
   }
