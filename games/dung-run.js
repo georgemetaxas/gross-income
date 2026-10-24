@@ -73,8 +73,15 @@
   .dr-msg.green { background: #4caf6e; box-shadow: 0 0 24px rgba(76,175,110,0.6); }
   .dr-hint { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
     color: var(--muted, #a08060); text-align: center; padding: 10px 0 0; }
+  /* Scrolls on short phones: auto margins centre it without cutting off the top, and the
+     swipe-to-steer handler leaves these screens alone */
   .dr-screen { position: absolute; inset: 0; z-index: 2; background: var(--bg, #1a1208); overflow-y: auto;
-    display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 8px 4px; }
+    overscroll-behavior: contain; touch-action: pan-y;
+    display: flex; flex-direction: column; align-items: center; text-align: center; padding: 8px 4px; }
+  .dr-screen > :first-child { margin-top: auto; }
+  .dr-screen > :last-child { margin-bottom: auto; }
+  /* Play stays in view on short phones while the instructions scroll under it */
+  .dr-btn[data-go] { position: sticky; bottom: 0; z-index: 1; box-shadow: 0 -10px 18px 6px var(--bg, #1a1208); }
   .dr-screen[hidden] { display: none; }
   .dr-hero { font-size: 84px; line-height: 1; filter: drop-shadow(0 0 24px rgba(127,211,245,0.45)); }
   .dr-title { font-family: 'Bebas Neue', sans-serif; font-size: 72px; line-height: 0.95; color: var(--gold, #f5c842); margin-top: 6px; }
@@ -543,7 +550,7 @@
     }
     let sx = 0, sy = 0, touching = false;
     function onTouchStart(e) {
-      if (e.target.closest('button')) return;
+      if (e.target.closest('button, .dr-screen')) return;
       const t = e.touches[0]; sx = t.clientX; sy = t.clientY; touching = true;
     }
     function onTouchMove(e) {
@@ -574,6 +581,8 @@
     return {
       destroy() {
         alive = false;
+        // Let the phone power the audio down; the next tap on Play wakes it
+        if (sound.ac && sound.ac.state === 'running') sound.ac.suspend().catch(() => {});
         if (frame) cancelAnimationFrame(frame);
         clearTimeout(g.msgTimer);
         window.removeEventListener('keydown', onKey);

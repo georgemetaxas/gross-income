@@ -32,13 +32,19 @@
 <meta name="apple-mobile-web-app-title" content="Gross Income">
 <link rel="icon" href="icons/logo.svg?v=2" type="image/svg+xml">
 <link rel="icon" href="icons/favicon-32.png?v=2" sizes="32x32" type="image/png">
-<!-- Open connections early: fonts, the Supabase library for Poop Pool, and Supabase itself -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- Fonts are served from our own domain (Latin subset from Google Fonts, OFL), so first paint
+     doesn't wait on two other servers and the home screen app has them offline. -->
+<link rel="preload" as="font" type="font/woff2" href="fonts/bebas-neue-400.woff2" crossorigin>
+<link rel="preload" as="font" type="font/woff2" href="fonts/dm-mono-400.woff2" crossorigin>
+<!-- Open the Supabase connection early for Poop Pool. The library itself loads from the pool script. -->
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="preconnect" href="https://pngsoygqbvhlfkzdghtr.supabase.co" crossorigin>
-<link rel="preload" as="script" href="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js">
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;600&display=swap" rel="stylesheet">
 <style>
+  @font-face { font-family: 'Bebas Neue'; font-style: normal; font-weight: 400; font-display: swap; src: url(fonts/bebas-neue-400.woff2) format('woff2'); }
+  @font-face { font-family: 'DM Mono'; font-style: normal; font-weight: 400; font-display: swap; src: url(fonts/dm-mono-400.woff2) format('woff2'); }
+  @font-face { font-family: 'DM Mono'; font-style: normal; font-weight: 500; font-display: swap; src: url(fonts/dm-mono-500.woff2) format('woff2'); }
+  @font-face { font-family: 'DM Sans'; font-style: normal; font-weight: 300 600; font-display: swap; src: url(fonts/dm-sans-var.woff2) format('woff2'); }
+
   :root {
     --bg: #1a1208;
     --surface: #231a0a;
@@ -182,7 +188,7 @@
     background: var(--surface2);
     border-radius: 24px 24px 0 0;
     padding-bottom: calc(34px + env(safe-area-inset-bottom));
-    max-height: 90vh; overflow-y: auto; overscroll-behavior: contain;
+    max-height: 90vh; max-height: 90dvh; overflow-y: auto; overscroll-behavior: contain;
   }
 
   /* ── PROFILE SHEET: account, salary, privacy, pools, sign out ── */
@@ -513,11 +519,13 @@
   .pool-text { font-size: 14px; color: var(--cream); line-height: 1.5; margin: 12px 0; }
   .pool-input, .pool-select {
     width: 100%; background: var(--paper); border: 1px solid var(--border); border-radius: 12px;
-    padding: 13px 14px; color: var(--cream); font-family: 'DM Mono', monospace; font-size: 14px; margin-top: 10px;
+    padding: 13px 14px; color: var(--cream); font-family: 'DM Mono', monospace; font-size: 16px; margin-top: 10px;
   }
   .code-row { margin-top: 10px; }
   .code-row input { letter-spacing: 6px; }
   .pool-select { padding: 8px 10px; font-size: 11px; width: auto; margin-top: 0; letter-spacing: 1px; }
+  .pool-head .section-label { white-space: nowrap; }
+  .pool-head .pool-select { min-width: 0; max-width: 60%; text-overflow: ellipsis; }
   /* Pool switcher: gold border and a clear ▾ so it reads as a dropdown. */
   #poolPicker {
     -webkit-appearance: none; appearance: none; cursor: pointer;
@@ -533,8 +541,7 @@
   .emoji-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
   .emoji-opt { width: 40px; height: 40px; border-radius: 50%; background: var(--paper); border: 1px solid var(--border); font-size: 20px; cursor: pointer; }
   .emoji-opt.on { border-color: var(--gold); background: rgba(245,200,66,0.14); }
-  .pool-check { display: flex; gap: 10px; align-items: flex-start; margin-top: 14px; font-size: 13px; color: var(--cream); line-height: 1.4; }
-  .pool-check input { margin-top: 3px; accent-color: #F5C842; }
+  .pool-switch { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); }
   .pool-list { list-style: none; margin: 12px 0 0; padding: 0; font-size: 13px; line-height: 1.9; color: var(--cream); }
   .pool-tabs { display: flex; gap: 8px; margin-top: 16px; }
   /* Same look as .tab, separate class so the salary tab handler leaves these alone */
@@ -605,6 +612,63 @@
     box-shadow: 0 2px 8px rgba(0,0,0,0.4), 0 0 0 1px rgba(245,200,66,0.25);
   }
   .app-bar-icon[hidden] { display: none; }
+  .app-bar-text .app-bar-btn { display: block; margin-top: 10px; }
+  /* Install hint: gold card so it stands out, ✕ in the top right corner */
+  .app-bar.is-install { background: var(--gold); border-color: var(--gold); color: var(--bg); padding-right: 40px; }
+  .app-bar.is-install .app-bar-title,
+  .app-bar.is-install .app-bar-text b { color: var(--bg); }
+  .app-bar.is-install .app-bar-title { font-weight: 700; }
+  .app-bar.is-install .app-bar-btn { background: var(--bg); color: var(--gold); }
+  .app-bar.is-install .app-bar-x { position: absolute; top: 6px; right: 6px; color: var(--bg); opacity: 0.7; }
+  .app-bar.is-install .app-bar-icon { box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+
+  /* ── iPhone add to home screen guide ── */
+  .a2hs { position: fixed; inset: 0; z-index: 40; }
+  .a2hs[hidden] { display: none; }
+  .a2hs-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.62); }
+  .a2hs-sheet {
+    position: absolute; left: 0; right: 0; bottom: 0; max-width: 520px; margin: 0 auto;
+    max-height: 90vh; overflow-y: auto;
+    background: var(--surface2); border-radius: 24px 24px 0 0;
+    padding: 24px 20px calc(24px + env(safe-area-inset-bottom));
+  }
+  .a2hs-steps { list-style: none; display: grid; gap: 18px; margin: 4px 0 20px; counter-reset: a2hs; }
+  .a2hs-steps li { counter-increment: a2hs; }
+  .a2hs-num::before { content: counter(a2hs); }
+  /* iOS 26 Safari hides Share behind the menu button in the address bar */
+  .a2hs.ios26 [data-v="old"], .a2hs:not(.ios26) [data-v="26"] { display: none; }
+  .a2hs-pill { flex: 1; display: flex; align-items: center; gap: 8px; background: var(--surface); border-radius: 999px; padding: 4px 12px 4px 4px; }
+  .a2hs-pill .a2hs-url { background: none; padding: 0; }
+  .a2hs-pill .a2hs-hit { display: flex; padding: 6px; border-radius: 999px; }
+  .a2hs-steps li { display: grid; grid-template-columns: 28px 1fr; gap: 8px 12px; align-items: start; }
+  .a2hs-num {
+    width: 28px; height: 28px; border-radius: 50%; background: var(--gold); color: var(--bg);
+    font-family: 'Bebas Neue', sans-serif; font-size: 18px; line-height: 28px; text-align: center;
+  }
+  .a2hs-copy { font-size: 14px; line-height: 1.45; color: var(--cream); padding-top: 4px; }
+  .a2hs-copy b { color: var(--gold); font-weight: 600; }
+  .a2hs-pic {
+    grid-column: 2; display: flex; align-items: center; gap: 10px;
+    background: var(--paper); border: 1px solid var(--border); border-radius: 14px;
+    padding: 10px 12px; color: var(--muted); font-size: 13px;
+  }
+  .a2hs-hit {
+    color: var(--gold); border-radius: 10px;
+    box-shadow: 0 0 0 2px var(--gold), 0 0 16px rgba(245,200,66,0.35);
+    animation: a2hsPulse 1.6s ease-in-out infinite;
+  }
+  @keyframes a2hsPulse { 50% { box-shadow: 0 0 0 2px var(--gold), 0 0 4px rgba(245,200,66,0.1); } }
+  @media (prefers-reduced-motion: reduce) { .a2hs-hit { animation: none; } }
+  .a2hs-url { flex: 1; background: var(--surface); border-radius: 999px; padding: 7px 12px; font-family: 'DM Mono', monospace; font-size: 11px; }
+  .a2hs-safari .a2hs-hit { display: flex; padding: 5px; }
+  .a2hs-dots { font-size: 18px; padding: 0 4px; }
+  .a2hs-menu { flex-direction: column; align-items: stretch; gap: 0; padding: 4px; }
+  .a2hs-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 10px; }
+  .a2hs-row + .a2hs-row { border-top: 1px solid var(--border); }
+  .a2hs-add img { border-radius: 9px; }
+  .a2hs-add span:first-of-type { flex: 1; color: var(--cream); }
+  .a2hs-addbtn { padding: 5px 12px; font-weight: 600; }
+  .a2hs-done { width: 100%; }
   .app-bar-title {
     display: block; margin-bottom: 4px;
     font-size: 16px; font-weight: 600; line-height: 1.3; color: var(--gold);
@@ -661,6 +725,8 @@
   }
   .game-layer[hidden] { display: none; }
   .game-open { overflow: hidden; }
+  /* The game covers the home screen: stop painting it (wave, glow, logo) so the game gets the phone's full speed */
+  .game-open .wrapper { visibility: hidden; }
   .game-open .app-bar { display: none; }
   .game-open .throne-check:not([hidden]) { display: flex; z-index: 41; }
   .mini-timer {
@@ -898,6 +964,62 @@
   <button type="button" class="app-bar-x" onclick="this.parentNode.hidden = true" aria-label="Dismiss">✕</button>
 </div>
 
+<!-- iPhone "Show me" guide: Safari has no install button, so we show the three taps -->
+<div class="a2hs" id="a2hs" role="dialog" aria-modal="true" aria-labelledby="a2hsTitle" hidden>
+  <div class="a2hs-backdrop" data-close></div>
+  <div class="a2hs-sheet">
+    <div class="sheet-head" style="display:flex">
+      <div class="sheet-title" id="a2hsTitle">Add to Home Screen</div>
+      <button type="button" class="sheet-close" data-close aria-label="Close">✕</button>
+    </div>
+    <ol class="a2hs-steps">
+      <li data-v="26">
+        <span class="a2hs-num"></span>
+        <div class="a2hs-copy">Tap the <b>menu button</b> at the left of Safari's address bar.</div>
+        <div class="a2hs-pic a2hs-safari">
+          <span class="a2hs-pill"><span class="a2hs-hit"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h12M4 17h8"/></svg></span><span class="a2hs-url">grossincome.com.au</span><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 4v5h-5"/></svg></span>
+        </div>
+      </li>
+      <li data-v="26">
+        <span class="a2hs-num"></span>
+        <div class="a2hs-copy">Tap <b>Share</b>.</div>
+        <div class="a2hs-pic a2hs-menu">
+          <div class="a2hs-row">Add Bookmark</div>
+          <div class="a2hs-row a2hs-hit">Share <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="M8 7l4-4 4 4"/><path d="M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1"/></svg></div>
+        </div>
+      </li>
+      <li data-v="old">
+        <span class="a2hs-num"></span>
+        <div class="a2hs-copy">At the bottom of Safari, tap <b>Share</b>. If you don't see it, tap <b>⋯</b> first.</div>
+        <div class="a2hs-pic a2hs-safari">
+          <span class="a2hs-url">grossincome.com.au</span>
+          <span class="a2hs-hit"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="M8 7l4-4 4 4"/><path d="M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1"/></svg></span>
+          <span class="a2hs-dots">⋯</span>
+        </div>
+      </li>
+      <li>
+        <span class="a2hs-num"></span>
+        <div class="a2hs-copy">Scroll down and tap <b>Add to Home Screen</b>. Can't see it? Tap <b>View More</b>.</div>
+        <div class="a2hs-pic a2hs-menu">
+          <div class="a2hs-row">Copy</div>
+          <div class="a2hs-row">Add to Favourites</div>
+          <div class="a2hs-row a2hs-hit">Add to Home Screen <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="4"/><path d="M12 8v8M8 12h8"/></svg></div>
+        </div>
+      </li>
+      <li>
+        <span class="a2hs-num"></span>
+        <div class="a2hs-copy">Tap <b>Add</b>. Gross Income lands on your home screen, ready for your next bog.</div>
+        <div class="a2hs-pic a2hs-add">
+          <img src="icons/apple-touch-icon.png" alt="" width="40" height="40">
+          <span>Gross Income</span>
+          <span class="a2hs-hit a2hs-addbtn">Add</span>
+        </div>
+      </li>
+    </ol>
+    <button type="button" class="btn btn-start a2hs-done" data-close>Got it</button>
+  </div>
+</div>
+
 <div class="app-bar throne-check" id="throneCheck" role="alertdialog" aria-labelledby="throneText" hidden>
   <div class="app-bar-text" id="throneText"></div>
   <button type="button" class="app-bar-btn" id="throneFinish" onclick="throneFinish()">Finish up</button>
@@ -922,6 +1044,8 @@
   // so every read/write is guarded and the app still works without it.
   const SESSIONS_KEY = 'gi.sessions.v1';
   const SALARY_KEY = 'gi.salary.v1';
+  // A bog in progress, so it survives the phone closing the app in the background
+  const RUNNING_KEY = 'gi.running.v1';
   const MIN_SESSION_SECS = 5;
 
   function readJSON(key, fallback) {
@@ -967,10 +1091,12 @@
     return parseFloat(salaryInput.value.replace(/,/g, '')) || 0;
   }
 
+  // Uses the saved period: tapping a period tab in the sheet shouldn't change a running bog
+  // until they save.
   function getHourlyRate() {
     const raw = savedSalary;
-    if (currentPeriod === 'year') return raw / 52 / 40;
-    if (currentPeriod === 'month') return raw / 4 / 40;
+    if (savedPeriod === 'year') return raw / 52 / 40;
+    if (savedPeriod === 'month') return raw * 12 / 52 / 40;
     return raw;
   }
 
@@ -1057,10 +1183,16 @@
       salaryInput.focus();
       return;
     }
+    beginTimer(seconds, Date.now());
+    startMotion();
+  }
+
+  function beginTimer(fromSeconds, startMs, hiddenAtSecs) {
     running = true;
-    segmentStartSeconds = seconds;
-    segmentStartMs = Date.now();
+    segmentStartSeconds = fromSeconds;
+    segmentStartMs = startMs;
     segmentStartedAt = new Date(segmentStartMs).toISOString();
+    saveRunning(hiddenAtSecs);
     timerInterval = setInterval(updateTimer, 250);
     document.getElementById('timerDot').classList.add('live');
     document.getElementById('miniTimerDot').classList.add('live');
@@ -1068,7 +1200,10 @@
     document.getElementById('dashEarned').classList.add('ticking');
     document.getElementById('startBtn').style.display = 'none';
     document.getElementById('stopBtn').style.display = 'block';
-    startMotion();
+  }
+
+  function saveRunning(hiddenAtSecs) {
+    writeJSON(RUNNING_KEY, running ? { from: segmentStartSeconds, startMs: segmentStartMs, hiddenAtSecs } : null);
   }
 
   // atSeconds: end the bog at an earlier point, e.g. when they left the app
@@ -1077,6 +1212,7 @@
     updateTimer();
     if (atSeconds != null && atSeconds < seconds) { seconds = atSeconds; renderTimer(); }
     running = false;
+    saveRunning();
     hideThrone();
     clearInterval(timerInterval);
     document.getElementById('timerDot').classList.remove('live');
@@ -1135,7 +1271,9 @@
   document.addEventListener('visibilitychange', () => {
     if (!running) return;
     updateTimer();
-    if (document.visibilityState === 'hidden') { hiddenAtSecs = seconds; return; }
+    // Saved too: the phone may close the app while it's in the background
+    if (document.visibilityState === 'hidden') { hiddenAtSecs = seconds; saveRunning(hiddenAtSecs); return; }
+    saveRunning();
     if (hiddenAtSecs != null && seconds - hiddenAtSecs >= AWAY_PROMPT_SECS) {
       askThrone(`<b>You left ${fmtDuration(seconds - hiddenAtSecs)} ago.</b> Did you get off the throne?`, hiddenAtSecs);
     }
@@ -1303,27 +1441,39 @@
       ctx.fillStyle = grad;
       ctx.fill();
     });
-    waveT++;
   }
 
   // ── ANIMATION LOOP ──
-  // Paused while the dashboard is scrolled out of view. Reduced motion gets one still frame.
-  (function () {
+  // Paused while the dashboard is scrolled out of view or a game covers it. Reduced motion
+  // gets one still frame. Drawn at 30fps and moved by the clock, so 120Hz phones don't
+  // run it twice as fast or burn twice the battery.
+  const wave = (function () {
     const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     let onScreen = true;
     let frame = null;
-    function loop() {
+    let last = 0;
+    function loop(now) {
+      frame = null;
+      if (still || !onScreen || document.body.classList.contains('game-open')) return;
+      frame = requestAnimationFrame(loop);
+      if (now - last < 32) return;
+      // waveT counts 60ths of a second, which the wave speeds were tuned for
+      waveT += Math.min(now - last, 100) * 0.06;
+      last = now;
       drawMainWave();
-      frame = still || !onScreen ? null : requestAnimationFrame(loop);
+    }
+    function resume() {
+      if (frame === null) { drawMainWave(); frame = requestAnimationFrame(loop); }
     }
     if ('IntersectionObserver' in window) {
       new IntersectionObserver(([e]) => {
         onScreen = e.isIntersecting;
-        if (onScreen && frame === null) loop();
+        if (onScreen) resume();
       }).observe(waveCanvas);
     }
     window.addEventListener('resize', () => { if (frame === null) drawMainWave(); });
-    loop();
+    resume();
+    return { resume };
   })();
 
   refreshAll();
@@ -1510,7 +1660,7 @@
     const note = document.getElementById('arcadeNote');
     const soon = PAYWALL_FROM !== null && Date.now() < Date.parse(PAYWALL_FROM);
     note.hidden = !(soon && !unlocked() && !(typeof pool !== 'undefined' && pool.user));
-    if (!note.hidden) note.textContent = `Sign in to Poop Pool before ${new Date(PAYWALL_FROM).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })} to keep the whole arcade free forever.`;
+    if (!note.hidden) note.textContent = `Sign in to Poop Pool before ${new Date(PAYWALL_FROM).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', timeZone: 'Australia/Sydney' })} to keep the whole arcade free forever.`;
   }
   renderArcade();
 
@@ -1600,6 +1750,7 @@
     document.getElementById('gameRoot').innerHTML = '';
     document.getElementById('gameLayer').hidden = true;
     document.body.classList.remove('game-open');
+    wave.resume();
   }
 
   // Closing goes through history so the phone's back gesture closes the game too
@@ -1633,6 +1784,16 @@
       saveSalary();
     }
     renderHistory();
+
+    // Pick up a bog the phone closed the app on, and check they're still on the throne
+    const bog = readJSON(RUNNING_KEY, null);
+    if (bog && savedSalary > 0 && bog.startMs > 0 && bog.startMs <= Date.now()) {
+      beginTimer(bog.from || 0, bog.startMs);
+      updateTimer();
+      if (bog.hiddenAtSecs != null && seconds - bog.hiddenAtSecs >= AWAY_PROMPT_SECS) {
+        askThrone(`<b>You left ${fmtDuration(seconds - bog.hiddenAtSecs)} ago.</b> Did you get off the throne?`, bog.hiddenAtSecs);
+      }
+    } else if (bog) writeJSON(RUNNING_KEY, null);
   })();
 </script>
 
@@ -1961,10 +2122,30 @@
       : `We emailed a login code to <b>${esc(v.email)}</b>. Type it in here to get on the board. Not there? Check your spam.`;
   }
 
+  // "Share minutes only" is one setting on the profile, so it covers every pool you're in.
+  // On the join/create cards it only changes the screen until you tap Join or Create.
+  function minutesOn(v) { return v.minutes != null ? v.minutes : !(pool.profile && pool.profile.share_money); }
+
+  function minutesSwitch(on, sub) {
+    return `<label class="switch-row pool-switch">
+        <span>Share minutes only<small>${sub}</small></span>
+        <input type="checkbox" class="js-minutes" ${on ? 'checked' : ''}><i class="switch" aria-hidden="true"></i>
+      </label>`;
+  }
+
+  function moneyLine(v) {
+    if (!pool.user) return '◐ $ earned on the bog, only if you opt in';
+    return minutesOn(v) ? '✗ Your $ earned. Share minutes only is on.' : '✓ Your $ earned on the bog';
+  }
+
+  function moneyColor(v) { return pool.user && minutesOn(v) ? 'var(--muted)' : 'var(--amber)'; }
+
   function viewInvite(v) {
     const p = v.preview;
+    const minutes = minutesOn(v);
     const action = pool.user
-      ? `<div class="pool-btns"><button class="btn btn-start" data-act="join" data-busy="Joining…">Join the pool</button></div>`
+      ? `${minutesSwitch(minutes, 'Your pools see your bog time, not your $. Applies to all your pools. Change it anytime in Profile &amp; Crap.')}
+         <div class="pool-btns"><button class="btn btn-start" data-act="join" data-busy="Joining…">Join the pool</button></div>`
       : `<input class="pool-input" id="poolEmail" type="email" inputmode="email" autocomplete="email" placeholder="you@email.com" value="${esc(v.email || '')}">
          <div class="pool-btns"><button class="btn btn-start" data-act="login">Email me a login code to join</button></div>`;
     return `
@@ -1975,7 +2156,7 @@
       <ul class="pool-list">
         <li>✓ Your bog time and session count</li>
         <li>✓ Your rank (and crown, if you earn it)</li>
-        <li style="color:var(--amber)">◐ $ earned on the bog, only if you opt in</li>
+        <li class="js-money-line" style="color:${moneyColor(v)}">${moneyLine(v)}</li>
         <li style="color:var(--muted)">✗ Your salary. It never leaves your phone.</li>
       </ul>
       ${action}
@@ -1990,8 +2171,7 @@
       <input class="pool-input js-name" maxlength="24" placeholder="Display name" value="${esc(p.display_name || '')}">
       <div class="emoji-row">${POOL_EMOJIS.map(e =>
         `<button type="button" class="emoji-opt ${e === emoji ? 'on' : ''}" data-act="emoji" data-emoji="${e}">${e}</button>`).join('')}</div>
-      <label class="pool-check"><input type="checkbox" class="js-money" ${p.share_money ? 'checked' : ''}>
-        <span>Show my $ earned to my pools. Off by default, because dollars per minute gives away your pay.</span></label>
+      ${minutesSwitch(minutesOn(v), 'Your pools see your bog time, not your $. Dollars per minute gives away your pay.')}
       <div class="pool-btns"><button class="btn btn-start" data-act="save-profile" data-busy="Saving…">Save</button></div>`;
   }
 
@@ -2000,7 +2180,8 @@
       <span class="section-label">👑 Poop Pool</span>
       <div class="pool-title">Start a Poop Pool</div>
       <p class="pool-text">Name it, then send the invite link to your mates.</p>
-      <input class="pool-input" id="poolNewName" maxlength="40" placeholder="e.g. Office Throne Room">
+      <input class="pool-input" id="poolNewName" maxlength="40" placeholder="e.g. Office Throne Room" value="${esc(v.newName || '')}">
+      ${minutesSwitch(minutesOn(v), 'Your pools see your bog time, not your $. Applies to all your pools.')}
       <div class="pool-btns">
         ${pool.pools.length ? '<button class="btn btn-ghost" data-act="cancel">Cancel</button>' : ''}
         <button class="btn btn-start" data-act="create-pool" data-busy="Creating…">Create pool</button>
@@ -2114,7 +2295,8 @@
     },
     async back() { pool.view = { name: 'pitch' }; },
     async decline() { writeJSON(POOL_INVITE_KEY, null); await refreshPool(); return 'done'; },
-    async join() {
+    async join(el, root) {
+      await saveShareMoney(!root.querySelector('.js-minutes').checked);
       const { data: pid, error } = await pool.sb.rpc('join_pool', { p_code: pool.view.code });
       if (error) throw error;
       writeJSON(POOL_INVITE_KEY, null);
@@ -2129,11 +2311,11 @@
       const name = root.querySelector('.js-name').value.trim();
       if (!name) throw new Error('Pick a throne name first.');
       const on = root.querySelector('.emoji-opt.on');
-      const money = root.querySelector('.js-money');
+      const minutes = root.querySelector('.js-minutes');
       const row = {
         id: pool.user.id, display_name: name.slice(0, 24),
         emoji: on ? on.dataset.emoji : '💩',
-        share_money: money ? money.checked : !!(pool.profile && pool.profile.share_money),
+        share_money: minutes ? !minutes.checked : !!(pool.profile && pool.profile.share_money),
       };
       const { error } = await pool.sb.from('profiles').upsert(row);
       if (error) throw error;
@@ -2141,9 +2323,10 @@
       pool.sheetEdit = false;
       await refreshPool(); return 'done';
     },
-    async 'create-pool'() {
+    async 'create-pool'(el, root) {
       const name = document.getElementById('poolNewName').value.trim();
       if (!name) throw new Error('Give your pool a name.');
+      await saveShareMoney(!root.querySelector('.js-minutes').checked);
       const { data, error } = await pool.sb.rpc('create_pool', { p_name: name });
       if (error) throw error;
       writeJSON(POOL_CURRENT_KEY, data.id);
@@ -2201,18 +2384,23 @@
 
   // Turning on "share minutes only" re-uploads every bog with earned blanked out, so
   // the $ is gone from Supabase, not just hidden on screen.
+  async function saveShareMoney(share_money) {
+    if (pool.profile && !!pool.profile.share_money === share_money) return;
+    const { error } = await pool.sb.from('profiles').update({ share_money }).eq('id', pool.user.id);
+    if (error) throw error;
+    pool.profile = Object.assign({}, pool.profile, { share_money });
+    pool.boards = {};
+    saveCache();
+    await syncSessions();
+  }
+
   async function setShareMinutes(box) {
     const share_money = !box.checked;
     box.disabled = true;
     pool.msg = '';
     try {
       if (!(await sbReady)) throw new Error('Poop Pool is offline right now.');
-      const { error } = await pool.sb.from('profiles').update({ share_money }).eq('id', pool.user.id);
-      if (error) throw error;
-      pool.profile = Object.assign({}, pool.profile, { share_money });
-      pool.boards = {};
-      saveCache();
-      await syncSessions();
+      await saveShareMoney(share_money);
       pool.msg = share_money ? 'Your pools can now see your $ earned.' : 'Your $ is hidden. Pools only see your minutes.';
       if (pool.view && pool.view.name === 'board') await showBoard();
       renderPool();
@@ -2255,6 +2443,18 @@
     document.getElementById(id).addEventListener('click', onPoolClick));
   document.getElementById('profilePanel').addEventListener('change', (e) => {
     if (e.target.id === 'shareMinutes') setShareMinutes(e.target);
+  });
+
+  // The join/create switch is remembered on the view (so a re-render keeps it) and
+  // flips the "$ earned" line on the invite straight away.
+  poolCard.addEventListener('change', (e) => {
+    if (!e.target.classList.contains('js-minutes') || !pool.view) return;
+    pool.view.minutes = e.target.checked;
+    const line = poolCard.querySelector('.js-money-line');
+    if (line) { line.textContent = moneyLine(pool.view); line.style.color = moneyColor(pool.view); }
+  });
+  poolCard.addEventListener('input', (e) => {
+    if (e.target.id === 'poolNewName' && pool.view) pool.view.newName = e.target.value;
   });
 
   // Six digits in (typed, pasted or iOS autofill) logs straight in
@@ -2354,7 +2554,17 @@
       }
     };
     s.onerror = () => { sbReadyResolve(false); pool.msg = 'Poop Pool is offline right now.'; renderPool(); };
-    document.body.appendChild(s);
+    // Signed in, or arriving from an invite or login link: load Supabase straight away.
+    // Otherwise it waits until the page has settled, so first paint doesn't pay for it.
+    const loadSb = () => { if (!s.isConnected) document.body.appendChild(s); };
+    if (pool.user || readJSON(POOL_INVITE_KEY, null) || q.has('token_hash')) loadSb();
+    else {
+      const idle = window.requestIdleCallback || (fn => setTimeout(fn, 1500));
+      const later = () => idle(loadSb, { timeout: 3000 });
+      if (document.readyState === 'complete') later(); else window.addEventListener('load', later, { once: true });
+      // A tap on the pool card (e.g. the email box) shouldn't wait for idle time
+      poolCard.addEventListener('pointerdown', loadSb, { once: true });
+    }
   })();
 </script>
 <script>
@@ -2371,6 +2581,8 @@
     const ua = navigator.userAgent;
     const isIOS = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
     const isIOSSafari = isIOS && !/CriOS|FxiOS|EdgiOS|OPiOS/.test(ua);
+    const safariVersion = +((ua.match(/Version\/(\d+)/) || [])[1] || 0);
+    const isIOS26 = safariVersion >= 26;
     let barKind = null;
     let installPrompt = null;
     // Dismissing the install hint snoozes it for two weeks. ?installhint shows it now.
@@ -2384,6 +2596,7 @@
     function showBar(kind, html, btnLabel) {
       barKind = kind;
       document.getElementById('appBarIcon').hidden = kind !== 'install';
+      bar.classList.toggle('is-install', kind === 'install');
       text.innerHTML = html;
       btn.hidden = !btnLabel;
       btn.textContent = btnLabel || '';
@@ -2405,6 +2618,15 @@
       }
     });
 
+    const guide = document.getElementById('a2hs');
+    guide.classList.toggle('ios26', isIOS26);
+    text.addEventListener('click', (e) => {
+      if (e.target.id === 'a2hsOpen') guide.hidden = false;
+    });
+    guide.addEventListener('click', (e) => {
+      if (e.target.closest('[data-close]')) guide.hidden = true;
+    });
+
     // Install hint: only after the first salary save, so first visits stay clean.
     const INSTALL_TITLE = '<span class="app-bar-title">Put Gross Income on your home screen for easy on the bog access!</span>';
     function maybeShowInstallHint() {
@@ -2413,7 +2635,10 @@
       if (installPrompt) {
         showBar('install', INSTALL_TITLE + 'Tap Install to add it.', 'Install');
       } else if (isIOSSafari) {
-        showBar('install', INSTALL_TITLE + 'Tap Share (or ⋯ then Share), then <b>Add to Home Screen</b>.');
+        showBar('install', INSTALL_TITLE + (isIOS26
+          ? 'Tap the menu button in the address bar, then Share, then <b>Add to Home Screen</b>.'
+          : 'Tap Share (or ⋯ then Share), then <b>Add to Home Screen</b>.') +
+          '<button type="button" class="app-bar-btn" id="a2hsOpen">Show me how</button>');
       }
     }
     window.addEventListener('beforeinstallprompt', (e) => {
