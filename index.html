@@ -619,7 +619,7 @@
   .app-bar.is-install .app-bar-text b { color: var(--bg); }
   .app-bar.is-install .app-bar-title { font-weight: 700; }
   .app-bar.is-install .app-bar-btn { background: var(--bg); color: var(--gold); }
-  .app-bar.is-install .app-bar-x { position: absolute; top: 6px; right: 6px; color: var(--bg); opacity: 0.7; }
+  .app-bar.is-install .app-bar-x { color: var(--bg); opacity: 0.7; }
   .app-bar.is-install .app-bar-icon { box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
 
   /* ── iPhone add to home screen guide ── */
@@ -680,9 +680,11 @@
   }
   .app-bar-btn[hidden] { display: none; }
   .app-bar-x {
+    position: absolute; top: 6px; right: 6px;
     background: none; border: none; color: var(--muted);
     font-size: 14px; padding: 6px; cursor: pointer;
   }
+  .app-bar:has(.app-bar-x) { padding-right: 40px; }
   .sheet-open .app-bar { display: none; }
   .throne-check { z-index: 31; flex-wrap: wrap; }
   .throne-check .app-bar-text { flex-basis: 100%; }
@@ -753,8 +755,27 @@
     background: var(--bg); border: 1px solid var(--gold); font-size: 11px;
     display: flex; align-items: center; justify-content: center;
   }
-  .arcade-note { margin-top: 8px; font-size: 12px; color: var(--muted); line-height: 1.4; }
-  .arcade-note[hidden] { display: none; }
+  /* Pre-launch announcement: sign in now to become a Founding Flusher */
+  .founder-bar {
+    position: relative; align-self: stretch;
+    margin: -24px -16px 16px; padding: 12px 44px 12px 16px;
+    padding-top: calc(12px + env(safe-area-inset-top));
+    display: flex; justify-content: center;
+    background: var(--green); color: var(--bg);
+    box-shadow: 0 6px 20px rgba(76,175,110,0.25);
+    font-size: 13px; line-height: 1.35;
+  }
+  .founder-bar[hidden] { display: none; }
+  .founder-bar-inner { flex: 1; max-width: 520px; display: flex; flex-direction: column; gap: 10px; }
+  .founder-bar-text { flex: 1; }
+  .founder-bar-text b { font-weight: 700; }
+  .founder-bar .founder-bar-btn { flex: none; width: auto; align-self: flex-start; font-size: 17px; padding: 11px 28px; }
+  .founder-bar-x {
+    position: absolute; top: calc(4px + env(safe-area-inset-top)); right: 4px;
+    width: 32px; height: 32px; border: 0; border-radius: 50%;
+    background: transparent; color: var(--bg); font-size: 15px; cursor: pointer;
+  }
+  .game-open .founder-bar { display: none; }
   .paywall { height: 100%; overflow-y: auto; text-align: center; padding: 18px 6px 24px; }
   .paywall-icon {
     width: 84px; height: 84px; border-radius: 24px; margin: 6px auto 14px;
@@ -779,6 +800,13 @@
 </style>
 </head>
 <body>
+<div class="founder-bar" id="founderBar" role="status" hidden>
+  <div class="founder-bar-inner">
+    <div class="founder-bar-text" id="founderBarText"></div>
+    <button type="button" class="btn btn-start founder-bar-btn" id="founderBarBtn">Sign in</button>
+  </div>
+  <button type="button" class="founder-bar-x" id="founderBarX" aria-label="Dismiss">✕</button>
+</div>
 <div class="wrapper">
 
   <!-- HEADER -->
@@ -875,7 +903,6 @@
   <div class="arcade-card" id="arcadeCard">
     <div class="arcade-head"><b>Don't go off for a doom scroll!</b>Play the Bog Arcade while the clock pays you.</div>
     <div class="arcade-tiles" id="arcadeTiles"></div>
-    <div class="arcade-note" id="arcadeNote" hidden></div>
   </div>
 
   <!-- BOG HISTORY + LIFETIME PROJECTOR (one collapsible card) -->
@@ -933,7 +960,7 @@
     </div>
   </div>
 
-  <!-- POOP POOL (beta) -->
+  <!-- POOP POOL -->
   <div class="pool-card" id="poolCard" hidden></div>
 
 
@@ -1664,12 +1691,21 @@
         <span class="arcade-icon" style="background:${gm.bg}" aria-hidden="true">${gm.icon}${gameLocked(gm) ? '<span class="arcade-lock">🔒</span>' : ''}</span>
         <span class="arcade-name">${gm.name}</span>
       </button>`).join('');
-    // Before launch: people who sign in now become Founding Flushers and keep the arcade free
-    const note = document.getElementById('arcadeNote');
-    const soon = PAYWALL_FROM !== null && Date.now() < Date.parse(PAYWALL_FROM);
-    note.hidden = !(soon && !unlocked() && !(typeof pool !== 'undefined' && pool.user));
-    if (!note.hidden) note.textContent = `Sign in to Poop Pool before ${new Date(PAYWALL_FROM).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', timeZone: 'Australia/Sydney' })} to keep the whole arcade free forever.`;
+    renderFounderBar();
   }
+
+  // Before launch: people who sign in now become Founding Flushers and keep the arcade free
+  let founderBarClosed = false;
+  function renderFounderBar() {
+    const bar = document.getElementById('founderBar');
+    const soon = PAYWALL_FROM !== null && Date.now() < Date.parse(PAYWALL_FROM);
+    bar.hidden = founderBarClosed || !(soon && !unlocked() && !(typeof pool !== 'undefined' && pool.user));
+    if (!bar.hidden) document.getElementById('founderBarText').innerHTML =
+      `<b>👑 You're a Founding Flusher!</b> Sign in to Poop Pool before ${new Date(PAYWALL_FROM).toLocaleDateString('en-AU', { day: 'numeric', month: 'long', timeZone: 'Australia/Sydney' })} to keep the arcade free, forever.`;
+  }
+  document.getElementById('founderBarBtn').onclick = () =>
+    document.getElementById('poolCard').scrollIntoView({ block: 'start', behavior: 'smooth' });
+  document.getElementById('founderBarX').onclick = () => { founderBarClosed = true; renderFounderBar(); };
   renderArcade();
 
   function paywallHtml(gm) {
@@ -1806,7 +1842,7 @@
 </script>
 
 <script>
-  // ══ POOP POOL (beta) ══
+  // ══ POOP POOL ══
   // Friends-only leaderboards backed by Supabase.
   // Schema and privacy rules: supabase/schema.sql
   const SUPABASE_URL = 'https://pngsoygqbvhlfkzdghtr.supabase.co';
@@ -2104,7 +2140,7 @@
 
   function viewPitch(v) {
     return `
-      <span class="section-label">👑 Poop Pool · Beta</span>
+      <span class="section-label">👑 Poop Pool</span>
       <div class="pool-title">The Royal Flush</div>
       <p class="pool-text">${esc(v.note || 'Race your mates for the Golden Throne. Private, invite-only leaderboards for bog time.')}</p>
       <input class="pool-input" id="poolEmail" type="email" inputmode="email" autocomplete="email" placeholder="you@email.com" value="${esc(v.email || '')}">
@@ -2114,7 +2150,7 @@
 
   function viewSent(v) {
     return `
-      <span class="section-label">👑 Poop Pool · Beta</span>
+      <span class="section-label">👑 Poop Pool</span>
       <div class="pool-title">Check your inbox</div>
       <p class="pool-text" id="poolSentText">${sentText(v)}</p>
       <div class="input-row code-row">
@@ -2522,6 +2558,7 @@
       else if (pool.pools.length === 0) pool.view = { name: 'create' };
     }
     renderPool();
+    renderFounderBar(); // signed in from the cache: no need to nag
     if (readJSON(POOL_INVITE_KEY, null)) poolCard.scrollIntoView({ block: 'start' });
 
     const s = document.createElement('script');
