@@ -38,6 +38,9 @@
   .ts-val { font-family: 'Bebas Neue', sans-serif; font-size: 24px; line-height: 1.05; letter-spacing: 1px; }
   .ts-val.green { color: var(--green, #4caf6e); }
   .ts-val.gold { color: var(--gold, #f5c842); }
+  .ts-pass { width: 36px; height: 36px; border-radius: 50%; border: 1px solid #7fd3f5; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; font-size: 18px; box-shadow: 0 0 12px rgba(127,211,245,0.45); }
+  .ts-pass[hidden] { display: none; }
   .ts-mute { background: none; border: 1px solid rgba(245,200,66,0.2); border-radius: 50%; width: 36px; height: 36px;
     font-size: 16px; cursor: pointer; flex-shrink: 0; }
   .ts-stage { flex: 1; min-height: 0; position: relative; display: flex; align-items: center; justify-content: center;
@@ -131,6 +134,7 @@
           <div class="ts-stat"><div class="ts-lbl">Log length</div><div class="ts-val gold" data-len>0 cm</div></div>
           <div class="ts-stat"><div class="ts-lbl">Paid to play</div><div class="ts-val green" data-paid>$0.00</div></div>
           <div class="ts-stat"><div class="ts-lbl">Record</div><div class="ts-val" data-best>0 cm</div></div>
+          <div class="ts-pass" data-pass title="U-bend: one free pass through the bowl" hidden>🌀</div>
           <button type="button" class="ts-mute" data-mute aria-label="Sound"></button>
         </div>
         <div class="ts-stage"><canvas></canvas><div class="ts-msg" hidden></div></div>
@@ -140,14 +144,14 @@
     const $ = sel => root.querySelector(sel);
     const el = {
       wrap: $('.ts'), stage: $('.ts-stage'), canvas: $('canvas'), msg: $('.ts-msg'), screen: $('[data-screen]'),
-      len: $('[data-len]'), paid: $('[data-paid]'), best: $('[data-best]'), mute: $('[data-mute]'),
+      len: $('[data-len]'), paid: $('[data-paid]'), best: $('[data-best]'), mute: $('[data-mute]'), pass: $('[data-pass]'),
     };
     const ctx = el.canvas.getContext('2d');
 
     let T = 20, W = 0, H = 0, dpr = 1, bg = null;
     const g = {
       state: 'title', body: [], lastTail: null, dir: [1, 0], queue: [], grow: 0, step: 0, acc: 0,
-      food: null, bonus: null, eaten: 0, hot: 0, playSecs: 0, timer: 0, clock: 0,
+      food: null, bonus: null, bend: null, pass: false, eaten: 0, hot: 0, playSecs: 0, timer: 0, clock: 0,
       corn: [], puffs: [], cause: '', best: load(BEST_KEY, 0),
     };
     let frame = null, last = 0, alive = true, hud = {};
@@ -193,6 +197,7 @@
       g.lastTail = [3, cy];
       g.dir = [1, 0]; g.queue = []; g.grow = 0; g.acc = 0; g.eaten = 0; g.hot = 0;
       g.playSecs = 0; g.corn = []; g.puffs = []; g.bonus = null; g.cause = '';
+      g.bend = null; g.pass = false; renderPass();
       layout();
       g.food = spawn();
       el.screen.hidden = true;
@@ -220,6 +225,7 @@
         if (onSnake(c, r)) continue;
         if (g.food && g.food.x === c && g.food.y === r) continue;
         if (g.bonus && g.bonus.x === c && g.bonus.y === r) continue;
+        if (g.bend && g.bend.x === c && g.bend.y === r) continue;
         return { x: c, y: r, ...(extra || FOODS[Math.floor(Math.random() * FOODS.length)]) };
       }
       return null;
@@ -241,8 +247,15 @@
         g.dir = d; break;
       }
       const [hx, hy] = g.body[0];
-      // No walls: go out one side and come back in the other, like the old Nokia
-      const nx = (hx + g.dir[0] + COLS) % COLS, ny = (hy + g.dir[1] + ROWS) % ROWS;
+      let nx = hx + g.dir[0], ny = hy + g.dir[1];
+      if (nx < 0 || ny < 0 || nx >= COLS || ny >= ROWS) {
+        if (!g.pass) return die('bowl');
+        // A U-bend lets you through the bowl once: out one side, in the other
+        nx = (nx + COLS) % COLS; ny = (ny + ROWS) % ROWS;
+        g.pass = false; renderPass();
+        sound.chomp(); buzz([20, 20, 40]);
+        flash('U-BEND!', true);
+      }
       // Moving into the tail's cell is fine unless it's about to grow
       const hitsSelf = g.body.some(([x, y], i) => x === nx && y === ny && (i < g.body.length - 1 || g.grow > 0));
       if (hitsSelf) return die('self');
@@ -255,6 +268,11 @@
 
       if (g.food && nx === g.food.x && ny === g.food.y) eat(g.food, false);
       if (g.bonus && nx === g.bonus.x && ny === g.bonus.y) eat(g.bonus, true);
+      if (g.bend && nx === g.bend.x && ny === g.bend.y) {
+        g.bend = null; g.pass = true; renderPass();
+        sound.chomp(); buzz([15, 15, 15]);
+        flash('U-BEND: ONE FREE PASS!', true);
+      }
     }
 
     function eat(f, bonus) {
@@ -273,6 +291,8 @@
         }
         g.food = spawn();
         if (!g.bonus && g.eaten % 6 === 0) g.bonus = spawn({ emoji: '🌶️', name: 'chilli', life: 7 });
+        // Rare: about 1 bite in 10 once you're going, and only one pass at a time
+        else if (!g.bend && !g.pass && g.eaten >= 4 && Math.random() < 0.1) g.bend = spawn({ emoji: '🌀', name: 'u-bend', life: 6 });
       }
     }
 
@@ -301,6 +321,7 @@
         }
       }
       if (g.bonus && (g.bonus.life -= dt) <= 0) g.bonus = null;
+      if (g.bend && (g.bend.life -= dt) <= 0) g.bend = null;
 
       g.acc += dt;
       let st = stepTime();
@@ -396,6 +417,14 @@
 
       // Face on the front end: googly eyes that look where it's heading
       const [hx, hy] = pts[0];
+      if (g.pass && !dying) {
+        // Holding a U-bend: a blue swirl spins round the head
+        ctx.strokeStyle = '#7fd3f5'; ctx.lineWidth = Math.max(2, T * 0.09);
+        const a = still ? 0 : g.clock * 5;
+        for (let k = 0; k < 3; k++) {
+          ctx.beginPath(); ctx.arc(hx * T, hy * T, girth + T * 0.22, a + k * 2.09, a + k * 2.09 + 1.2); ctx.stroke();
+        }
+      }
       const [dx, dy] = g.dir;
       const px = -dy, py = dx;
       const er = Math.max(3, girth * 0.42);
@@ -439,6 +468,10 @@
         const blink = g.bonus.life < 2 && !still && Math.floor(g.clock * 8) % 2 === 0;
         if (!blink) emoji(g.bonus.emoji, (g.bonus.x + 0.5) * T, (g.bonus.y + 0.5) * T, T * 0.9 * pulse, '#e07b00');
       }
+      if (g.bend) {
+        const blink = g.bend.life < 2 && !still && Math.floor(g.clock * 8) % 2 === 0;
+        if (!blink) emoji('🌀', (g.bend.x + 0.5) * T, (g.bend.y + 0.5) * T, T * 0.9 * pulse, '#7fd3f5');
+      }
       for (const p of g.puffs) {
         ctx.globalAlpha = Math.max(0, 0.5 * (1 - p.t / 1.1));
         ctx.fillStyle = '#7DBA4A';
@@ -469,6 +502,7 @@
       if (hud.best !== best) el.best.textContent = hud.best = best;
     }
 
+    function renderPass() { el.pass.hidden = !g.pass; }
     function renderMute() { el.mute.textContent = sound.muted ? '🔇' : '🔊'; }
 
     // ── LOOP ──
@@ -494,14 +528,15 @@
       el.screen.innerHTML = `
         <div class="ts-hero">💩</div>
         <div class="ts-title">Turd Snake</div>
-        <div class="ts-sub">Eat. Grow. Don't bite your tail.</div>
+        <div class="ts-sub">Eat. Grow. Don't touch the bowl.</div>
         <div class="ts-box">
           <div class="ts-lbl" style="margin-bottom:6px">Instructions</div>
           <div class="ts-instr-text">Swipe to turn. Eat everything to grow your log.</div>
           <div class="ts-row"><div class="ts-av">🌽</div><div><b>Corn &amp; mates</b><span>+${CM_PER_SEG} cm each. Corn stays in, obviously.</span></div></div>
           <div class="ts-row"><div class="ts-av">🌶️</div><div><b>Chilli</b><span>+${CM_PER_SEG * 2} cm and ring of fire speed</span></div></div>
           <div class="ts-row"><div class="ts-av">🪰</div><div><b>Flies</b><span>harmless. They just like you.</span></div></div>
-          <div class="ts-row"><div class="ts-av">🚽</div><div><b>The bowl</b><span>no walls: slide off one side and come back on the other. Bite your own tail and it's over</span></div></div>
+          <div class="ts-row"><div class="ts-av">🚽</div><div><b>The bowl</b><span>hit the edge or bite your own tail and it's over</span></div></div>
+          <div class="ts-row"><div class="ts-av">🌀</div><div><b>U-bend</b><span>rare. One free pass through the bowl: out one side, in the other</span></div></div>
         </div>
         <div class="ts-box ts-grid">
           <div><div class="ts-lbl">Longest log</div><div class="ts-val gold">${cm(g.best)}</div></div>
