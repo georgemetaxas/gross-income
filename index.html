@@ -766,14 +766,10 @@
     font-size: 13px; line-height: 1.35;
   }
   .founder-bar[hidden] { display: none; }
-  .founder-bar-inner { flex: 1; max-width: 520px; display: flex; align-items: center; gap: 12px; }
+  .founder-bar-inner { flex: 1; max-width: 520px; display: flex; flex-direction: column; gap: 10px; }
   .founder-bar-text { flex: 1; }
   .founder-bar-text b { font-weight: 700; }
-  .founder-bar-btn {
-    flex-shrink: 0; border: 0; border-radius: 10px; padding: 9px 12px;
-    background: var(--bg); color: var(--green);
-    font: 600 13px 'DM Sans', sans-serif; cursor: pointer;
-  }
+  .founder-bar .founder-bar-btn { flex: none; font-size: 17px; padding: 11px 16px; }
   .founder-bar-x {
     position: absolute; top: calc(4px + env(safe-area-inset-top)); right: 4px;
     width: 32px; height: 32px; border: 0; border-radius: 50%;
@@ -807,7 +803,7 @@
 <div class="founder-bar" id="founderBar" role="status" hidden>
   <div class="founder-bar-inner">
     <div class="founder-bar-text" id="founderBarText"></div>
-    <button type="button" class="founder-bar-btn" id="founderBarBtn">Sign in</button>
+    <button type="button" class="btn btn-start founder-bar-btn" id="founderBarBtn">Sign in</button>
   </div>
   <button type="button" class="founder-bar-x" id="founderBarX" aria-label="Dismiss">✕</button>
 </div>
