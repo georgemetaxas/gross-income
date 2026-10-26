@@ -1927,6 +1927,35 @@
   let game = null;
   const gameScripts = {};
 
+  // ── GAME STATS ──
+  // Anonymous counts so we can see which games get played: one 'open' row when a
+  // game opens, and a 'time' row with seconds played when it closes or the app is
+  // hidden. No user id, device id or score. Only the live site sends (?trackgames
+  // forces it for testing). Table + game_popularity view: supabase/schema.sql
+  const TRACK_GAMES = location.hostname === 'grossincome.com.au' || new URLSearchParams(location.search).has('trackgames');
+  let playing = null; // { id, since }
+  function trackGame(row) {
+    if (!TRACK_GAMES) return;
+    try {
+      fetch(SUPABASE_URL + '/rest/v1/game_events', {
+        method: 'POST', keepalive: true,
+        headers: { apikey: SUPABASE_KEY, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+        body: JSON.stringify(row),
+      }).catch(() => {});
+    } catch (e) {}
+  }
+  function trackPlayTime() {
+    if (!playing) return;
+    const secs = Math.min(Math.round((Date.now() - playing.since) / 1000), 3 * 3600);
+    if (secs >= 2) trackGame({ game: playing.id, kind: 'time', secs });
+    playing.since = Date.now();
+  }
+  document.addEventListener('visibilitychange', () => {
+    if (!playing) return;
+    if (document.visibilityState === 'hidden') trackPlayTime();
+    else playing.since = Date.now();
+  });
+
   // ── GOLDEN THRONE (arcade unlock) ──
   // A one-off purchase opens every game; Turd Snake stays free as a taster.
   // On the web it's bought through a Stripe Payment Link, and the stripe-webhook
@@ -2055,7 +2084,9 @@
     document.getElementById('gameLayer').hidden = false;
     document.body.classList.add('game-open');
     history.pushState({ game: true }, '');
-    if (gameLocked(gm)) { root.innerHTML = paywallHtml(gm); return; }
+    const locked = gameLocked(gm);
+    trackGame({ game: gm.id, kind: 'open', locked });
+    if (locked) { root.innerHTML = paywallHtml(gm); return; }
     root.innerHTML = '<div class="game-loading">Unblocking the pipes…</div>';
     try { await loadGame(gm); } catch (e) {
       root.innerHTML = `<div class="game-loading">${gm.name} didn't load. Check your signal and try again.</div>`;
@@ -2064,9 +2095,12 @@
     if (document.getElementById('gameLayer').hidden) return;
     // Only pays while a bog is running, so "Paid to play" is $0 off the bog
     game = window[gm.global].mount(root, { hourly: () => running ? getHourlyRate() : 0, onExit: closeGame });
+    playing = { id: gm.id, since: Date.now() };
   }
 
   function hideGame() {
+    trackPlayTime();
+    playing = null;
     if (game) { game.destroy(); game = null; }
     document.getElementById('gameRoot').innerHTML = '';
     document.getElementById('gameLayer').hidden = true;

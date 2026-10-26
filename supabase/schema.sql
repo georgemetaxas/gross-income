@@ -241,3 +241,41 @@ alter table public.entitlements enable row level security;
 drop policy if exists "entitlements: read own" on public.entitlements;
 create policy "entitlements: read own" on public.entitlements
   for select to authenticated using (user_id = auth.uid());
+
+-- ── GAME STATS ──
+-- Anonymous arcade usage, so we can see which games are popular. The app writes
+-- one 'open' row when a game opens (locked = it hit the paywall) and 'time' rows
+-- with seconds played. No user or device id. Anyone can insert; nobody can read
+-- through the API. Look at it in SQL Editor: select * from game_popularity;
+
+create table if not exists public.game_events (
+  id     bigint generated always as identity primary key,
+  at     timestamptz not null default now(),
+  game   text not null check (game ~ '^[a-z0-9-]{1,30}$'),
+  kind   text not null check (kind in ('open', 'time')),
+  locked boolean not null default false,
+  secs   integer check (secs between 0 and 10800)
+);
+create index if not exists game_events_at on public.game_events (at);
+
+alter table public.game_events enable row level security;
+
+drop policy if exists "game_events: anyone can add" on public.game_events;
+create policy "game_events: anyone can add" on public.game_events
+  for insert to anon, authenticated with check (true);
+revoke all on public.game_events from anon, authenticated;
+grant insert on public.game_events to anon, authenticated;
+
+-- Last 30 days per game, most played first. Change the interval to look further back.
+create or replace view public.game_popularity with (security_invoker = true) as
+select game,
+       count(*) filter (where kind = 'open')                    as opens,
+       count(*) filter (where kind = 'open' and locked)         as paywall_hits,
+       round(coalesce(sum(secs), 0) / 60.0)::int                as minutes_played,
+       round(coalesce(sum(secs), 0) / 60.0
+             / nullif(count(*) filter (where kind = 'open' and not locked), 0), 1) as avg_minutes_per_play
+from public.game_events
+where at > now() - interval '30 days'
+group by game
+order by minutes_played desc, opens desc;
+revoke all on public.game_popularity from anon, authenticated;
