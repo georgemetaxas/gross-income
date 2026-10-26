@@ -30,7 +30,8 @@ The leaderboard runs on Supabase. The site itself stays static.
 
 - `game_events` table (in `schema.sql`): anonymous arcade usage. An `open` row per game opened (`locked` = hit the paywall) and `time` rows with seconds played. No user or device id.
 - Only the live site sends (add `?trackgames` to a preview link to test). Anyone can insert; nothing can be read through the API.
-- To see it: SQL Editor → `select * from game_popularity;` (last 30 days, most played first).
+- To see it: open grossincome.com.au/stats signed in (only accounts in `stats_admins`), or SQL Editor → `select * from game_popularity;`.
+- Give someone the stats page: `insert into stats_admins select id from auth.users where email = '…';`
 
 ## Golden Throne (arcade unlock)
 

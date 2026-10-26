@@ -279,3 +279,35 @@ where at > now() - interval '30 days'
 group by game
 order by minutes_played desc, opens desc;
 revoke all on public.game_popularity from anon, authenticated;
+
+-- Stats page (stats.html): only people listed in stats_admins can read the numbers.
+-- Add someone: insert into stats_admins select id from auth.users where email = '…';
+create table if not exists public.stats_admins (
+  user_id uuid primary key references auth.users on delete cascade
+);
+alter table public.stats_admins enable row level security;
+revoke all on public.stats_admins from anon, authenticated;
+
+-- One row per day per game. Days are Sydney days.
+create or replace function public.game_stats(p_days int default 30)
+returns table (day date, game text, opens int, paywall_hits int, secs int)
+language plpgsql stable security definer set search_path = public
+as $$
+begin
+  if not exists (select 1 from stats_admins where user_id = auth.uid()) then
+    raise exception 'not allowed';
+  end if;
+  return query
+  select (e.at at time zone 'Australia/Sydney')::date,
+         e.game,
+         (count(*) filter (where e.kind = 'open'))::int,
+         (count(*) filter (where e.kind = 'open' and e.locked))::int,
+         coalesce(sum(e.secs), 0)::int
+  from game_events e
+  where e.at > now() - make_interval(days => least(greatest(p_days, 1), 365))
+  group by 1, 2
+  order by 1, 2;
+end;
+$$;
+revoke execute on function public.game_stats(int) from public, anon;
+grant execute on function public.game_stats(int) to authenticated;
