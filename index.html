@@ -2714,14 +2714,21 @@
     if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
     navigator.serviceWorker.register('sw.js').catch(() => {});
 
-    // New version check: compare the page's ETag/Last-Modified with what we loaded.
+    // New version check. Cloudflare Pages sends no ETag or Last-Modified for HTML, so
+    // fingerprint the inline <style> and <script> source (which the app never rewrites)
+    // of the page we're running and of a fresh copy from the server.
+    async function fingerprint(doc) {
+      const src = [...doc.querySelectorAll('style, script:not([src])')].map(el => el.textContent).join('\n');
+      const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(src));
+      return [...new Uint8Array(hash)].map(b => b.toString(16).padStart(2, '0')).join('');
+    }
     let loadedVersion = null;
     async function pageVersion() {
-      const res = await fetch(location.pathname, { method: 'HEAD', cache: 'no-store' });
+      const res = await fetch(location.pathname, { cache: 'no-store' });
       if (!res.ok) return null;
-      return res.headers.get('etag') || res.headers.get('last-modified');
+      return fingerprint(new DOMParser().parseFromString(await res.text(), 'text/html'));
     }
-    pageVersion().then(v => { loadedVersion = v; }).catch(() => {});
+    if (crypto.subtle) fingerprint(document).then(v => { loadedVersion = v; }).catch(() => {});
 
     let lastCheck = Date.now();
     document.addEventListener('visibilitychange', async () => {
