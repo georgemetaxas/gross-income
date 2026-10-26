@@ -690,14 +690,14 @@
   .throne-check .app-bar-text { flex-basis: 100%; }
   .throne-check .app-bar-btn { flex: 1; }
   .throne-check .throne-stay { background: transparent; color: var(--cream); border: 1px solid var(--border); }
-  /* ── BOG ARCADE: card while the timer runs, full screen game with a mini timer ── */
+  /* ── BOG ARCADE: always-on card, full screen game with a mini timer ── */
   .arcade-card {
-    display: none;
     background: linear-gradient(135deg, rgba(127,211,245,0.10), rgba(245,200,66,0.08));
     border: 1px solid rgba(245,200,66,0.35); border-radius: 20px;
     padding: 16px 18px 18px; margin-bottom: 12px; width: 100%;
   }
-  .bog-running .arcade-card { display: block; }
+  /* Copy and mini timer button swap with the bog timer */
+  .bog-running .arcade-idle, body:not(.bog-running) .arcade-live { display: none; }
   .arcade-head { font-size: 14px; line-height: 1.4; color: var(--cream); }
   .arcade-head b { display: block; font-family: 'Bebas Neue', sans-serif; font-size: 24px; font-weight: 400; letter-spacing: 1.5px; color: var(--gold); line-height: 1.1; }
   /* One sideways-scrolling row so any number of games fits; the next tile peeks in at the edge. */
@@ -742,6 +742,7 @@
     background: transparent; color: #ff8a65; border: 1px solid rgba(255,138,101,0.4); border-radius: 10px;
     font-family: 'Bebas Neue', sans-serif; font-size: 16px; letter-spacing: 1.5px; padding: 8px 10px; cursor: pointer; white-space: nowrap;
   }
+  .mini-timer-btn.arcade-idle { color: var(--gold); border-color: rgba(245,200,66,0.45); }
   .mini-timer-x {
     width: 36px; height: 36px; border-radius: 50%; background: var(--paper); border: 1px solid var(--border);
     color: var(--muted); font-size: 14px; cursor: pointer; flex-shrink: 0;
@@ -899,9 +900,10 @@
     </div>
   </div>
 
-  <!-- BOG ARCADE CARD (only while the timer runs); tiles come from GAMES below -->
+  <!-- BOG ARCADE CARD (always shown); tiles come from GAMES below -->
   <div class="arcade-card" id="arcadeCard">
-    <div class="arcade-head"><b>Don't go off for a doom scroll!</b>Play the Bog Arcade while the clock pays you.</div>
+    <div class="arcade-head arcade-live"><b>Don't go off for a doom scroll!</b>Play the Bog Arcade while the clock pays you.</div>
+    <div class="arcade-head arcade-idle"><b>Bog Arcade</b>Start a bog first and the clock pays you to play.</div>
     <div class="arcade-tiles" id="arcadeTiles"></div>
   </div>
 
@@ -973,7 +975,8 @@
     <div class="timer-dot" id="miniTimerDot"></div>
     <div class="timer-digits" id="miniTimerTime">00:00</div>
     <div class="mini-timer-earned" id="miniTimerEarned">$0.00</div>
-    <button type="button" class="mini-timer-btn" id="miniTimerStop" onclick="finishFromGame()">■ Finish Up</button>
+    <button type="button" class="mini-timer-btn arcade-live" id="miniTimerStop" onclick="finishFromGame()">■ Finish Up</button>
+    <button type="button" class="mini-timer-btn arcade-idle" id="miniTimerStart" onclick="startFromGame()">▶ Start a Bog</button>
     <button type="button" class="mini-timer-x" onclick="closeGame()" aria-label="Close game">✕</button>
   </div>
   <div class="game-root" id="gameRoot"></div>
@@ -1638,7 +1641,7 @@
   // Each game lives in its own file under games/ and only loads when someone opens it.
   // A game file sets window[global] = { mount(el, { hourly, onExit }) } and
   // mount returns { destroy() }. Add a game by adding a line here.
-  // The bog timer keeps running underneath, shrunk to a bar at the top.
+  // The card is always shown; a running bog timer keeps going underneath, shrunk to a bar at the top.
   const GAMES = [
     { id: 'dung-run', name: 'Dung Run', icon: '🚽', file: 'games/dung-run.js', global: 'DungRun',
       bg: 'linear-gradient(145deg,#2a6f8f,#123447)' },
@@ -1786,7 +1789,8 @@
       return;
     }
     if (document.getElementById('gameLayer').hidden) return;
-    game = window[gm.global].mount(root, { hourly: getHourlyRate, onExit: closeGame });
+    // Only pays while a bog is running, so "Paid to play" is $0 off the bog
+    game = window[gm.global].mount(root, { hourly: () => running ? getHourlyRate() : 0, onExit: closeGame });
   }
 
   function hideGame() {
@@ -1809,6 +1813,13 @@
   function finishFromGame() {
     closeGame();
     stopTimer();
+  }
+
+  // Playing without a bog running: start one from the game bar. No salary yet → back to the setup form.
+  function startFromGame() {
+    if (savedSalary > 0) return startTimer();
+    closeGame();
+    setTimeout(startTimer, 50);
   }
 
   // ── RESTORE SAVED STATE ──
@@ -2101,7 +2112,7 @@
     const unlock = readJSON(UNLOCK_KEY, null);
     const throne = unlock
       ? `<p class="pool-text">👑 Unlocked${unlock.source === 'founder' ? ' · <b>Founding Flusher</b>' : ''}. Every Bog Arcade game is yours.</p>`
-      : `<p class="pool-text">Unlock every Bog Arcade game for ${UNLOCK_PRICE}, once. Open a locked game while you're on the bog to buy.</p>`;
+      : `<p class="pool-text">Unlock every Bog Arcade game for ${UNLOCK_PRICE}, once. Open a locked game in the Bog Arcade to buy.</p>`;
     panel.innerHTML = `
       ${unlock || paywallOn() ? `<div class="sheet-section"><span class="section-label">Golden Throne</span>${throne}</div>` : ''}
       <div class="sheet-section">
