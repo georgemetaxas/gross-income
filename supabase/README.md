@@ -4,8 +4,8 @@ The leaderboard runs on Supabase. The site itself stays static.
 
 ## Where it runs
 
-- Production: https://grossincome.com.au (GitHub Pages, from `main`). Poop Pool hidden unless `?poolbeta`.
-- Cloudflare Pages project `gross-income`: https://gross-income.pages.dev (from `main`), plus a preview for every branch at `https://<branch-name>.gross-income.pages.dev`.
+- Production: https://grossincome.com.au, served by the Cloudflare Pages project `gross-income` from `main` (also at https://gross-income.pages.dev). Merging to `main` deploys it.
+- Every branch gets a preview at `https://<branch-name>.gross-income.pages.dev`.
 
 ## One-time setup
 
@@ -18,14 +18,6 @@ The leaderboard runs on Supabase. The site itself stays static.
    - Templates (Magic link and Confirm sign up) show the login code `{{ .Token }}`, which people type into the app. This is what makes login work in the iPhone home screen app, because a tapped link opens in Safari, and Safari doesn't share its login with the installed app.
    - Below the code, the templates can still link to `{{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=email` rather than `{{ .ConfirmationURL }}`, for people using the website. The app finishes either kind of login with `verifyOtp`, and keeping the link on our own domain helps the email stay out of spam.
    - The branded templates and subject lines are in `../emails/`.
-
-## Turning the beta on
-
-The Poop Pool card is hidden unless one of these is true:
-
-- the site is opened on a `*.pages.dev` preview or `localhost`
-- the page was opened from an invite link (`?pool=CODE`)
-- the page was opened with `?poolbeta` (remembered on that device)
 
 ## Privacy
 
