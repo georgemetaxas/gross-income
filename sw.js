@@ -4,7 +4,7 @@
 // On a weak signal (bathroom wifi) the page waits at most NAV_TIMEOUT_MS for the network
 // before opening the saved copy; the fresh copy still lands in the cache for next time.
 // Other origins (Supabase, the CDN) are never touched.
-const CACHE = 'gi-v3';
+const CACHE = 'gi-v4';
 const NAV_TIMEOUT_MS = 4000;
 const SHELL = [
   './', 'manifest.webmanifest', 'icons/icon-192.png?v=2', 'icons/apple-touch-icon.png?v=2',

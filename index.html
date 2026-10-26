@@ -2730,16 +2730,21 @@
     }
     if (crypto.subtle) fingerprint(document).then(v => { loadedVersion = v; }).catch(() => {});
 
-    let lastCheck = Date.now();
-    document.addEventListener('visibilitychange', async () => {
-      if (document.visibilityState !== 'visible' || Date.now() - lastCheck < 60000) return;
-      lastCheck = Date.now();
+    async function checkForUpdate() {
       try {
         const v = await pageVersion();
         // Never interrupt a bog in progress: an unsaved timer is lost on reload.
         if (!v || !loadedVersion || v === loadedVersion || running || seconds > 0) return;
         showBar('update', '<b>Fresh drop.</b> A new version of Gross Income is ready.', 'Refresh');
       } catch (e) {}
+    }
+    // Once soon after opening, in case a slow network meant the saved copy was shown
+    setTimeout(checkForUpdate, 6000);
+    let lastCheck = Date.now();
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState !== 'visible' || Date.now() - lastCheck < 60000) return;
+      lastCheck = Date.now();
+      checkForUpdate();
     });
   })();
 </script>
