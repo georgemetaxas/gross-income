@@ -153,6 +153,12 @@
   }
 
   /* ── SETTINGS BUTTON (shown once salary is set) ── */
+  /* Branch previews only, so a preview added to the home screen isn't mistaken for the live app */
+  .test-build {
+    position: relative; z-index: 2; align-self: stretch; text-align: center;
+    margin: calc(-24px - env(safe-area-inset-top, 0px)) -16px 24px; padding: calc(env(safe-area-inset-top, 0px) + 5px) 12px 5px;
+    background: var(--amber); color: #1A1208; font: 500 11px/1.3 'DM Mono', monospace; letter-spacing: .12em;
+  }
   .settings-btn {
     position: absolute; top: 8px; right: 0;
     width: 44px; height: 44px; border-radius: 50%;
@@ -1941,6 +1947,12 @@
   // Never on the live site or gross-income.pages.dev, so it can't be used to skip paying.
   const testHost = /\.gross-income\.pages\.dev$|^localhost$/.test(location.hostname);
   if (testHost && qs.has('nopaywall')) writeJSON('gi.paywallPreview', 'off');
+  if (testHost) {
+    const tag = document.createElement('div');
+    tag.className = 'test-build';
+    tag.textContent = 'TEST BUILD · NOT THE LIVE APP';
+    document.body.prepend(tag);
+  }
 
   function paywallOn() {
     if (testHost && readJSON('gi.paywallPreview', null) === 'off') return false;
