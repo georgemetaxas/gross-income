@@ -801,38 +801,25 @@
   .tile-sub { font-size: 12px; line-height: 1.35; color: var(--muted); margin-top: auto; padding-top: 8px; }
   .tile-bars { position: absolute; right: 16px; top: 52px; height: 30px; display: flex; align-items: flex-end; gap: 3px; }
   .tile-bars i { width: 7px; border-radius: 2px; background: var(--amber); }
-  /* Nothing logged yet, or the gold join card is showing: stats shrinks to a slim full-width row */
-  .home-tile.slim, .home-tiles:has(.join) #statsTile {
-    grid-column: 1 / -1; min-height: 0; flex-direction: row; align-items: center; gap: 14px; padding: 18px 16px;
-  }
-  .home-tile.slim .tile-big, .home-tile.slim .tile-bars,
-  .home-tiles:has(.join) #statsTile :is(.tile-big, .tile-bars) { display: none; }
-  .home-tile.slim .tile-sub, .home-tiles:has(.join) #statsTile .tile-sub { margin: 0; padding: 0; }
-  .home-tile.slim .tile-arrow, .home-tiles:has(.join) #statsTile .tile-arrow { top: 50%; transform: translateY(-50%); }
-  /* Signed out: Poop Pool becomes the big gold "join" card */
-  .home-tile.join {
-    grid-column: 1 / -1; order: -1; min-height: 0; color: var(--bg); border: 0;
-    background: linear-gradient(135deg, var(--gold), #f0a830);
-  }
-  .home-tile.join .tile-label, .home-tile.join .tile-sub { color: var(--bg); }
-  .home-tile.join .tile-arrow { display: none; }
-  .home-tile.join .tile-big { color: var(--bg); font-size: 32px; margin-top: 6px; }
-  .home-tile.join .tile-sub { font-size: 13px; max-width: 58%; margin: 6px 0 0; padding: 0; opacity: 0.85; }
+  /* Signed out: Poop Pool turns gold and asks you to join */
+  .home-tile.join { color: var(--bg); border: 0; background: linear-gradient(135deg, var(--gold), #f0a830); }
+  .home-tile.join .tile-label { color: var(--bg); }
+  .home-tile.join .tile-arrow, .home-tile.join .tile-sub { display: none; }
+  .home-tile.join .tile-big { color: var(--bg); font-size: 26px; margin-top: 36px; }
   .tile-join { display: none; }
   .home-tile.join .tile-join {
-    display: block; position: absolute; right: 16px; bottom: 16px;
-    background: var(--bg); color: var(--gold); border-radius: 999px; padding: 10px 18px;
-    font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 1px;
+    display: block; margin-top: auto; align-self: stretch; text-align: center;
+    background: var(--bg); color: var(--gold); border-radius: 999px; padding: 8px 12px;
+    font-family: 'Bebas Neue', sans-serif; font-size: 17px; letter-spacing: 1px;
   }
-  .tile-faces { display: none; position: absolute; top: 14px; right: 14px; }
+  .tile-faces { display: none; position: absolute; top: 38px; left: 22px; }
   .home-tile.join .tile-faces { display: flex; }
   .tile-faces span {
-    width: 30px; height: 30px; border-radius: 50%; margin-left: -8px; font-size: 15px;
+    width: 26px; height: 26px; border-radius: 50%; margin-left: -6px; font-size: 13px;
     display: flex; align-items: center; justify-content: center;
     background: #f6d766; border: 1.5px solid rgba(26,18,8,0.5);
   }
   .tile-faces span:nth-child(2) { position: relative; z-index: 1; }
-  .home-tile.join .tile-faces + .tile-big { padding-right: 70px; }
 
   /* "Backing one out": the tile strains, then the sheet pushes up with a little overshoot */
   .home-tile.strain { animation: strain 0.14s ease-out; }
@@ -1052,7 +1039,7 @@
       <span class="tile-label">👑 Poop Pool</span><span class="tile-arrow" aria-hidden="true">↗</span>
       <span class="tile-faces" aria-hidden="true"><span>🦍</span><span>💩</span><span>🐒</span></span>
       <span class="tile-big" id="tilePoolBig">Join the Royal Flush</span>
-      <span class="tile-sub" id="tilePoolSub">Race your mates for the Golden Throne. Free, private, no passwords.</span>
+      <span class="tile-sub" id="tilePoolSub"></span>
       <span class="tile-join" aria-hidden="true">Join free →</span>
     </button>
   </div>
@@ -1750,7 +1737,6 @@
   // Bog Stats tile: total time, a line of totals and the last 7 bogs as little bars
   function renderStatsTile(sessions, totalSecs, totalEarned) {
     const tile = document.getElementById('statsTile');
-    tile.classList.toggle('slim', !sessions.length);
     document.getElementById('tileStatsBig').textContent = fmtDuration(totalSecs);
     document.getElementById('tileStatsSub').textContent = sessions.length
       ? `${sessions.length} ${sessions.length === 1 ? 'bog' : 'bogs'} · ${fmtExact(totalEarned)} earned`
@@ -2337,7 +2323,7 @@
     tile.classList.toggle('join', !pool.user);
     if (!pool.user) {
       return set(v.name === 'invite' ? "You're invited" : 'Join the Royal Flush',
-        'Race your mates for the Golden Throne. Free, private, no passwords.');
+        'Race your mates for the Golden Throne.');
     }
     const p = currentPool();
     if (v.name === 'board' && p && pool.board) {
