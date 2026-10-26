@@ -92,10 +92,12 @@
   .wrapper { width: 100%; max-width: 520px; position: relative; z-index: 1; }
 
   /* ── HEADER ── */
-  header { text-align: center; margin-bottom: 28px; padding-top: 8px; }
+  /* One row: logo, then wordmark with the tagline under it. Leaves room for the profile button. */
+  header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; padding: 4px 56px 0 2px; min-height: 52px; }
+  .brand { display: inline-flex; flex-direction: column; align-items: flex-start; }
 
   .logo-mark {
-    width: 64px; height: 64px; display: block; margin: 0 auto 6px;
+    width: 48px; height: 48px; display: block; flex: none;
     animation: bob 3.5s ease-in-out infinite;
     filter: drop-shadow(0 4px 16px rgba(245,200,66,0.3));
   }
@@ -110,19 +112,20 @@
 
   @keyframes bob {
     0%, 100% { transform: translateY(0) rotate(-3deg); }
-    50% { transform: translateY(-10px) rotate(3deg); }
+    50% { transform: translateY(-4px) rotate(3deg); }
   }
 
   h1 {
     font-family: 'Bebas Neue', sans-serif;
-    font-size: clamp(48px, 12vw, 72px);
-    letter-spacing: 4px; line-height: 1; color: var(--gold);
-    text-shadow: 0 0 60px rgba(245,200,66,0.25), 0 2px 0 rgba(0,0,0,0.5);
+    font-size: 36px;
+    letter-spacing: 3px; line-height: 1; color: var(--gold);
+    text-shadow: 0 0 40px rgba(245,200,66,0.25), 0 2px 0 rgba(0,0,0,0.5);
   }
 
+  /* Letter spacing is set in JS so the tagline spans exactly the wordmark's width */
   .tagline {
-    font-size: 12px; color: var(--muted); letter-spacing: 3px;
-    text-transform: uppercase; margin-top: 6px; font-family: 'DM Mono', monospace;
+    font-size: 9px; color: var(--muted); letter-spacing: 2px; white-space: nowrap;
+    text-transform: uppercase; margin-top: 3px; font-family: 'DM Mono', monospace;
   }
 
   /* ── CARD ── */
@@ -151,7 +154,7 @@
 
   /* ── SETTINGS BUTTON (shown once salary is set) ── */
   .settings-btn {
-    position: absolute; top: 4px; right: 0;
+    position: absolute; top: 8px; right: 0;
     width: 44px; height: 44px; border-radius: 50%;
     background: rgba(245,200,66,0.1);
     border: 1px solid rgba(245,200,66,0.3);
@@ -451,28 +454,12 @@
   .fun-fact span { color: var(--gold); }
 
   /* ── BOG HISTORY (top half of the lifetime card) ── */
-  .stats-toggle {
-    display: flex; justify-content: space-between; align-items: center; gap: 12px;
-    width: 100%; background: none; border: none; padding: 0; margin: 0;
-    color: inherit; cursor: pointer; text-align: left; position: relative; z-index: 1;
-  }
-  .stats-toggle .section-label { margin-bottom: 0; }
-  .stats-chevron { color: var(--gold); font-family: 'DM Mono', monospace; font-size: 28px; line-height: 1; padding: 0 4px; }
-  .stats-chevron::before { content: '−'; }
-  .lifetime-card.collapsed .stats-chevron::before { content: '+'; }
-  /* 0fr → 1fr grid rows animate height without measuring it */
-  .stats-body { display: grid; grid-template-rows: 1fr; transition: grid-template-rows 0.3s ease; }
-  .lifetime-card.collapsed .stats-body { grid-template-rows: 0fr; }
-  .stats-inner { overflow: hidden; min-height: 0; }
-  .stats-part { padding-top: 20px; }
+  .stats-part { padding-top: 12px; }
   .stats-part[hidden] { display: none; }
   .stats-part + .stats-part { margin-top: 20px; border-top: 1px solid rgba(245,200,66,0.16); }
   .stats-sub { margin-bottom: 0; font-size: 11px; }
   body:not(.has-salary) #portfolioPart { display: none; }
   #historyPart .lt-val { color: var(--gold); }
-  @media (prefers-reduced-motion: reduce) {
-    .stats-body { transition: none; }
-  }
   .history-list { margin-top: 18px; border-top: 1px solid var(--border); }
   .history-row {
     display: flex; justify-content: space-between; gap: 12px; padding: 10px 0;
@@ -800,6 +787,148 @@
   .paywall-small { font-size: 12px !important; color: var(--muted) !important; margin-top: 14px !important; }
   .paywall-small a, .paywall-small button { color: var(--gold); background: none; border: none; padding: 0; font: inherit; text-decoration: underline; cursor: pointer; }
   .paywall-msg { min-height: 18px; font-size: 13px; color: #ff8a65; margin-top: 10px; }
+
+  /* ── HOME TILES: Bog Stats + Poop Pool open as sheets ── */
+  .home-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  .home-tile {
+    position: relative; display: flex; flex-direction: column; align-items: flex-start; text-align: left;
+    min-height: 150px; padding: 16px; border-radius: 20px; cursor: pointer; color: var(--cream);
+    background: var(--surface); border: 1px solid rgba(245,200,66,0.3); font: inherit;
+  }
+  .tile-label { font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--heading); }
+  .tile-arrow { position: absolute; top: 12px; right: 14px; color: var(--gold); font-size: 16px; }
+  .tile-big { font-family: 'Bebas Neue', sans-serif; font-size: 48px; letter-spacing: 1px; line-height: 1; color: var(--gold); margin-top: 12px; }
+  .tile-sub { font-size: 12px; line-height: 1.35; color: var(--muted); margin-top: auto; padding-top: 8px; }
+  .tile-bars { position: absolute; right: 16px; top: 52px; height: 30px; display: flex; align-items: flex-end; gap: 3px; }
+  .tile-bars i { width: 7px; border-radius: 2px; background: var(--amber); }
+  /* Nothing logged yet, or the gold join card is showing: stats shrinks to a slim full-width row */
+  .home-tile.slim, .home-tiles:has(.join) #statsTile {
+    grid-column: 1 / -1; min-height: 0; flex-direction: row; align-items: center; gap: 14px; padding: 18px 16px;
+  }
+  .home-tile.slim .tile-big, .home-tile.slim .tile-bars,
+  .home-tiles:has(.join) #statsTile :is(.tile-big, .tile-bars) { display: none; }
+  .home-tile.slim .tile-sub, .home-tiles:has(.join) #statsTile .tile-sub { margin: 0; padding: 0; }
+  .home-tile.slim .tile-arrow, .home-tiles:has(.join) #statsTile .tile-arrow { top: 50%; transform: translateY(-50%); }
+  /* Signed out: Poop Pool becomes the big gold "join" card */
+  .home-tile.join {
+    grid-column: 1 / -1; order: -1; min-height: 0; color: var(--bg); border: 0;
+    background: linear-gradient(135deg, var(--gold), #f0a830);
+  }
+  .home-tile.join .tile-label, .home-tile.join .tile-sub { color: var(--bg); }
+  .home-tile.join .tile-arrow { display: none; }
+  .home-tile.join .tile-big { color: var(--bg); font-size: 32px; margin-top: 6px; }
+  .home-tile.join .tile-sub { font-size: 13px; max-width: 58%; margin: 6px 0 0; padding: 0; opacity: 0.85; }
+  .tile-join { display: none; }
+  .home-tile.join .tile-join {
+    display: block; position: absolute; right: 16px; bottom: 16px;
+    background: var(--bg); color: var(--gold); border-radius: 999px; padding: 10px 18px;
+    font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 1px;
+  }
+  .tile-faces { display: none; position: absolute; top: 14px; right: 14px; }
+  .home-tile.join .tile-faces { display: flex; }
+  .tile-faces span {
+    width: 30px; height: 30px; border-radius: 50%; margin-left: -8px; font-size: 15px;
+    display: flex; align-items: center; justify-content: center;
+    background: #f6d766; border: 1.5px solid rgba(26,18,8,0.5);
+  }
+  .tile-faces span:nth-child(2) { position: relative; z-index: 1; }
+  .home-tile.join .tile-faces + .tile-big { padding-right: 70px; }
+
+  /* "Backing one out": the tile strains, then the sheet pushes up with a little overshoot */
+  .home-tile.strain { animation: strain 0.14s ease-out; }
+  @keyframes strain { 50% { transform: scale(1.04, 0.95); } }
+  .hs-head {
+    position: sticky; top: -24px; z-index: 2; display: flex; align-items: center; justify-content: space-between;
+    margin: -24px -24px 8px; padding: 22px 24px 12px; background: var(--surface2);
+    touch-action: none; cursor: grab;
+  }
+  .hs-head::before {
+    content: ''; position: absolute; top: 8px; left: 50%; width: 40px; height: 5px; margin-left: -20px;
+    border-radius: 3px; background: rgba(245,234,214,0.25);
+  }
+  body:not(.hs-stats) #lifetimeCard, body:not(.hs-pool) #poolCard { display: none !important; }
+  .hs-stats #lifetimeCard, .hs-pool #poolCard {
+    display: block !important; position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
+    max-width: 520px; margin: 0 auto; border-radius: 24px 24px 0 0; border-bottom: 0;
+    background: var(--surface2); opacity: 1; transform: none; transform-origin: 50% 100%; transition: none;
+    padding-bottom: calc(34px + env(safe-area-inset-bottom));
+    max-height: 92vh; max-height: 92dvh; overflow-y: auto; overscroll-behavior: contain;
+  }
+  .hs-open { overflow: hidden; }
+  .hs-open .sheet-backdrop { display: block; animation: fade-in 0.25s ease-out; }
+  .hs-closing .sheet-backdrop { animation: fade-out 0.22s ease-in forwards; }
+  @keyframes fade-in { from { opacity: 0; } }
+  @keyframes fade-out { to { opacity: 0; } }
+  .hs-in { animation: back-one-out 0.46s cubic-bezier(0.2, 1.25, 0.35, 1); }
+  @keyframes back-one-out {
+    0% { transform: translateY(100%) scale(0.94, 0.86); }
+    55% { transform: translateY(-1.5%) scale(1, 1.03); }
+  }
+  .hs-out { animation: plop-down 0.22s ease-in forwards; }
+  @keyframes plop-down { to { transform: translateY(100%); } }
+  /* Home pushes back a touch while a sheet is up */
+  .wrapper > header, .wrapper > .dashboard, .wrapper > .arcade-card, .wrapper > .home-tiles {
+    transition: transform 0.35s cubic-bezier(0.2, 1, 0.3, 1);
+  }
+  .hs-open:not(.hs-closing) .wrapper > :is(header, .dashboard, .arcade-card, .home-tiles) { transform: scale(0.95); }
+  /* The pool's own "👑 Poop Pool" label moves up into the sheet title */
+  #poolCard > .plunger + .section-label, #poolCard .pool-head > .section-label { display: none; }
+  #poolCard .pool-head:not(:has(select)) { display: none; }
+
+  /* Toilet roll: rows unroll one after another as the stats sheet opens */
+  .hs-fresh .history-row, .hs-fresh .lifetime-grid > div { animation: unroll 0.3s ease-out both; }
+  @keyframes unroll { from { opacity: 0; transform: translateY(-8px) scaleY(0.6); } }
+  .hs-fresh .history-row:nth-child(2), .hs-fresh .lifetime-grid > div:nth-child(2) { animation-delay: 0.04s; }
+  .hs-fresh .history-row:nth-child(3), .hs-fresh .lifetime-grid > div:nth-child(3) { animation-delay: 0.08s; }
+  .hs-fresh .history-row:nth-child(4), .hs-fresh .lifetime-grid > div:nth-child(4) { animation-delay: 0.12s; }
+  .hs-fresh .history-row:nth-child(5) { animation-delay: 0.16s; }
+  .hs-fresh .history-row:nth-child(n+6) { animation-delay: 0.2s; }
+
+  /* Flush swirl: the bog's earnings spin down into the Bog Stats tile */
+  .flush-chip {
+    position: fixed; z-index: 30; pointer-events: none; will-change: transform;
+    font-family: 'Bebas Neue', sans-serif; font-size: 40px; color: var(--green); line-height: 1;
+    text-shadow: 0 0 20px rgba(76,175,110,0.5);
+  }
+  .home-tile.gulp { animation: gulp 0.4s cubic-bezier(0.3, 1.6, 0.5, 1); }
+  @keyframes gulp { 40% { transform: scale(0.94); } }
+  .tile-bank {
+    position: absolute; left: 50%; top: 40%; pointer-events: none;
+    font-family: 'Bebas Neue', sans-serif; font-size: 26px; color: var(--green);
+    animation: bank-up 1.4s ease-out forwards;
+  }
+  @keyframes bank-up { from { opacity: 0; transform: translate(-50%, 10px); } 20% { opacity: 1; } to { opacity: 0; transform: translate(-50%, -40px); } }
+
+  /* Plunger pop: pull the leaderboard down to refresh it */
+  .plunger {
+    position: absolute; left: 50%; top: 58px; width: 34px; margin-left: -17px; z-index: 1;
+    opacity: 0; pointer-events: none; transform-origin: 50% 100%;
+  }
+  .plunger.popping { animation: plunger-pop 0.5s cubic-bezier(0.3, 1.8, 0.5, 1) forwards; }
+  @keyframes plunger-pop {
+    0% { transform: translateY(var(--pull, 40px)) scale(1.3, 0.75); opacity: 1; }
+    45% { transform: translateY(-10px) scale(0.85, 1.2); opacity: 1; }
+    100% { transform: translateY(-30px) scale(1); opacity: 0; }
+  }
+  .puff {
+    position: absolute; left: 50%; top: 80px; width: 12px; height: 12px; border-radius: 50%;
+    background: rgba(245,234,214,0.6); pointer-events: none; z-index: 1;
+    animation: puff 0.55s ease-out forwards;
+  }
+  @keyframes puff { from { transform: translate(-50%, 0) scale(0.4); opacity: 1; } to { transform: translate(calc(-50% + var(--dx)), var(--dy)) scale(1.4); opacity: 0; } }
+
+  /* Slosh: the active tab sloshes like water when you switch */
+  .period-tabs .tab.active, .pool-tab.slosh { animation: slosh 0.32s ease-out; }
+  @keyframes slosh { 35% { transform: skewX(-10deg) scaleX(1.06); } 70% { transform: skewX(4deg); } }
+
+  @media (prefers-reduced-motion: reduce) {
+    .home-tile.strain, .home-tile.gulp, .hs-fresh .history-row, .hs-fresh .lifetime-grid > div,
+    .period-tabs .tab.active, .pool-tab.slosh, .plunger, .puff { animation: none; }
+    .hs-in { animation: fade-in 0.15s ease-out; }
+    .hs-out { animation: fade-out 0.15s ease-in forwards; }
+    .wrapper > header, .wrapper > .dashboard, .wrapper > .arcade-card, .wrapper > .home-tiles { transition: none; }
+    .hs-open:not(.hs-closing) .wrapper > :is(header, .dashboard, .arcade-card, .home-tiles) { transform: none; }
+  }
 </style>
 </head>
 <body>
@@ -831,8 +960,10 @@
      <path d="M66,150 Q100,186 134,150 Q100,160 66,150 Z" fill="#2A1608" stroke="#2A1608" stroke-width="3" stroke-linejoin="round"/>
      <path d="M74,153 Q100,160 126,153 L124,158 Q100,164 76,158 Z" fill="#fff"/>
     </svg>
-    <h1>Gross Income</h1>
-    <p class="tagline">In every sense of the word</p>
+    <div class="brand">
+      <h1>Gross Income</h1>
+      <p class="tagline" id="tagline">In every sense of the word</p>
+    </div>
   </header>
 
   <!-- SALARY CARD -->
@@ -869,7 +1000,7 @@
     <div class="profile-panel" id="profilePanel"></div>
   </div>
 
-  <div class="sheet-backdrop" onclick="closeSettings()"></div>
+  <div class="sheet-backdrop" onclick="closeSettings(); closeHomeSheet()"></div>
 
   <!-- MAIN DASHBOARD -->
   <div class="dashboard">
@@ -909,12 +1040,29 @@
     <div class="arcade-tiles" id="arcadeTiles"></div>
   </div>
 
-  <!-- BOG HISTORY + LIFETIME PROJECTOR (one collapsible card) -->
-  <div class="lifetime-card collapsed" id="lifetimeCard" style="display:none">
-    <button type="button" class="stats-toggle" id="statsToggle" aria-expanded="false" aria-controls="statsBody" onclick="toggleStats()">
-      <span class="section-label">🧻 Bog Stats</span>
-      <span class="stats-chevron" aria-hidden="true"></span>
+  <!-- HOME TILES: each grows into a full sheet -->
+  <div class="home-tiles">
+    <button type="button" class="home-tile" id="statsTile" onclick="openHomeSheet('stats', this)">
+      <span class="tile-label">🧻 Bog Stats</span><span class="tile-arrow" aria-hidden="true">↗</span>
+      <span class="tile-big" id="tileStatsBig">0m</span>
+      <span class="tile-bars" id="tileBars" aria-hidden="true"></span>
+      <span class="tile-sub" id="tileStatsSub">No bogs yet</span>
     </button>
+    <button type="button" class="home-tile" id="poolTile" onclick="openHomeSheet('pool', this)">
+      <span class="tile-label">👑 Poop Pool</span><span class="tile-arrow" aria-hidden="true">↗</span>
+      <span class="tile-faces" aria-hidden="true"><span>🦍</span><span>💩</span><span>🐒</span></span>
+      <span class="tile-big" id="tilePoolBig">Join the Royal Flush</span>
+      <span class="tile-sub" id="tilePoolSub">Race your mates for the Golden Throne. Free, private, no passwords.</span>
+      <span class="tile-join" aria-hidden="true">Join free →</span>
+    </button>
+  </div>
+
+  <!-- BOG HISTORY + LIFETIME PROJECTOR (a sheet, opened from the Bog Stats tile) -->
+  <div class="lifetime-card" id="lifetimeCard" role="dialog" aria-modal="true" aria-label="Bog Stats">
+    <div class="hs-head">
+      <div class="sheet-title">🧻 Bog Stats</div>
+      <button type="button" class="sheet-close" onclick="closeHomeSheet()" aria-label="Close">✕</button>
+    </div>
     <div class="stats-body" id="statsBody">
       <div class="stats-inner">
         <div class="stats-part" id="historyPart">
@@ -1157,6 +1305,7 @@
 
   // ── SETTINGS SHEET ──
   function openSettings() {
+    closeHomeSheet(true);
     document.getElementById('saveBtn').textContent = 'Save & Flush 💩';
     document.body.classList.add('sheet-open');
     document.getElementById('salaryCard').scrollTop = 0;
@@ -1253,7 +1402,9 @@
     document.getElementById('dashEarned').classList.remove('ticking');
     document.getElementById('startBtn').style.display = 'block';
     document.getElementById('stopBtn').style.display = 'none';
+    const logged = seconds - segmentStartSeconds >= MIN_SESSION_SECS;
     logSession(seconds - segmentStartSeconds);
+    if (logged && !document.body.classList.contains('game-open')) flushToStats(document.getElementById('dashEarned').textContent);
     showFunFact();
   }
 
@@ -1586,6 +1737,8 @@
       list.appendChild(clear);
     }
 
+    renderStatsTile(sessions, totalSecs, totalEarned);
+
     part.hidden = false;
     const card = document.getElementById('lifetimeCard');
     if (card.style.display === 'none') {
@@ -1593,6 +1746,141 @@
       card.classList.add('revealed');
     }
   }
+
+  // Bog Stats tile: total time, a line of totals and the last 7 bogs as little bars
+  function renderStatsTile(sessions, totalSecs, totalEarned) {
+    const tile = document.getElementById('statsTile');
+    tile.classList.toggle('slim', !sessions.length);
+    document.getElementById('tileStatsBig').textContent = fmtDuration(totalSecs);
+    document.getElementById('tileStatsSub').textContent = sessions.length
+      ? `${sessions.length} ${sessions.length === 1 ? 'bog' : 'bogs'} · ${fmtExact(totalEarned)} earned`
+      : 'No bogs yet';
+    const last = sessions.slice(-7);
+    const max = Math.max(1, ...last.map(x => x.secs));
+    document.getElementById('tileBars').innerHTML =
+      last.map(x => `<i style="height:${Math.max(4, Math.round(x.secs / max * 30))}px"></i>`).join('');
+  }
+
+  // ── HOME SHEETS (Bog Stats, Poop Pool) ──
+  // A tile strains, then its sheet "backs one out" from the bottom. Swipe the top
+  // down, tap outside or press Esc to close.
+  const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const homeSheets = { stats: 'lifetimeCard', pool: 'poolCard' };
+  let homeSheet = null;
+
+  function openHomeSheet(name, tile) {
+    if (homeSheet === name) return;
+    if (homeSheet) closeHomeSheet(true);
+    closeSettings();
+    const go = () => {
+      const el = document.getElementById(homeSheets[name]);
+      homeSheet = name;
+      document.body.classList.add('hs-open', 'hs-' + name);
+      document.body.classList.remove('hs-closing');
+      el.style.transform = '';
+      el.scrollTop = 0;
+      el.classList.remove('hs-out');
+      el.classList.add('hs-in', 'hs-fresh');
+      setTimeout(() => el.classList.remove('hs-in', 'hs-fresh'), 700);
+    };
+    if (tile && !reducedMotion()) {
+      tile.classList.remove('strain');
+      void tile.offsetWidth;
+      tile.classList.add('strain');
+      setTimeout(go, 110);
+    } else go();
+  }
+
+  function closeHomeSheet(now) {
+    if (!homeSheet) return;
+    const name = homeSheet;
+    const el = document.getElementById(homeSheets[name]);
+    homeSheet = null;
+    const done = () => {
+      document.body.classList.remove('hs-open', 'hs-closing', 'hs-' + name);
+      el.classList.remove('hs-out', 'hs-in');
+      el.style.transform = '';
+    };
+    if (now === true) return done();
+    document.body.classList.add('hs-closing');
+    el.classList.remove('hs-in');
+    el.classList.add('hs-out');
+    setTimeout(done, 230);
+  }
+
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeHomeSheet(); });
+
+  // Drag the sheet's top bar down to close it
+  document.querySelectorAll('.wrapper').forEach(w => w.addEventListener('pointerdown', e => {
+    const head = e.target.closest('.hs-head');
+    if (!head || e.target.closest('button, select, input') || !homeSheet) return;
+    const el = document.getElementById(homeSheets[homeSheet]);
+    const y0 = e.clientY;
+    let dy = 0;
+    head.setPointerCapture(e.pointerId);
+    const move = ev => { dy = Math.max(0, ev.clientY - y0); el.style.transform = `translateY(${dy}px)`; };
+    const up = () => {
+      head.removeEventListener('pointermove', move);
+      head.removeEventListener('pointerup', up);
+      head.removeEventListener('pointercancel', up);
+      if (dy > 90) return closeHomeSheet();
+      el.animate([{ transform: `translateY(${dy}px)` }, { transform: 'none' }], { duration: 200, easing: 'cubic-bezier(0.2, 1.3, 0.4, 1)' });
+      el.style.transform = '';
+    };
+    head.addEventListener('pointermove', move);
+    head.addEventListener('pointerup', up);
+    head.addEventListener('pointercancel', up);
+  }));
+
+  // Flush swirl: on Finish Up, the bog's earnings spin down the drain into the Bog Stats tile
+  function flushToStats(amount) {
+    const tile = document.getElementById('statsTile');
+    const bank = () => {
+      tile.classList.remove('gulp');
+      void tile.offsetWidth;
+      tile.classList.add('gulp');
+      const tag = document.createElement('span');
+      tag.className = 'tile-bank';
+      tag.textContent = '+' + amount;
+      tile.appendChild(tag);
+      setTimeout(() => tag.remove(), 1500);
+    };
+    const from = document.getElementById('dashEarned').getBoundingClientRect();
+    const to = tile.getBoundingClientRect();
+    const onScreen = to.top < innerHeight && to.bottom > 0 && from.bottom > 0;
+    if (reducedMotion() || !onScreen || !document.body.animate) return bank();
+    const chip = document.createElement('div');
+    chip.className = 'flush-chip';
+    chip.textContent = amount;
+    document.body.appendChild(chip);
+    const c = chip.getBoundingClientRect();
+    chip.style.left = (from.left + from.width / 2 - c.width / 2) + 'px';
+    chip.style.top = (from.top + from.height / 2 - c.height / 2) + 'px';
+    const dx = to.left + to.width / 2 - (from.left + from.width / 2);
+    const dy = to.top + to.height / 2 - (from.top + from.height / 2);
+    // A few points around a shrinking circle fake the swirl down the drain
+    chip.animate([
+      { transform: 'translate(0, 0) rotate(0) scale(1)' },
+      { transform: `translate(${dx * 0.3 + 60}px, ${dy * 0.25}px) rotate(180deg) scale(0.85)`, offset: 0.3 },
+      { transform: `translate(${dx * 0.65 - 40}px, ${dy * 0.6}px) rotate(400deg) scale(0.55)`, offset: 0.62 },
+      { transform: `translate(${dx * 0.9 + 15}px, ${dy * 0.9}px) rotate(600deg) scale(0.3)`, offset: 0.85 },
+      { transform: `translate(${dx}px, ${dy}px) rotate(720deg) scale(0.1)`, opacity: 0.3 },
+    ], { duration: 750, easing: 'cubic-bezier(0.45, 0, 0.8, 0.4)' }).finished
+      .then(() => { chip.remove(); bank(); }, () => chip.remove());
+  }
+
+  // The tagline's letter spacing stretches it to exactly the wordmark's width
+  (function fitTagline() {
+    const t = document.getElementById('tagline');
+    const fit = () => {
+      t.style.letterSpacing = '0px';
+      const ls = Math.max(0, (t.previousElementSibling.offsetWidth - t.offsetWidth) / t.textContent.length);
+      t.style.letterSpacing = ls + 'px';
+      t.style.marginRight = -ls + 'px'; // the last letter's spacing hangs off the end
+    };
+    fit();
+    if (document.fonts) document.fonts.ready.then(fit);
+  })();
 
   // ── DELETE BOGS ──
   function deleteSessions(starts) {
@@ -1623,20 +1911,6 @@
   function disarm(btn) {
     btn.classList.remove('armed');
     if (btn.dataset.label) btn.textContent = btn.dataset.label;
-  }
-
-  // ── STATS CARD COLLAPSE ──
-  const STATS_COLLAPSED_KEY = 'gi.statsCollapsed.v1';
-
-  function setStatsCollapsed(collapsed) {
-    document.getElementById('lifetimeCard').classList.toggle('collapsed', collapsed);
-    document.getElementById('statsToggle').setAttribute('aria-expanded', String(!collapsed));
-  }
-
-  function toggleStats() {
-    const collapsed = !document.getElementById('lifetimeCard').classList.contains('collapsed');
-    setStatsCollapsed(collapsed);
-    writeJSON(STATS_COLLAPSED_KEY, collapsed);
   }
 
   // ── BOG ARCADE ──
@@ -1708,8 +1982,7 @@
     if (!bar.hidden) document.getElementById('founderBarText').innerHTML =
       `<b>👑 You're a Founding Flusher!</b> Sign in to Poop Pool before ${new Date(PAYWALL_FROM).toLocaleDateString('en-AU', { day: 'numeric', month: 'long', timeZone: 'Australia/Sydney' })} to keep the arcade free, forever.`;
   }
-  document.getElementById('founderBarBtn').onclick = () =>
-    document.getElementById('poolCard').scrollIntoView({ block: 'start', behavior: 'smooth' });
+  document.getElementById('founderBarBtn').onclick = () => openHomeSheet('pool');
   document.getElementById('founderBarX').onclick = () => { founderBarClosed = true; renderFounderBar(); };
   renderArcade();
 
@@ -1744,7 +2017,7 @@
       writeJSON(PENDING_UNLOCK_KEY, { id: el.dataset.game, at: Date.now() });
       closeGame();
       setTimeout(() => {
-        document.getElementById('poolCard').scrollIntoView({ block: 'start', behavior: 'smooth' });
+        openHomeSheet('pool');
         const email = document.getElementById('poolEmail');
         if (email) email.focus({ preventScroll: true });
       }, 50);
@@ -1826,7 +2099,6 @@
 
   // ── RESTORE SAVED STATE ──
   (function restore() {
-    setStatsCollapsed(readJSON(STATS_COLLAPSED_KEY, true) !== false);
     // Branch previews start with a test salary so testing skips the setup step.
     // Live (grossincome.com.au) and the main pages.dev site are untouched.
     if (location.hostname.endsWith('.gross-income.pages.dev') && !readJSON(SALARY_KEY, null)) {
@@ -2045,6 +2317,38 @@
   }
 
   // ── RENDER ──
+  const POOL_SHEET_HEAD = `<div class="hs-head">
+      <div class="sheet-title">👑 Poop Pool</div>
+      <button type="button" class="sheet-close" onclick="closeHomeSheet()" aria-label="Close">✕</button>
+    </div>
+    <svg class="plunger" id="plunger" viewBox="0 0 34 60" aria-hidden="true">
+      <rect x="14" y="0" width="6" height="40" rx="3" fill="#B5793A"/>
+      <path d="M2,56 Q2,36 17,36 Q32,36 32,56 Z" fill="#C0392B"/>
+    </svg>`;
+
+  // Home tile: your rank when you're on a board, otherwise a big "join" card
+  function renderPoolTile() {
+    const tile = document.getElementById('poolTile');
+    const v = pool.view || { name: 'loading' };
+    const set = (big, sub) => {
+      document.getElementById('tilePoolBig').textContent = big;
+      document.getElementById('tilePoolSub').textContent = sub;
+    };
+    tile.classList.toggle('join', !pool.user);
+    if (!pool.user) {
+      return set(v.name === 'invite' ? "You're invited" : 'Join the Royal Flush',
+        'Race your mates for the Golden Throne. Free, private, no passwords.');
+    }
+    const p = currentPool();
+    if (v.name === 'board' && p && pool.board) {
+      const i = pool.board.findIndex(r => r.is_me);
+      const when = { week: 'This week', month: 'This month', all: 'All time' }[pool.period] || '';
+      return set(i < 0 ? '—' : '#' + (i + 1), `${when} · ${p.name}`);
+    }
+    if (v.name === 'create') return set('Start one', 'Make a pool and invite your mates.');
+    set('…', 'Warming up the seat');
+  }
+
   function renderPool() {
     const v = pool.view || { name: 'loading' };
     const html = {
@@ -2052,9 +2356,15 @@
       pitch: viewPitch, sent: viewSent, invite: viewInvite, profile: viewProfile,
       create: viewCreate, board: viewBoard,
     }[v.name](v);
-    poolCard.innerHTML = html + `<div class="pool-msg">${esc(pool.msg)}</div>`;
+    poolCard.innerHTML = POOL_SHEET_HEAD + html + `<div class="pool-msg">${esc(pool.msg)}</div>`;
     poolCard.hidden = false;
     poolCard.classList.toggle('stale', pool.stale);
+    if (pool.sloshTab) {
+      pool.sloshTab = false;
+      const t = poolCard.querySelector('.pool-tab.active');
+      if (t) t.classList.add('slosh');
+    }
+    renderPoolTile();
     if (v.name !== pool.shown) {
       pool.shown = v.name;
       poolCard.classList.remove('pool-enter');
@@ -2148,7 +2458,7 @@
   // Close the sheet and take them to the pool card
   function toPoolCard() {
     closeSettings();
-    poolCard.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    openHomeSheet('pool');
   }
 
   function viewPitch(v) {
@@ -2389,7 +2699,7 @@
       writeJSON(POOL_CURRENT_KEY, data.id);
       await refreshPool(); return 'done';
     },
-    async period(el) { pool.period = el.dataset.period; await showBoard(); },
+    async period(el) { pool.period = el.dataset.period; pool.sloshTab = true; await showBoard(); },
     async invite() {
       const p = currentPool();
       const url = inviteLink(p.invite_code);
@@ -2544,6 +2854,52 @@
     } catch (e) { console.warn('Poop Pool refresh failed', e); }
   };
 
+  // Plunger pop: pull the board down from the top to refresh it
+  (function plungerPull() {
+    let y0 = null, pull = 0;
+    poolCard.addEventListener('touchstart', e => {
+      y0 = poolCard.scrollTop <= 0 && pool.view && pool.view.name === 'board' && pool.user && !pool.busy
+        ? e.touches[0].clientY : null;
+      pull = 0;
+    }, { passive: true });
+    poolCard.addEventListener('touchmove', e => {
+      if (y0 === null) return;
+      const dy = e.touches[0].clientY - y0;
+      if (dy <= 0) { pull = 0; return; }
+      e.preventDefault(); // we're pulling, not scrolling
+      pull = Math.min(dy * 0.45, 90);
+      const pl = document.getElementById('plunger');
+      pl.style.opacity = Math.min(1, pull / 50);
+      pl.style.transform = `translateY(${pull - 40}px) scale(${1 + pull / 300}, ${1 - pull / 400})`;
+    }, { passive: false });
+    poolCard.addEventListener('touchend', async () => {
+      if (y0 === null) return;
+      y0 = null;
+      const pl = document.getElementById('plunger');
+      pl.style.transform = '';
+      pl.style.opacity = '';
+      if (pull < 60) return;
+      if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        pl.style.setProperty('--pull', (pull - 40) + 'px');
+        pl.classList.add('popping');
+        [[-46, -20], [46, -24], [-30, 20], [34, 18]].forEach(([dx, dy]) => {
+          const p = document.createElement('span');
+          p.className = 'puff';
+          p.style.setProperty('--dx', dx + 'px');
+          p.style.setProperty('--dy', dy + 'px');
+          poolCard.appendChild(p);
+          setTimeout(() => p.remove(), 600);
+        });
+      }
+      // Let the pop finish before the board re-renders over it
+      poolCard.classList.add('stale');
+      const popped = new Promise(r => setTimeout(r, 520));
+      try { await syncSessions(); await loadBoard(); } catch (e) { pool.msg = errText(e); }
+      await popped;
+      renderPool();
+    });
+  })();
+
   window.poolOnDelete = starts => {
     writeJSON(POOL_DELETED_KEY, [...new Set([...readJSON(POOL_DELETED_KEY, []), ...starts])]);
     window.poolOnSession();
@@ -2572,7 +2928,7 @@
     }
     renderPool();
     renderFounderBar(); // signed in from the cache: no need to nag
-    if (readJSON(POOL_INVITE_KEY, null)) poolCard.scrollIntoView({ block: 'start' });
+    if (readJSON(POOL_INVITE_KEY, null)) openHomeSheet('pool');
 
     const s = document.createElement('script');
     s.src = SUPABASE_JS;
