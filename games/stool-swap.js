@@ -5,7 +5,7 @@
 // window.StoolSwap.mount(el, { hourly: () => number, onExit: () => void })
 // draws the game into el and returns { destroy() }.
 (function () {
-  const N = 8;
+  let N = 8; // board size; each level sets it
   const GOLD = 9;
   const PIECES = [
     { name: 'Soft serve', color: '#A0652F', desc: 'a classic' },
@@ -16,11 +16,15 @@
     { name: 'Gum', color: '#F48FB1', desc: 'mum did warn you' },
   ];
   // Add a level by adding a line. kinds = how many piece types are in play,
-  // collect = [piece index, how many] on top of the score target.
+  // collect = [piece index, how many] on top of the score target, size = board width (8 if left out).
   const LEVELS = [
     { name: 'The Morning Movement', moves: 18, kinds: 5, score: 3000 },
     { name: 'Corn Season', moves: 22, kinds: 5, score: 4000, collect: [1, 25] },
     { name: 'Mystery Bowl', moves: 24, kinds: 6, score: 4500, collect: [3, 25] },
+    { name: 'Two-Flush Job', size: 9, moves: 22, kinds: 6, score: 5000 },
+    { name: 'Pea Pod Party', size: 9, moves: 24, kinds: 6, score: 6000, collect: [2, 30] },
+    { name: 'Family Size', size: 10, moves: 26, kinds: 6, score: 7000 },
+    { name: 'The Big One', size: 10, moves: 28, kinds: 6, score: 8500, collect: [4, 40] },
   ];
   const PROGRESS_KEY = 'gi.stoolswap.v1';
   const MUTE_KEY = 'gi.stoolswap.muted';
@@ -413,6 +417,8 @@
     function startLevel(i) {
       sound.init();
       g.lv = i; g.L = LEVELS[i];
+      g.grid = null; N = g.L.size || 8;
+      layout();
       g.moves = g.L.moves; g.score = 0; g.got = 0; g.combo = 0; g.playSecs = 0;
       g.sel = null; g.dying = []; g.parts = []; g.floats = []; g.hint = null; g.idle = 0;
       g.grid = fillBoard();
@@ -776,7 +782,7 @@
           ${LEVELS.map((L, i) => `<button type="button" class="ss-level" data-lv="${i}" ${i > p.unlocked ? 'disabled' : ''}>
             <div class="ss-level-n">${i + 1}</div>
             <div class="ss-level-t"><b>${L.name}</b><span>${i > p.unlocked ? '🔒 Beat level ' + i + ' first' :
-              L.moves + ' moves · ' + L.score.toLocaleString('en-US') + ' pts' + (L.collect ? ' · ' + L.collect[1] + ' ' + PIECES[L.collect[0]].name.toLowerCase() : '')}</span></div>
+              (L.size || 8) + '×' + (L.size || 8) + ' · ' + L.moves + ' moves · ' + L.score.toLocaleString('en-US') + ' pts' + (L.collect ? ' · ' + L.collect[1] + ' ' + PIECES[L.collect[0]].name.toLowerCase() : '')}</span></div>
             <div class="ss-stars">${p.stars[i] ? starStr(p.stars[i]) : ''}</div>
             ${i > p.unlocked ? '<div class="ss-play locked" aria-label="Locked">🔒</div>' : '<div class="ss-play">Play ▶</div>'}
           </button>`).join('')}
