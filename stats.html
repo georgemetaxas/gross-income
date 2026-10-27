@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Bog Arcade Stats · Gross Income</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#1a1208">
+<link rel="icon" href="icons/logo.svg?v=2" type="image/svg+xml">
+<style>
+  @font-face { font-family: 'Bebas Neue'; font-weight: 400; font-display: swap; src: url(fonts/bebas-neue-400.woff2) format('woff2'); }
+  @font-face { font-family: 'DM Mono'; font-weight: 400; font-display: swap; src: url(fonts/dm-mono-400.woff2) format('woff2'); }
+  @font-face { font-family: 'DM Mono'; font-weight: 500; font-display: swap; src: url(fonts/dm-mono-500.woff2) format('woff2'); }
+  @font-face { font-family: 'DM Sans'; font-weight: 300 600; font-display: swap; src: url(fonts/dm-sans-var.woff2) format('woff2'); }
+  :root {
+    --bg: #1a1208; --surface: #231a0a; --surface2: #2a1f0e; --gold: #f5c842; --amber: #e07b00;
+    --cream: #f5ead6; --muted: #a08060; --heading: #f0ddb0; --border: rgba(245,200,66,0.12);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--cream); font-family: 'DM Sans', sans-serif; font-size: 15px; line-height: 1.5; }
+  main { max-width: 720px; margin: 0 auto; padding: calc(24px + env(safe-area-inset-top)) 16px 64px; }
+  a { color: var(--gold); }
+  .back { font-family: 'DM Mono', monospace; font-size: 12px; letter-spacing: 1px; text-decoration: none; }
+  h1 { font-family: 'Bebas Neue', sans-serif; font-weight: 400; font-size: 44px; letter-spacing: 3px; color: var(--gold); line-height: 1; margin: 16px 0 2px; }
+  .sub { color: var(--muted); font-size: 14px; margin: 0 0 18px; }
+  h2 { font-family: 'Bebas Neue', sans-serif; font-weight: 400; font-size: 24px; letter-spacing: 1.5px; color: var(--heading); margin: 0 0 12px; }
+  .label { font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); }
+
+  .range { display: flex; gap: 6px; margin-bottom: 18px; }
+  .range button { font: 500 12px 'DM Mono', monospace; letter-spacing: 1px; color: var(--cream); background: transparent;
+    border: 1px solid var(--border); border-radius: 12px; padding: 8px 14px; cursor: pointer; }
+  .range button.on { background: var(--gold); color: var(--bg); border-color: var(--gold); }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 18px 16px; margin-bottom: 14px; }
+  .kpis { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 14px; }
+  @media (min-width: 560px) { .kpis { grid-template-columns: repeat(4, 1fr); } }
+  .kpi { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 14px; min-width: 0; }
+  .kpi .v { font-family: 'Bebas Neue', sans-serif; font-size: 36px; letter-spacing: 1px; color: var(--gold); line-height: 1.1; margin-top: 4px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .kpi .n { font-size: 12px; color: var(--muted); }
+  .kpi .v.name { font-size: 26px; white-space: normal; line-height: 1.05; }
+
+  /* Per-game ranking: horizontal bars, one hue (gold) = minutes played */
+  .rank { display: grid; gap: 14px; }
+  .row-top { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 6px; }
+  .game { font-weight: 600; color: var(--heading); white-space: nowrap; }
+  .game .ico { margin-right: 6px; }
+  .mins { font-family: 'DM Mono', monospace; font-size: 13px; color: var(--cream); white-space: nowrap; }
+  .track { height: 10px; background: var(--surface2); border-radius: 4px; overflow: hidden; }
+  .bar { height: 100%; background: var(--gold); border-radius: 0 4px 4px 0; min-width: 2px; transition: width .5s ease; }
+  .meta { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 6px; font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); }
+
+  /* Daily opens: columns anchored to the baseline */
+  .daily { position: relative; padding-top: 34px; }
+  .cols { display: flex; align-items: flex-end; gap: 2px; height: 140px; border-bottom: 1px solid var(--border); }
+  .col { flex: 1; height: 100%; display: flex; align-items: flex-end; cursor: default; }
+  .col i { display: block; width: 100%; background: var(--amber); border-radius: 4px 4px 0 0; min-height: 0; }
+  .col:hover i, .col.hl i { background: var(--gold); }
+  .axis { display: flex; justify-content: space-between; margin-top: 6px; font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); }
+  .tip { position: absolute; top: 0; transform: translateX(-50%); background: var(--cream); color: var(--bg); border-radius: 8px;
+    padding: 6px 9px; font: 500 12px 'DM Mono', monospace; white-space: nowrap; pointer-events: none; display: none; }
+
+  table { width: 100%; border-collapse: collapse; font-family: 'DM Mono', monospace; font-size: 12px; }
+  th, td { text-align: right; padding: 7px 4px; border-bottom: 1px solid var(--border); }
+  th:first-child, td:first-child { text-align: left; }
+  th { color: var(--muted); font-weight: 400; letter-spacing: 1px; }
+  details summary { cursor: pointer; color: var(--gold); font-family: 'DM Mono', monospace; font-size: 12px; letter-spacing: 1px; }
+  .scroll { overflow-x: auto; margin-top: 10px; }
+
+  .msg { text-align: center; padding: 40px 16px; }
+  .msg .big { font-size: 48px; }
+  .msg p { color: var(--muted); max-width: 360px; margin: 8px auto 18px; }
+  .btn { display: inline-block; background: var(--gold); color: var(--bg); text-decoration: none; font-weight: 600; border-radius: 12px; padding: 12px 18px; }
+  .foot { color: var(--muted); font-size: 12px; margin-top: 18px; }
+</style>
+</head>
+<body>
+<main>
+  <a class="back" href="./">← BACK TO THE BOG</a>
+  <h1>Bog Arcade Stats</h1>
+  <p class="sub">Which games people actually play while they're on the throne.</p>
+  <div id="app"><div class="msg"><div class="big">🧻</div><p>Unrolling the numbers…</p></div></div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script>
+  // Private stats page. Reads game_stats() (supabase/schema.sql), which only answers
+  // for people in stats_admins. Uses the same login as Poop Pool on this site.
+  const SUPABASE_URL = 'https://pngsoygqbvhlfkzdghtr.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_VfI274ud8nqxAFZvKzquwQ_qChku-Bu';
+  // Names and icons match GAMES in index.html; unknown ids still show, by id.
+  const NAMES = {
+    'dung-run': ['🚽', 'Dung Run'], 'turd-snake': ['💩', 'Turd Snake'], 'stool-swap': ['🌽', 'Stool Swap'],
+    'fling-bonus': ['🐒', 'Fling Bonus'], 'wrap-up': ['🧩', 'Wrap Up'], 'turdle': ['📰', 'Turdle'],
+  };
+  const app = document.getElementById('app');
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const fmt = n => n.toLocaleString('en-AU');
+  const fmtMins = secs => secs < 60 ? `${secs}s` : secs < 3600 ? `${Math.round(secs / 60)} min` : `${(secs / 3600).toFixed(1)} hr`;
+  const nameOf = id => NAMES[id] || ['🎮', id];
+  let days = 30;
+  let sb;
+
+  function message(icon, text, link) {
+    app.innerHTML = `<div class="msg"><div class="big">${icon}</div><p>${text}</p>${link || ''}</div>`;
+  }
+
+  async function load() {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) {
+      return message('🔒', 'Sign in to Poop Pool on this browser first, then come back here.',
+        '<a class="btn" href="./">Go sign in</a>');
+    }
+    const { data, error } = await sb.rpc('game_stats', { p_days: days });
+    if (error) {
+      return /not allowed/.test(error.message)
+        ? message('🚫', `This account (${esc(session.user.email || '')}) isn't on the stats list.`)
+        : message('🪠', `Couldn't load the stats: ${esc(error.message)}`);
+    }
+    render(data || []);
+  }
+
+  function render(rows) {
+    // Per game totals
+    const by = {};
+    for (const r of rows) {
+      const g = by[r.game] || (by[r.game] = { game: r.game, opens: 0, paywall: 0, secs: 0 });
+      g.opens += r.opens; g.paywall += r.paywall_hits; g.secs += r.secs;
+    }
+    const games = Object.values(by).sort((a, b) => b.secs - a.secs || b.opens - a.opens);
+    const tot = games.reduce((t, g) => ({ opens: t.opens + g.opens, paywall: t.paywall + g.paywall, secs: t.secs + g.secs }), { opens: 0, paywall: 0, secs: 0 });
+    const maxSecs = Math.max(1, ...games.map(g => g.secs));
+
+    // Opens per Sydney day, including empty days
+    const perDay = {};
+    for (const r of rows) perDay[r.day] = (perDay[r.day] || 0) + r.opens;
+    const dayList = [];
+    const today = new Date(new Date().toLocaleString('en-US', { timeZone: 'Australia/Sydney' }));
+    for (let i = days - 1; i >= 0; i--) {
+      const d = new Date(today); d.setDate(d.getDate() - i);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      dayList.push({ key, d, opens: perDay[key] || 0 });
+    }
+    const maxDay = Math.max(1, ...dayList.map(x => x.opens));
+    const dayLabel = d => d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
+
+    const range = `<div class="range">${[7, 30, 90].map(n =>
+      `<button data-days="${n}" class="${n === days ? 'on' : ''}">${n} DAYS</button>`).join('')}</div>`;
+
+    if (!games.length) {
+      app.innerHTML = range + `<div class="card msg"><div class="big">🚽</div><p>No games played in the last ${days} days yet. Stats only count plays on grossincome.com.au.</p></div>`;
+      return bindRange();
+    }
+
+    const top = nameOf(games[0].game);
+    const played = tot.opens - tot.paywall;
+    app.innerHTML = range + `
+      <div class="kpis">
+        <div class="kpi"><div class="label">Most played</div><div class="v name">${top[0]} ${esc(top[1])}</div><div class="n">${fmtMins(games[0].secs)}</div></div>
+        <div class="kpi"><div class="label">Game opens</div><div class="v">${fmt(tot.opens)}</div><div class="n">${fmt(Math.round(tot.opens / days * 10) / 10)} a day</div></div>
+        <div class="kpi"><div class="label">Time played</div><div class="v">${fmtMins(tot.secs)}</div><div class="n">${played ? fmtMins(Math.round(tot.secs / played)) + ' per play' : '–'}</div></div>
+        <div class="kpi"><div class="label">Paywall hits</div><div class="v">${fmt(tot.paywall)}</div><div class="n">${tot.opens ? Math.round(tot.paywall / tot.opens * 100) : 0}% of opens</div></div>
+      </div>
+
+      <div class="card">
+        <h2>Most played games</h2>
+        <div class="label" style="margin:-8px 0 14px">Ranked by time played</div>
+        <div class="rank">${games.map(g => {
+          const [ico, name] = nameOf(g.game);
+          const plays = g.opens - g.paywall;
+          return `<div>
+            <div class="row-top"><span class="game"><span class="ico">${ico}</span>${esc(name)}</span><span class="mins">${fmtMins(g.secs)}</span></div>
+            <div class="track"><div class="bar" style="width:${(g.secs / maxSecs * 100).toFixed(1)}%"></div></div>
+            <div class="meta"><span>${fmt(g.opens)} opens</span><span>${plays ? fmtMins(Math.round(g.secs / plays)) : '–'} per play</span>${g.paywall ? `<span>🔒 ${fmt(g.paywall)} paywall hits</span>` : ''}</div>
+          </div>`;
+        }).join('')}</div>
+      </div>
+
+      <div class="card">
+        <h2>Game opens per day</h2>
+        <div class="daily" id="daily">
+          <div class="tip" id="tip"></div>
+          <div class="cols">${dayList.map((x, i) =>
+            `<div class="col" data-i="${i}"><i style="height:${(x.opens / maxDay * 100).toFixed(1)}%"></i></div>`).join('')}</div>
+          <div class="axis"><span>${dayLabel(dayList[0].d)}</span><span>max ${fmt(maxDay)} a day</span><span>Today</span></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <details><summary>SHOW AS TABLE</summary>
+          <div class="scroll"><table>
+            <tr><th>GAME</th><th>OPENS</th><th>PAYWALL</th><th>TIME</th><th>PER PLAY</th></tr>
+            ${games.map(g => { const p = g.opens - g.paywall; return `<tr><td>${nameOf(g.game)[0]} ${esc(nameOf(g.game)[1])}</td><td>${fmt(g.opens)}</td><td>${fmt(g.paywall)}</td><td>${fmtMins(g.secs)}</td><td>${p ? fmtMins(Math.round(g.secs / p)) : '–'}</td></tr>`; }).join('')}
+          </table></div>
+        </details>
+      </div>
+      <p class="foot">Anonymous counts from grossincome.com.au. No user or device is attached. Days are Sydney time.</p>`;
+
+    // Hover / tap a day for its count
+    const daily = document.getElementById('daily'), tip = document.getElementById('tip');
+    const show = col => {
+      daily.querySelectorAll('.col.hl').forEach(c => c.classList.remove('hl'));
+      if (!col) { tip.style.display = 'none'; return; }
+      const x = dayList[+col.dataset.i];
+      col.classList.add('hl');
+      tip.textContent = `${dayLabel(x.d)} · ${fmt(x.opens)} open${x.opens === 1 ? '' : 's'}`;
+      const box = daily.getBoundingClientRect(), c = col.getBoundingClientRect();
+      const mid = c.left + c.width / 2 - box.left;
+      tip.style.left = Math.min(Math.max(mid, 70), box.width - 70) + 'px';
+      tip.style.display = 'block';
+    };
+    daily.addEventListener('pointerover', e => show(e.target.closest('.col')));
+    daily.addEventListener('pointerdown', e => show(e.target.closest('.col')));
+    daily.addEventListener('pointerleave', () => show(null));
+    bindRange();
+  }
+
+  function bindRange() {
+    app.querySelectorAll('[data-days]').forEach(b => b.onclick = () => { days = +b.dataset.days; load(); });
+  }
+
+  try {
+    sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    load().catch(e => message('🪠', `Couldn't load the stats: ${esc(e.message || e)}`));
+  } catch (e) {
+    message('📶', "Couldn't reach the database. Check your signal and refresh.");
+  }
+</script>
+</body>
+</html>

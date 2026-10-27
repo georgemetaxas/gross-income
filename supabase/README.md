@@ -26,6 +26,13 @@ The leaderboard runs on Supabase. The site itself stays static.
 - Salary never leaves the device.
 - A single session counts for at most 60 minutes on the board. Longer ones get a 🚩.
 
+## Game stats
+
+- `game_events` table (in `schema.sql`): anonymous arcade usage. An `open` row per game opened (`locked` = hit the paywall) and `time` rows with seconds played. No user or device id.
+- Only the live site sends (add `?trackgames` to a preview link to test). Anyone can insert; nothing can be read through the API.
+- To see it: open grossincome.com.au/stats signed in (only accounts in `stats_admins`), or SQL Editor → `select * from game_popularity;`.
+- Give someone the stats page: `insert into stats_admins select id from auth.users where email = '…';`
+
 ## Golden Throne (arcade unlock)
 
 A one-off purchase that opens every Bog Arcade game. Turd Snake stays free. Poop Pool stays free.
