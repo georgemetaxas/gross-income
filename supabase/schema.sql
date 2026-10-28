@@ -311,3 +311,37 @@ end;
 $$;
 revoke execute on function public.game_stats(int) from public, anon;
 grant execute on function public.game_stats(int) to authenticated;
+
+-- ── LOCKDOWN (Oct 2026 security audit) ──
+-- Supabase grants every table and function to anon (signed out) and authenticated
+-- (signed in) by default, and lets RLS sort it out. Trim those grants down to what
+-- the app actually uses, so a missing or loose policy can't open anything up.
+
+-- Signed-out visitors never touch these tables directly (invites use pool_preview()).
+revoke all on public.profiles, public.sessions, public.pools, public.pool_members, public.entitlements from anon;
+revoke truncate, references, trigger on public.profiles, public.sessions, public.pools, public.pool_members, public.entitlements from authenticated;
+
+-- Profiles: created_at decides who is a Founding Flusher, so nobody can set it.
+revoke insert, update, delete on public.profiles from authenticated;
+grant insert (id, display_name, emoji, share_money), update (id, display_name, emoji, share_money)
+  on public.profiles to authenticated;
+
+-- Pools are created and joined through create_pool() / join_pool(); owners can only rename.
+revoke insert, update on public.pools from authenticated;
+grant update (name) on public.pools to authenticated;
+revoke insert, update on public.pool_members from authenticated;
+
+-- Only the Stripe webhook (service role) writes unlocks.
+revoke insert, update, delete on public.entitlements from authenticated;
+
+-- Game stats: `at` comes from the server clock, so rows can't be backdated.
+revoke insert on public.game_events from anon, authenticated;
+grant insert (game, kind, locked, secs) on public.game_events to anon, authenticated;
+
+-- Functions are executable by everyone unless revoked. Signed out only needs pool_preview().
+revoke execute on function public.create_pool(text), public.join_pool(text),
+  public.regenerate_invite_code(uuid), public.pool_leaderboard(uuid, timestamptz),
+  public.is_pool_member(uuid), public.is_pool_mate(uuid) from public, anon;
+grant execute on function public.create_pool(text), public.join_pool(text),
+  public.regenerate_invite_code(uuid), public.pool_leaderboard(uuid, timestamptz),
+  public.is_pool_member(uuid), public.is_pool_mate(uuid) to authenticated;
