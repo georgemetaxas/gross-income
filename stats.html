@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Bog Arcade Stats · Gross Income</title>
+<title>Stats · Gross Income</title>
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#1a1208">
 <link rel="icon" href="icons/logo.svg?v=2" type="image/svg+xml">
@@ -72,20 +72,23 @@
   .msg p { color: var(--muted); max-width: 360px; margin: 8px auto 18px; }
   .btn { display: inline-block; background: var(--gold); color: var(--bg); text-decoration: none; font-weight: 600; border-radius: 12px; padding: 12px 18px; }
   .foot { color: var(--muted); font-size: 12px; margin-top: 18px; }
+  .section { font-family: 'Bebas Neue', sans-serif; font-weight: 400; font-size: 28px; letter-spacing: 2px; color: var(--gold); margin: 26px 0 10px; }
+  .kpi .n.warn { color: var(--amber); font-weight: 600; }
+  .note { color: var(--muted); font-size: 13px; margin: -4px 0 14px; }
 </style>
 </head>
 <body>
 <main>
   <a class="back" href="./"><svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-0.15em"><path d="M19 12H5"/><path d="M11 18l-6-6 6-6"/></svg> BACK TO THE BOG</a>
-  <h1>Bog Arcade Stats</h1>
-  <p class="sub">Which games people actually play while they're on the throne.</p>
+  <h1>Gross Stats</h1>
+  <p class="sub">Founding Flushers, paid unlocks and which games people play on the throne.</p>
   <div id="app"><div class="msg"><div class="big">🧻</div><p>Unrolling the numbers…</p></div></div>
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" integrity="sha384-0w2KAL2YHP6wKOkUDzkCDGgVvfmHnj02DHeQ6XcHOgTfFsGyonKOpShMH1x6nk9o" crossorigin="anonymous"></script>
 <script>
-  // Private stats page. Reads game_stats() (supabase/schema.sql), which only answers
-  // for people in stats_admins. Uses the same login as Poop Pool on this site.
+  // Private stats page. Reads account_stats() and game_stats() (supabase/schema.sql),
+  // which only answer for people in stats_admins. Uses the same login as Poop Pool on this site.
   const SUPABASE_URL = 'https://pngsoygqbvhlfkzdghtr.supabase.co';
   const SUPABASE_KEY = 'sb_publishable_VfI274ud8nqxAFZvKzquwQ_qChku-Bu';
   // Names and icons match GAMES in index.html; unknown ids still show, by id.
@@ -99,6 +102,8 @@
   const fmt = n => n.toLocaleString('en-AU');
   const fmtMins = secs => secs < 60 ? `${secs}s` : secs < 3600 ? `${Math.round(secs / 60)} min` : `${(secs / 3600).toFixed(1)} hr`;
   const nameOf = id => NAMES[id] || ['🎮', id];
+  const PRICE = 4.69; // Golden Throne, A$
+  const pct = (a, b) => b ? `${(a / b * 100).toFixed(a / b < 0.1 ? 1 : 0)}%` : '–';
   let days = 30;
   let sb;
 
@@ -112,16 +117,87 @@
       return message('🔒', 'Sign in to Poop Pool on this browser first, then come back here.',
         '<a class="btn" href="./">Go sign in</a>');
     }
-    const { data, error } = await sb.rpc('game_stats', { p_days: days });
+    const [games, acct] = await Promise.all([
+      sb.rpc('game_stats', { p_days: days }),
+      sb.rpc('account_stats', { p_days: days }),
+    ]);
+    const error = games.error;
     if (error) {
       return /not allowed/.test(error.message)
         ? message('🚫', `This account (${esc(session.user.email || '')}) isn't on the stats list.`)
         : message('🪠', `Couldn't load the stats: ${esc(error.message)}`);
     }
-    render(data || []);
+    render(games.data || [], acct.error ? null : acct.data);
   }
 
-  function render(rows) {
+  // Sydney days for the chosen range, oldest first, with empty days filled in
+  function dayKeys() {
+    const out = [];
+    const today = new Date(new Date().toLocaleString('en-US', { timeZone: 'Australia/Sydney' }));
+    for (let i = days - 1; i >= 0; i--) {
+      const d = new Date(today); d.setDate(d.getDate() - i);
+      out.push({ key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`, d });
+    }
+    return out;
+  }
+  const dayLabel = d => d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
+
+  // Column chart card: one column per day; tip(x) is the hover text
+  function dayChart(id, title, list, val, tip) {
+    const max = Math.max(1, ...list.map(val));
+    return `<div class="card">
+        <h2>${title}</h2>
+        <div class="daily" id="${id}">
+          <div class="tip"></div>
+          <div class="cols">${list.map((x, i) =>
+            `<div class="col" data-i="${i}"><i style="height:${(val(x) / max * 100).toFixed(1)}%"></i></div>`).join('')}</div>
+          <div class="axis"><span>${dayLabel(list[0].d)}</span><span>max ${fmt(max)} a day</span><span>Today</span></div>
+        </div>
+      </div>`;
+  }
+  function bindChart(id, list, tipText) {
+    const daily = document.getElementById(id);
+    if (!daily) return;
+    const tip = daily.querySelector('.tip');
+    const show = col => {
+      daily.querySelectorAll('.col.hl').forEach(c => c.classList.remove('hl'));
+      if (!col) { tip.style.display = 'none'; return; }
+      col.classList.add('hl');
+      tip.textContent = tipText(list[+col.dataset.i]);
+      const box = daily.getBoundingClientRect(), c = col.getBoundingClientRect();
+      const mid = c.left + c.width / 2 - box.left;
+      tip.style.left = Math.min(Math.max(mid, 80), box.width - 80) + 'px';
+      tip.style.display = 'block';
+    };
+    daily.addEventListener('pointerover', e => show(e.target.closest('.col')));
+    daily.addEventListener('pointerdown', e => show(e.target.closest('.col')));
+    daily.addEventListener('pointerleave', () => show(null));
+  }
+
+  // Founders, paid unlocks, conversion
+  function accountsHtml(a) {
+    if (!a) return `<div class="section">Flushers & sales</div>
+      <div class="card msg"><div class="big">🧾</div><p>Account numbers need the new account_stats() SQL run in Supabase.</p></div>`;
+    const launched = Date.now() >= Date.parse(a.launch);
+    const launchDay = new Date(a.launch).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', timeZone: 'Australia/Sydney' });
+    // After launch the founder SQL should have granted everyone who was eligible
+    const founders = launched ? a.founders_granted : a.founders_eligible;
+    const founderNote = !launched ? `signed up so far · locks in ${launchDay}`
+      : a.founders_granted < a.founders_eligible ? `<span class="warn">${fmt(a.founders_eligible - a.founders_granted)} not unlocked yet: run the founder SQL</span>`
+      : 'arcade free for life';
+    return `<div class="section">Flushers & sales</div>
+      ${launched ? '' : `<p class="note">Paywall goes live ${launchDay}. Paid and conversion start counting then.</p>`}
+      <div class="kpis">
+        <div class="kpi"><div class="label">Founding Flushers</div><div class="v">${fmt(founders)}</div><div class="n">${founderNote}</div></div>
+        <div class="kpi"><div class="label">Paid unlocks</div><div class="v">${fmt(a.paid)}</div><div class="n">${launched ? `A$${(a.paid * PRICE).toFixed(2)} before fees` : `starts ${launchDay}`}</div></div>
+        <div class="kpi"><div class="label">Accounts</div><div class="v">${fmt(a.accounts)}</div><div class="n">${launched ? `${fmt(a.signups_since_launch)} since launch` : 'all time'}</div></div>
+        <div class="kpi"><div class="label">Conversion</div><div class="v">${launched ? pct(a.paid, a.signups_since_launch) : '–'}</div><div class="n">${launched
+          ? `of new sign-ups · ${a.paywall_hits_since_launch ? `1 per ${fmt(Math.round(a.paywall_hits_since_launch / Math.max(a.paid, 1)))} paywall hits` : 'no paywall hits yet'}`
+          : `starts ${launchDay}`}</div></div>
+      </div>`;
+  }
+
+  function render(rows, acct) {
     // Per game totals
     const by = {};
     for (const r of rows) {
@@ -132,30 +208,31 @@
     const tot = games.reduce((t, g) => ({ opens: t.opens + g.opens, paywall: t.paywall + g.paywall, secs: t.secs + g.secs }), { opens: 0, paywall: 0, secs: 0 });
     const maxSecs = Math.max(1, ...games.map(g => g.secs));
 
-    // Opens per Sydney day, including empty days
+    // Opens per Sydney day
     const perDay = {};
     for (const r of rows) perDay[r.day] = (perDay[r.day] || 0) + r.opens;
-    const dayList = [];
-    const today = new Date(new Date().toLocaleString('en-US', { timeZone: 'Australia/Sydney' }));
-    for (let i = days - 1; i >= 0; i--) {
-      const d = new Date(today); d.setDate(d.getDate() - i);
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-      dayList.push({ key, d, opens: perDay[key] || 0 });
-    }
-    const maxDay = Math.max(1, ...dayList.map(x => x.opens));
-    const dayLabel = d => d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
+    const dayList = dayKeys().map(x => ({ ...x, opens: perDay[x.key] || 0 }));
+
+    // Sign-ups and paid unlocks per Sydney day
+    const acctDay = {};
+    for (const r of (acct && acct.daily) || []) acctDay[r.day] = r;
+    const signList = dayKeys().map(x => ({ ...x, signups: (acctDay[x.key] || {}).signups || 0, paid: (acctDay[x.key] || {}).paid || 0 }));
+    const signTip = x => `${dayLabel(x.d)} · ${fmt(x.signups)} sign-up${x.signups === 1 ? '' : 's'}${x.paid ? ` · ${fmt(x.paid)} paid` : ''}`;
 
     const range = `<div class="range">${[7, 30, 90].map(n =>
       `<button data-days="${n}" class="${n === days ? 'on' : ''}">${n} DAYS</button>`).join('')}</div>`;
+    const head = range + accountsHtml(acct) + (acct ? dayChart('signups', 'Sign-ups per day', signList, x => x.signups) : '')
+      + `<div class="section">Bog Arcade</div>`;
 
     if (!games.length) {
-      app.innerHTML = range + `<div class="card msg"><div class="big">🚽</div><p>No games played in the last ${days} days yet. Stats only count plays on grossincome.com.au.</p></div>`;
+      app.innerHTML = head + `<div class="card msg"><div class="big">🚽</div><p>No games played in the last ${days} days yet. Stats only count plays on grossincome.com.au.</p></div>`;
+      bindChart('signups', signList, signTip);
       return bindRange();
     }
 
     const top = nameOf(games[0].game);
     const played = tot.opens - tot.paywall;
-    app.innerHTML = range + `
+    app.innerHTML = head + `
       <div class="kpis">
         <div class="kpi"><div class="label">Most played</div><div class="v name">${top[0]} ${esc(top[1])}</div><div class="n">${fmtMins(games[0].secs)}</div></div>
         <div class="kpi"><div class="label">Game opens</div><div class="v">${fmt(tot.opens)}</div><div class="n">${fmt(Math.round(tot.opens / days * 10) / 10)} a day</div></div>
@@ -177,15 +254,7 @@
         }).join('')}</div>
       </div>
 
-      <div class="card">
-        <h2>Game opens per day</h2>
-        <div class="daily" id="daily">
-          <div class="tip" id="tip"></div>
-          <div class="cols">${dayList.map((x, i) =>
-            `<div class="col" data-i="${i}"><i style="height:${(x.opens / maxDay * 100).toFixed(1)}%"></i></div>`).join('')}</div>
-          <div class="axis"><span>${dayLabel(dayList[0].d)}</span><span>max ${fmt(maxDay)} a day</span><span>Today</span></div>
-        </div>
-      </div>
+      ${dayChart('daily', 'Game opens per day', dayList, x => x.opens)}
 
       <div class="card">
         <details><summary>SHOW AS TABLE</summary>
@@ -195,24 +264,10 @@
           </table></div>
         </details>
       </div>
-      <p class="foot">Anonymous counts from grossincome.com.au. No user or device is attached. Days are Sydney time.</p>`;
+      <p class="foot">Game counts are anonymous, from grossincome.com.au, with no user or device attached. Paywall hits count game opens, not people. Days are Sydney time.</p>`;
 
-    // Hover / tap a day for its count
-    const daily = document.getElementById('daily'), tip = document.getElementById('tip');
-    const show = col => {
-      daily.querySelectorAll('.col.hl').forEach(c => c.classList.remove('hl'));
-      if (!col) { tip.style.display = 'none'; return; }
-      const x = dayList[+col.dataset.i];
-      col.classList.add('hl');
-      tip.textContent = `${dayLabel(x.d)} · ${fmt(x.opens)} open${x.opens === 1 ? '' : 's'}`;
-      const box = daily.getBoundingClientRect(), c = col.getBoundingClientRect();
-      const mid = c.left + c.width / 2 - box.left;
-      tip.style.left = Math.min(Math.max(mid, 70), box.width - 70) + 'px';
-      tip.style.display = 'block';
-    };
-    daily.addEventListener('pointerover', e => show(e.target.closest('.col')));
-    daily.addEventListener('pointerdown', e => show(e.target.closest('.col')));
-    daily.addEventListener('pointerleave', () => show(null));
+    bindChart('signups', signList, signTip);
+    bindChart('daily', dayList, x => `${dayLabel(x.d)} · ${fmt(x.opens)} open${x.opens === 1 ? '' : 's'}`);
     bindRange();
   }
 

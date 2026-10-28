@@ -39,6 +39,7 @@ The leaderboard runs on Supabase. The site itself stays static.
 - Only the live site sends (add `?trackgames` to a preview link to test). Anyone can insert; nothing can be read through the API.
 - To see it: open grossincome.com.au/stats signed in (only accounts in `stats_admins`), or SQL Editor → `select * from game_popularity;`.
 - Give someone the stats page: `insert into stats_admins select id from auth.users where email = '…';`
+- The stats page also shows Founding Flushers, paid unlocks, accounts and conversion from `account_stats()` (same `stats_admins` gate). Its launch date is hard-coded to match `PAYWALL_FROM` in `index.html`; change both if launch moves.
 
 ## Golden Throne (arcade unlock)
 

@@ -312,6 +312,48 @@ $$;
 revoke execute on function public.game_stats(int) from public, anon;
 grant execute on function public.game_stats(int) to authenticated;
 
+-- Founders and sales for the stats page. Same stats_admins gate as game_stats().
+-- Accounts = people with a profile (same rule as the founder SQL in README.md).
+-- Founders: before launch, how many signed up so far (eligible); after launch,
+-- how many founder unlocks exist (granted). Paid = store/Stripe unlocks since launch,
+-- so leftover test purchases from before launch don't count.
+create or replace function public.account_stats(p_days int default 30)
+returns jsonb
+language plpgsql stable security definer set search_path = public
+as $$
+declare
+  launch constant timestamptz := '2026-11-02T00:00:00+11:00'; -- PAYWALL_FROM in index.html
+  since timestamptz := now() - make_interval(days => least(greatest(p_days, 1), 365));
+begin
+  if not exists (select 1 from stats_admins where user_id = auth.uid()) then
+    raise exception 'not allowed';
+  end if;
+  return (
+    with acc as (select u.created_at from profiles p join auth.users u on u.id = p.id),
+         paid as (select created_at from entitlements
+                  where source in ('stripe', 'apple', 'google') and created_at >= launch)
+    select jsonb_build_object(
+      'launch', launch,
+      'accounts', (select count(*) from acc),
+      'founders_eligible', (select count(*) from acc where created_at < launch),
+      'founders_granted', (select count(*) from entitlements where source = 'founder'),
+      'signups_since_launch', (select count(*) from acc where created_at >= launch),
+      'paid', (select count(*) from paid),
+      'paywall_hits_since_launch', (select count(*) from game_events
+                                    where kind = 'open' and locked and at >= launch),
+      'daily', coalesce((
+        select jsonb_agg(jsonb_build_object('day', day, 'signups', signups, 'paid', paid) order by day)
+        from (select day, sum(s)::int as signups, sum(b)::int as paid from (
+                select (created_at at time zone 'Australia/Sydney')::date as day, 1 as s, 0 as b from acc where created_at > since
+                union all
+                select (created_at at time zone 'Australia/Sydney')::date, 0, 1 from paid where created_at > since
+              ) x group by day) d), '[]'::jsonb)
+    ));
+end;
+$$;
+revoke execute on function public.account_stats(int) from public, anon;
+grant execute on function public.account_stats(int) to authenticated;
+
 -- ── LOCKDOWN (Oct 2026 security audit) ──
 -- Supabase grants every table and function to anon (signed out) and authenticated
 -- (signed in) by default, and lets RLS sort it out. Trim those grants down to what
