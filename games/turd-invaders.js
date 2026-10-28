@@ -744,7 +744,7 @@
             <div class="ti-level-n">${i + 1}</div>
             <div class="ti-level-t"><b>${L.name}</b><span>${open(i) ? L.sub + (p.best[i] ? ' · best ' + p.best[i].toLocaleString('en-US') : '') : '🔒 Beat level ' + i + ' first'}</span></div>
             <div class="ti-stars">${p.stars[i] ? starStr(p.stars[i]) : ''}</div>
-            ${open(i) ? '<div class="ti-play">Play ▶</div>' : '<div class="ti-play locked" aria-label="Locked">🔒</div>'}
+            ${open(i) ? '<div class="ti-play">Play <svg width="0.8em" height="0.8em" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="vertical-align:-0.05em"><path d="M7 4.8v14.4a1.2 1.2 0 0 0 1.8 1l11.6-7.2a1.2 1.2 0 0 0 0-2L8.8 3.8A1.2 1.2 0 0 0 7 4.8z"/></svg></div>' : '<div class="ti-play locked" aria-label="Locked">🔒</div>'}
           </button>`).join('')}
         </div>
         <div class="ti-box" style="margin-top:8px">
@@ -788,7 +788,7 @@
           <div><div class="ti-lbl">Paid to play</div><div class="ti-val green">${paid}</div></div>
           <div><div class="ti-lbl">Level record?</div><div class="ti-val" style="color:${record ? '#f5c842' : '#a08060'}">${record ? 'YES!' : 'Nah · ' + p.best[g.lv].toLocaleString('en-US')}</div></div>
         </div>
-        ${more ? '<button type="button" class="ti-btn" data-next>▶ Next level</button>' :
+        ${more ? '<button type="button" class="ti-btn" data-next><svg width="0.8em" height="0.8em" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="vertical-align:-0.05em"><path d="M7 4.8v14.4a1.2 1.2 0 0 0 1.8 1l11.6-7.2a1.2 1.2 0 0 0 0-2L8.8 3.8A1.2 1.2 0 0 0 7 4.8z"/></svg> Next level</button>' :
           '<div style="font-size:14px;opacity:0.8;margin-bottom:8px">That\'s every wave so far. More are on the way.</div>'}
         <button type="button" class="ti-btn ghost" data-again>↺ Play again</button>
         <button type="button" class="ti-link" data-levels>All levels</button>

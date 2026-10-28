@@ -657,7 +657,7 @@
           <div class="fb-num">${i + 1}</div>
           <div class="fb-lvl-text"><b>${lv.name}</b><span>${sub}</span></div>
           <div class="fb-lvl-best" style="color:${best >= lv.target ? '#4caf6e' : '#a08060'}">${best ? metres(best) : ''}</div>
-          ${open ? '<div class="fb-play">Play ▶</div>' : '<div class="fb-play locked" aria-label="Locked">🔒</div>'}
+          ${open ? '<div class="fb-play">Play <svg width="0.8em" height="0.8em" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="vertical-align:-0.05em"><path d="M7 4.8v14.4a1.2 1.2 0 0 0 1.8 1l11.6-7.2a1.2 1.2 0 0 0 0-2L8.8 3.8A1.2 1.2 0 0 0 7 4.8z"/></svg></div>' : '<div class="fb-play locked" aria-label="Locked">🔒</div>'}
         </button>`;
       }).join('');
     }
@@ -712,8 +712,8 @@
           </div>
           <div class="fb-note">${g.shots.map(metres).join(' · ')}${newUnlock ? `<br><b style="color:#4caf6e">Level ${g.li + 2} unlocked: ${next.name}</b>` : ''}</div>
         </div>
-        ${next && unlocked(g.li + 1) ? `<button type="button" class="fb-btn" data-next>▶ Level ${g.li + 2}: ${next.name}</button>` : ''}
-        <button type="button" class="fb-btn ${next && unlocked(g.li + 1) ? 'ghost' : ''}" data-go>▶ Fling again</button>
+        ${next && unlocked(g.li + 1) ? `<button type="button" class="fb-btn" data-next><svg width="0.8em" height="0.8em" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="vertical-align:-0.05em"><path d="M7 4.8v14.4a1.2 1.2 0 0 0 1.8 1l11.6-7.2a1.2 1.2 0 0 0 0-2L8.8 3.8A1.2 1.2 0 0 0 7 4.8z"/></svg> Level ${g.li + 2}: ${next.name}</button>` : ''}
+        <button type="button" class="fb-btn ${next && unlocked(g.li + 1) ? 'ghost' : ''}" data-go><svg width="0.8em" height="0.8em" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="vertical-align:-0.05em"><path d="M7 4.8v14.4a1.2 1.2 0 0 0 1.8 1l11.6-7.2a1.2 1.2 0 0 0 0-2L8.8 3.8A1.2 1.2 0 0 0 7 4.8z"/></svg> Fling again</button>
         <button type="button" class="fb-link" data-levels>All levels</button>
         <button type="button" class="fb-link" data-exit>Back to the bog timer</button>`;
       el.screen.hidden = false;

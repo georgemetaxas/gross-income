@@ -421,7 +421,7 @@
             <div class="td-level-n">${i + 1}</div>
             <div class="td-level-t"><b>${L.name}</b><span>${open(i) ? L.sub + (p.best[i] ? ' · best ' + clock(p.best[i]) : '') : '🔒 Finish level ' + i + ' first'}</span></div>
             <div class="td-stars">${p.stars[i] ? starStr(p.stars[i]) : ''}</div>
-            ${open(i) ? '<div class="td-play">Play ▶</div>' : '<div class="td-play locked" aria-label="Locked">🔒</div>'}
+            ${open(i) ? '<div class="td-play">Play <svg width="0.8em" height="0.8em" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="vertical-align:-0.05em"><path d="M7 4.8v14.4a1.2 1.2 0 0 0 1.8 1l11.6-7.2a1.2 1.2 0 0 0 0-2L8.8 3.8A1.2 1.2 0 0 0 7 4.8z"/></svg></div>' : '<div class="td-play locked" aria-label="Locked">🔒</div>'}
           </button>`).join('')}
         </div>
         <div class="td-box" style="margin-top:8px">
@@ -463,7 +463,7 @@
           <div class="td-lbl" style="margin-bottom:8px">Today's words</div>
           <div class="td-learned">${g.words.map(w => `<div><b>${w.w}</b>${w.blurb}</div>`).join('')}</div>
         </div>
-        ${more ? '<button type="button" class="td-btn" data-next>▶ Next level</button>' : ''}
+        ${more ? '<button type="button" class="td-btn" data-next><svg width="0.8em" height="0.8em" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="vertical-align:-0.05em"><path d="M7 4.8v14.4a1.2 1.2 0 0 0 1.8 1l11.6-7.2a1.2 1.2 0 0 0 0-2L8.8 3.8A1.2 1.2 0 0 0 7 4.8z"/></svg> Next level</button>' : ''}
         <button type="button" class="td-btn ${more ? 'ghost' : ''}" data-again>↺ New puzzle</button>
         <button type="button" class="td-link" data-levels>All levels</button>
         <button type="button" class="td-link" data-exit style="margin-top:6px">Back to the bog timer</button>`;

@@ -542,7 +542,7 @@
           <div><div class="ts-lbl">Longest log</div><div class="ts-val gold">${cm(g.best)}</div></div>
           <div><div class="ts-lbl">Gets faster</div><div class="ts-val">As you grow</div></div>
         </div>
-        <button type="button" class="ts-btn" data-go>▶ Start squeezing</button>`;
+        <button type="button" class="ts-btn" data-go><svg width="0.8em" height="0.8em" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="vertical-align:-0.05em"><path d="M7 4.8v14.4a1.2 1.2 0 0 0 1.8 1l11.6-7.2a1.2 1.2 0 0 0 0-2L8.8 3.8A1.2 1.2 0 0 0 7 4.8z"/></svg> Start squeezing</button>`;
       el.screen.hidden = false;
       el.screen.querySelector('[data-go]').onclick = newGame;
     }
@@ -571,7 +571,7 @@
           </div>
           <div class="ts-note">${verdict}</div>
         </div>
-        <button type="button" class="ts-btn" data-go>▶ Squeeze another</button>
+        <button type="button" class="ts-btn" data-go><svg width="0.8em" height="0.8em" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="vertical-align:-0.05em"><path d="M7 4.8v14.4a1.2 1.2 0 0 0 1.8 1l11.6-7.2a1.2 1.2 0 0 0 0-2L8.8 3.8A1.2 1.2 0 0 0 7 4.8z"/></svg> Squeeze another</button>
         <button type="button" class="ts-link" data-exit>Back to the bog timer</button>`;
       el.screen.hidden = false;
       el.screen.querySelector('[data-go]').onclick = newGame;
