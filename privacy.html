@@ -6,7 +6,11 @@
 <title>Privacy & Terms · Gross Income</title>
 <meta name="theme-color" content="#1a1208">
 <link rel="icon" href="icons/logo.svg" type="image/svg+xml">
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400&family=DM+Sans:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  @font-face { font-family: 'Bebas Neue'; font-weight: 400; font-display: swap; src: url(fonts/bebas-neue-400.woff2) format('woff2'); }
+  @font-face { font-family: 'DM Mono'; font-weight: 400; font-display: swap; src: url(fonts/dm-mono-400.woff2) format('woff2'); }
+  @font-face { font-family: 'DM Sans'; font-weight: 300 600; font-display: swap; src: url(fonts/dm-sans-var.woff2) format('woff2'); }
+</style>
 <style>
   :root { --bg: #1a1208; --surface: #231a0a; --gold: #f5c842; --cream: #f5ead6; --muted: #a08060; --border: rgba(245,200,66,0.12); }
   * { box-sizing: border-box; }
@@ -18,6 +22,8 @@
   .date { font-family: 'DM Mono', monospace; font-size: 12px; letter-spacing: 1px; color: var(--muted); }
   ul { padding-left: 20px; }
   li { margin: 6px 0; }
+  .short h2 { margin-top: 18px; }
+  .short { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 4px 18px; }
   .back { font-family: 'DM Mono', monospace; font-size: 12px; letter-spacing: 1px; text-decoration: none; }
 </style>
 </head>
@@ -25,43 +31,88 @@
 <main>
   <a class="back" href="./">← BACK TO THE BOG</a>
   <h1>Privacy &amp; Terms</h1>
-  <div class="date">Last updated 22 October 2026</div>
+  <div class="date">Last updated 28 October 2026</div>
 
-  <p>Gross Income (grossincome.com.au) shows how much you earn while you're on the toilet. This page explains what we keep and the rules for paying for the Golden Throne. Short version: your salary never leaves your phone.</p>
+  <p>Gross Income (grossincome.com.au) shows how much you earn while you're on the toilet. This page explains what we collect, what we don't, and the rules for paying for the Golden Throne.</p>
+
+  <div class="short">
+    <h2>The short version</h2>
+    <ul>
+      <li><b>We never see your salary.</b> It's saved on your phone and all the maths happens there.</li>
+      <li>You don't need an account. Without one, your bogs never leave your phone.</li>
+      <li>The only things we count for everyone are anonymous game stats: which Bog Arcade game was opened and for how long.</li>
+      <li>If you join Poop Pool, we store your email, throne name and how long your bogs were. Dollars only if you choose to share them.</li>
+      <li>No ads, no tracking cookies, and we don't sell your data.</li>
+    </ul>
+  </div>
+
+  <h2>Your salary</h2>
+  <p>The salary and pay period you type in are saved in your browser's local storage on your device. They're never sent to us or anyone else, and there's no salary field anywhere on our server.</p>
+  <p>The one way money can leave your phone is if you're in Poop Pool and turn off <b>"Share minutes only"</b>. It's on by default. If you turn it off:</p>
+  <ul>
+    <li>The dollars you earned on each bog are uploaded alongside how long it lasted.</li>
+    <li>Your pool mates see your total dollars and total time on the leaderboard.</li>
+    <li>Dollars and time together can be used to work out roughly what you earn per hour. That's true for your pool mates and for anyone who can look at our database. So only share dollars with people you'd be happy to know your rough pay.</li>
+    <li>Turn "Share minutes only" back on and the dollar amounts are wiped from our server.</li>
+  </ul>
 
   <h2>What stays on your device</h2>
   <ul>
     <li>Your salary and pay period.</li>
-    <li>Your bog sessions, game high scores and settings.</li>
+    <li>Your Bog Log (every bog's time, length and dollars).</li>
+    <li>Game progress and settings.</li>
   </ul>
-  <p>These are saved in your browser's local storage. We never see them unless you sign in to Poop Pool (see below). Clearing your browser data deletes them.</p>
+  <p>Clearing your browser data, or deleting the home screen app, deletes them. We can't recover them for you.</p>
+
+  <h2>Motion sensor</h2>
+  <p>While a bog is running, the app can use your phone's motion sensor to notice if you've walked off without pressing Finish. iPhones ask your permission first. The readings are checked on your phone and never sent anywhere.</p>
 
   <h2>Game stats</h2>
-  <p>When you open a Bog Arcade game, we count which game it was and how long it was open, so we know which games people like. These counts aren't linked to you, your device or your account.</p>
+  <p>When you open a Bog Arcade game, the app sends us the game's name, how long it was open, and whether it hit the Golden Throne paywall. That's all. There's no account, device ID or score attached, so we can't tell who played. We use it to see which games people like.</p>
 
-  <h2>What we keep if you sign in</h2>
-  <p>Signing in is optional. It's needed for Poop Pool (leaderboards with your mates) and the Golden Throne unlock. If you sign in, we store:</p>
+  <h2>If you sign in</h2>
+  <p>Signing in is optional. It's needed for Poop Pool (leaderboards with your mates) and the Golden Throne. If you sign in, we store:</p>
   <ul>
-    <li>Your email address, used to send login codes.</li>
+    <li>Your email address, to send login codes and answer you if you contact us.</li>
     <li>Your throne name and emoji, shown to people in your pools.</li>
-    <li>Each bog session's start time and length.</li>
-    <li>The dollars earned per session, only if you turn off "Share minutes only". Turning it back on deletes them from our server.</li>
-    <li>The pools you're in, and whether you've unlocked the Golden Throne.</li>
+    <li>Each bog's start time and length, plus dollars only if you share them (see above).</li>
+    <li>The pools you've made or joined.</li>
+    <li>Whether you've unlocked the Golden Throne, and Stripe's payment reference for it.</li>
   </ul>
-  <p>Pool mates only see totals (time, number of bogs, longest bog, and dollars if you share them), never your individual sessions or your salary.</p>
-  <p>This data is stored with <a href="https://supabase.com/privacy">Supabase</a>, our database provider. Login emails are sent through Cloudflare.</p>
+  <p>Pool mates see totals (time, number of bogs, longest bog, and dollars if you share them). They never see your individual bogs, your email or your salary.</p>
 
-  <h2>Payments</h2>
-  <p>Payments on the website are handled by <a href="https://stripe.com/au/privacy">Stripe</a>. We never see or store your card details. Stripe tells us that a payment went through and which Gross Income login it belongs to. In the iPhone and Android apps, payments go through Apple or Google instead.</p>
+  <h2>Who helps us run it</h2>
+  <ul>
+    <li><a href="https://supabase.com/privacy">Supabase</a> stores the sign-in data above and the anonymous game stats. It also keeps standard login records, like IP address and time.</li>
+    <li><a href="https://www.cloudflare.com/privacypolicy/">Cloudflare</a> hosts the website and sends our emails. Like any web host it sees your IP address and browser details when you load the site, and uses them to keep the site running and secure. It also forwards emails you send us to our Gmail inbox (Google).</li>
+    <li><a href="https://stripe.com/au/privacy">Stripe</a> handles payments on the website. We never see or store your card details. Stripe tells us a payment went through and which Gross Income login it belongs to. In future iPhone and Android apps, payments will go through Apple or Google instead.</li>
+  </ul>
+  <p>These companies may store or process data outside Australia, including in the United States.</p>
 
   <h2>What we don't do</h2>
   <ul>
-    <li>We don't sell your data.</li>
-    <li>We don't use advertising trackers today. If ads are added later, this page will be updated first, and Golden Throne owners won't see them.</li>
+    <li>We don't sell or rent your data.</li>
+    <li>We don't use advertising or tracking cookies. If ads are added later, we'll update this page first, and Golden Throne owners won't see them.</li>
+    <li>We don't send marketing emails. The only emails you'll get are login codes.</li>
   </ul>
 
-  <h2>Deleting your data</h2>
-  <p>You can leave a pool or delete your bog sessions in the app at any time. To delete your account and everything stored with it, email <a href="mailto:dropaline@grossincome.com.au">dropaline@grossincome.com.au</a> from the address you signed in with, and we'll delete it within 30 days.</p>
+  <h2>Seeing, fixing or deleting your data</h2>
+  <ul>
+    <li>Change your throne name, emoji and dollar sharing in Profile &amp; Crap at any time.</li>
+    <li>Delete bogs from your Bog Log, or leave a pool, in the app.</li>
+    <li>To get a copy of what we hold about you, or to delete your account and everything stored with it, email <a href="mailto:dropaline@grossincome.com.au">dropaline@grossincome.com.au</a> from the address you signed in with. We'll do it within 30 days. Payment records Stripe must keep for tax law stay with Stripe.</li>
+  </ul>
+  <p>We keep your sign-in data until you ask us to delete it. Anonymous game stats aren't linked to anyone, so they can't be deleted per person.</p>
+
+  <h2>Keeping it safe</h2>
+  <p>Data travels over HTTPS. Database rules mean only you can read your own bogs, and pool mates can only read pool totals. No system is perfect, though. If something goes wrong that's likely to harm you, we'll tell you as soon as we can.</p>
+
+  <h2>Australian privacy law</h2>
+  <p>Gross Income is run from Australia. We use the <a href="https://www.oaic.gov.au/privacy/australian-privacy-principles">Australian Privacy Principles</a> in the Privacy Act 1988 as our guide for how we handle personal information. As a small business we may not be legally bound by them, but we choose to follow them anyway.</p>
+  <p>If you have a privacy question or complaint, email us first and we'll reply within 30 days. If you're not happy with our answer, you can contact the <a href="https://www.oaic.gov.au/privacy/privacy-complaints">Office of the Australian Information Commissioner</a>.</p>
+
+  <h2>Changes</h2>
+  <p>If we change what we collect, we'll update this page and the date at the top before the change goes live.</p>
 
   <h2 id="terms">Golden Throne terms</h2>
   <ul>
