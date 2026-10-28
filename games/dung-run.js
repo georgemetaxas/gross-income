@@ -508,7 +508,7 @@
           <div><div class="dr-lbl">Your bog record</div><div class="dr-val">${best.toLocaleString('en-US')}</div></div>
           <div><div class="dr-lbl">Lives</div><div class="dr-val">🧻🧻🧻</div></div>
         </div>
-        <button type="button" class="dr-btn" data-go>▶ Start flushing</button>`;
+        <button type="button" class="dr-btn" data-go><svg width="0.8em" height="0.8em" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="vertical-align:-0.05em"><path d="M7 4.8v14.4a1.2 1.2 0 0 0 1.8 1l11.6-7.2a1.2 1.2 0 0 0 0-2L8.8 3.8A1.2 1.2 0 0 0 7 4.8z"/></svg> Start flushing</button>`;
       el.screen.hidden = false;
       el.screen.querySelector('[data-go]').onclick = newGame;
     }
@@ -535,7 +535,7 @@
           </div>
           <div class="dr-note">You caught ${g.caught} poo${g.caught === 1 ? '' : 's'} on company time.</div>
         </div>
-        <button type="button" class="dr-btn" data-go>▶ One more run</button>
+        <button type="button" class="dr-btn" data-go><svg width="0.8em" height="0.8em" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="vertical-align:-0.05em"><path d="M7 4.8v14.4a1.2 1.2 0 0 0 1.8 1l11.6-7.2a1.2 1.2 0 0 0 0-2L8.8 3.8A1.2 1.2 0 0 0 7 4.8z"/></svg> One more run</button>
         <button type="button" class="dr-link" data-exit>Back to the bog timer</button>`;
       el.screen.hidden = false;
       el.screen.querySelector('[data-go]').onclick = newGame;

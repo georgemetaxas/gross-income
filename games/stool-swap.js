@@ -784,7 +784,7 @@
             <div class="ss-level-t"><b>${L.name}</b><span>${i > p.unlocked ? '🔒 Beat level ' + i + ' first' :
               (L.size || 8) + '×' + (L.size || 8) + ' · ' + L.moves + ' moves · ' + L.score.toLocaleString('en-US') + ' pts' + (L.collect ? ' · ' + L.collect[1] + ' ' + PIECES[L.collect[0]].name.toLowerCase() : '')}</span></div>
             <div class="ss-stars">${p.stars[i] ? starStr(p.stars[i]) : ''}</div>
-            ${i > p.unlocked ? '<div class="ss-play locked" aria-label="Locked">🔒</div>' : '<div class="ss-play">Play ▶</div>'}
+            ${i > p.unlocked ? '<div class="ss-play locked" aria-label="Locked">🔒</div>' : '<div class="ss-play">Play <svg width="0.8em" height="0.8em" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="vertical-align:-0.05em"><path d="M7 4.8v14.4a1.2 1.2 0 0 0 1.8 1l11.6-7.2a1.2 1.2 0 0 0 0-2L8.8 3.8A1.2 1.2 0 0 0 7 4.8z"/></svg></div>'}
           </button>`).join('')}
         </div>
         <div class="ss-box" style="margin-top:8px">
@@ -832,7 +832,7 @@
           <div><div class="ss-lbl">Paid to play</div><div class="ss-val green">${paid}</div></div>
           <div><div class="ss-lbl">Level record?</div><div class="ss-val" style="color:${record ? '#f5c842' : '#a08060'}">${record ? 'YES!' : 'Nah · ' + p.best[g.lv].toLocaleString('en-US')}</div></div>
         </div>
-        ${more ? '<button type="button" class="ss-btn" data-next>▶ Next level</button>' :
+        ${more ? '<button type="button" class="ss-btn" data-next><svg width="0.8em" height="0.8em" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="vertical-align:-0.05em"><path d="M7 4.8v14.4a1.2 1.2 0 0 0 1.8 1l11.6-7.2a1.2 1.2 0 0 0 0-2L8.8 3.8A1.2 1.2 0 0 0 7 4.8z"/></svg> Next level</button>' :
           '<div class="ss-note" style="font-size:14px;opacity:0.8;margin-bottom:8px">That\'s every level so far. More bowls coming soon.</div>'}
         <button type="button" class="ss-btn ghost" data-again>↺ Play again</button>
         <button type="button" class="ss-link" data-levels>All levels</button>
