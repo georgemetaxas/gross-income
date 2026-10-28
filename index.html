@@ -588,6 +588,13 @@
   footer { text-align: center; font-family: 'DM Mono', monospace; font-size: 10px; color: #3d2f1a; margin-top: 8px; }
 
 
+  /* Turnstile only draws here when it needs a tap; above sheets and bars */
+  .captcha-box {
+    position: fixed; left: 50%; transform: translateX(-50%); z-index: 50;
+    bottom: calc(16px + env(safe-area-inset-bottom));
+  }
+  .captcha-box:empty { display: none; }
+
   /* ── APP BAR: install hint + new version prompt ── */
   .app-bar {
     position: fixed; left: 12px; right: 12px; z-index: 30;
@@ -1114,6 +1121,7 @@
 
   <!-- POOP POOL -->
   <div class="pool-card" id="poolCard" hidden></div>
+  <div class="captcha-box" id="captchaBox"></div>
 
 
   <div class="fun-fact" id="funFact"></div>
@@ -2173,6 +2181,14 @@
   // Publishable key: meant to ship in browser code. Access is enforced by row level security.
   const SUPABASE_KEY = 'sb_publishable_VfI274ud8nqxAFZvKzquwQ_qChku-Bu';
   const SUPABASE_JS = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js';
+  // Hash of that exact file, so a tampered CDN copy is refused instead of run.
+  // Update it with the version: curl -s <url> | openssl dgst -sha384 -binary | openssl base64 -A
+  const SUPABASE_JS_SRI = 'sha384-0w2KAL2YHP6wKOkUDzkCDGgVvfmHnj02DHeQ6XcHOgTfFsGyonKOpShMH1x6nk9o';
+  // Cloudflare Turnstile: a mostly invisible "are you a human" check before we send a
+  // login email, so bots can't use the form to spam inboxes. Supabase checks the token
+  // (Authentication → Attack Protection → CAPTCHA). Empty turns it off.
+  const TURNSTILE_SITEKEY = '0x4AAAAAAFpIQmGxMsFWpT3S';
+  const TURNSTILE_JS = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
 
   const POOL_INVITE_KEY = 'gi.pendingInvite';
   const POOL_CURRENT_KEY = 'gi.currentPool';
@@ -2193,6 +2209,42 @@
   let sbReadyResolve;
   const sbReady = new Promise(r => { sbReadyResolve = r; });
   const poolCard = document.getElementById('poolCard');
+
+  // Runs the check in the background from the moment the email box gets focus, so a
+  // token is usually ready by the time "Email me a login code" is tapped. Only shows
+  // anything (a checkbox in #captchaBox) when Cloudflare isn't sure.
+  const captcha = {
+    id: null, token: null, waiters: [], loading: null, failed: false,
+    prime() {
+      if (!TURNSTILE_SITEKEY || this.loading) return;
+      this.loading = new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = TURNSTILE_JS; s.async = true; s.onload = resolve; s.onerror = reject;
+        document.head.appendChild(s);
+      }).then(() => {
+        this.id = window.turnstile.render('#captchaBox', {
+          sitekey: TURNSTILE_SITEKEY, action: 'login', appearance: 'interaction-only',
+          callback: t => { this.token = t; this.waiters.splice(0).forEach(w => w(t)); },
+          'expired-callback': () => { this.token = null; },
+        });
+      }).catch(() => { this.failed = true; this.waiters.splice(0).forEach(w => w()); });
+    },
+    // A token, or undefined if the check couldn't run (Supabase then decides).
+    get() {
+      if (!TURNSTILE_SITEKEY || this.failed) return Promise.resolve();
+      this.prime();
+      if (this.token) return Promise.resolve(this.token);
+      return new Promise(resolve => {
+        this.waiters.push(resolve);
+        setTimeout(resolve, 60000);
+      });
+    },
+    // Tokens only work once: start on a fresh one for the next email.
+    used() {
+      this.token = null;
+      if (this.id != null) window.turnstile.reset(this.id);
+    },
+  };
 
   function esc(s) {
     return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -2680,10 +2732,16 @@
       // Desktop keeps the focus so the code can be typed or pasted straight in.
       if (matchMedia('(hover: hover) and (pointer: fine)').matches) document.getElementById('poolCode').focus();
       else if (document.activeElement) document.activeElement.blur();
+      const captchaToken = await captcha.get();
       const { error } = await pool.sb.auth.signInWithOtp({
-        email, options: { emailRedirectTo: location.origin + location.pathname },
+        email, options: { emailRedirectTo: location.origin + location.pathname, captchaToken },
       });
-      if (error) { pool.view = Object.assign({}, from, { email }); renderPool(); throw error; }
+      captcha.used();
+      if (error) {
+        pool.view = Object.assign({}, from, { email }); renderPool();
+        if (/captcha/i.test(error.message || '')) throw new Error('We couldn\'t check you\'re a human. Give it a sec and try again.');
+        throw error;
+      }
       pool.view.sending = false;
       // Update the line in place so a code already being typed isn't wiped
       const t = document.getElementById('poolSentText');
@@ -2872,6 +2930,7 @@
 
   // Keep the code box visible above the phone keyboard
   poolCard.addEventListener('focusin', (e) => {
+    if (e.target.id === 'poolEmail') captcha.prime();
     if (e.target.id === 'poolCode') setTimeout(() => e.target.scrollIntoView({ block: 'center', behavior: 'smooth' }), 300);
   });
 
@@ -2971,6 +3030,8 @@
 
     const s = document.createElement('script');
     s.src = SUPABASE_JS;
+    s.integrity = SUPABASE_JS_SRI;
+    s.crossOrigin = 'anonymous';
     s.onload = async () => {
       pool.sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
       sbReadyResolve(true);

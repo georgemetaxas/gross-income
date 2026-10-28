@@ -19,6 +19,13 @@ The leaderboard runs on Supabase. The site itself stays static.
    - Below the code, the templates can still link to `{{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=email` rather than `{{ .ConfirmationURL }}`, for people using the website. The app finishes either kind of login with `verifyOtp`, and keeping the link on our own domain helps the email stay out of spam.
    - The branded templates and subject lines are in `../emails/`.
 
+## Security
+
+- The publishable key is public on purpose. What protects the data is row level security plus the grants at the end of `schema.sql` (LOCKDOWN): signed-out visitors can only call `pool_preview()` and add `game_events`; signed-in people only touch their own rows, and pools change only through the functions. Re-run that section after adding a table, and give any new table RLS.
+- **Login CAPTCHA:** the app runs a Cloudflare Turnstile check (widget "Gross Income login", hostnames `grossincome.com.au` and `gross-income.pages.dev`, which covers previews) before asking for a login email. Site key is `TURNSTILE_SITEKEY` in `index.html`. Supabase checks the token once it's switched on: Authentication → Attack Protection → Enable CAPTCHA, provider Turnstile, paste the widget's secret key. Turn it on only after the app sends tokens, or every login fails.
+- `_headers` sets a Content-Security-Policy. A new outside service (ads, analytics, another CDN) won't load until its host is added there.
+- `supabase-js` loads with an integrity hash (`SUPABASE_JS_SRI` in `index.html`, and in `stats.html`). Bumping the version means updating the hash too.
+
 ## Privacy
 
 - Raw sessions are only readable by their owner. Pool mates only see totals, via `pool_leaderboard()`.
@@ -64,7 +71,8 @@ How it fits together:
 2. On launch day, make everyone who signed up before it a Founding Flusher (SQL Editor; change the date):
    ```sql
    insert into public.entitlements (user_id, source)
-   select id, 'founder' from public.profiles where created_at < '2026-11-02T00:00:00+11:00'
+   select p.id, 'founder' from public.profiles p join auth.users u on u.id = p.id
+   where u.created_at < '2026-11-02T00:00:00+11:00'
    on conflict do nothing;
    ```
 3. Swap the test Payment Link for the live one.
