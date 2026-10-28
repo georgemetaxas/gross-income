@@ -152,7 +152,16 @@
     // The march: four low notes going round, faster as the fleet thins out
     beat: 0,
     march() { const f = [98, 87, 78, 73][this.beat++ % 4]; this.tone(f, f * 0.9, 0.09, 'square', 0.05); },
-    shoot() { this.tone(900, 1500, 0.05, 'triangle', 0.03); },
+    // Every shot is a little toot, never quite the same twice
+    toot() {
+      const f = 85 + Math.random() * 50;
+      this.tone(f, f * 0.6, 0.16 + Math.random() * 0.08, 'sawtooth', 0.07, 22 + Math.random() * 16);
+    },
+    // Getting hit: something big drops in the bowl
+    plop() {
+      this.tone(220, 900, 0.07, 'sine', 0.16);
+      setTimeout(() => this.tone(700, 260, 0.18, 'sine', 0.1), 70);
+    },
     splat() { this.tone(300, 90, 0.12, 'sine', 0.12); },
     clunk() { this.tone(160, 120, 0.06, 'square', 0.04); },
     fart() { this.tone(95, 45, 0.6, 'sawtooth', 0.12, 28); },
@@ -328,7 +337,7 @@
           <button type="button" class="ti-mute" data-mute aria-label="Sound"></button>
         </div>
         <div class="ti-stage"><canvas></canvas><div class="ti-msg" hidden></div></div>
-        <div class="ti-hint">Drag to move · you fire on your own</div>
+        <div class="ti-hint">Tap to fire · drag to move</div>
         <div class="ti-screen" data-screen></div>
       </div>`;
     const $ = sel => root.querySelector(sel);
@@ -342,11 +351,11 @@
     const g = {
       state: 'title', lv: 0, L: LEVELS[0], score: 0, lives: LIVES, playSecs: 0, clock: 0,
       inv: [], dir: 1, stepT: 0, frame: 0, total: 0,
-      px: W / 2, shot: null, reload: 0, drips: [], fireT: 0,
+      px: W / 2, shots: [], reload: 0, drips: [], fireT: 0,
       shields: [], splats: [], floats: [], ufo: null, ufoT: 0, dead: 0, shake: 0, ending: 0, endFn: null,
     };
     let frame = null, last = 0, alive = true, hud = {}, msgTimer = 0;
-    const keys = { l: false, r: false };
+    const keys = { l: false, r: false, fire: false };
 
     // ── LAYOUT ──
     function layout() {
@@ -408,7 +417,7 @@
       g.lv = i; g.L = LEVELS[i];
       g.score = 0; g.lives = LIVES; g.playSecs = 0;
       g.inv = buildFleet(); g.total = g.inv.length; g.dir = 1; g.stepT = 0; g.frame = 0;
-      g.px = W / 2; g.shot = null; g.reload = 0.4; g.drips = []; g.fireT = 1.2;
+      g.px = W / 2; g.shots = []; g.reload = 0.3; g.drips = []; g.fireT = 1.2;
       g.shields = buildShields(); g.splats = []; g.floats = [];
       g.ufo = null; g.ufoT = 14 + Math.random() * 10; g.dead = 0; g.shake = 0; g.ending = 0; g.endFn = null;
       el.screen.hidden = true;
@@ -479,18 +488,12 @@
       } else {
         const v = (keys.r ? 1 : 0) - (keys.l ? 1 : 0);
         g.px = Math.max(PLAYER_W / 2 + 4, Math.min(W - PLAYER_W / 2 - 4, g.px + v * 190 * dt));
-        // Fire on its own: one square of paper in the air at a time, like the original
         g.reload -= dt;
-        if (!g.shot && g.reload <= 0) {
-          g.shot = { x: g.px - 2, y: PLAYER_Y - PLAYER_H / 2 - 8 };
-          g.reload = 0.12;
-          sound.shoot();
-        }
+        if (keys.fire) fire();
       }
 
-      // Paper square going up
-      if (g.shot) {
-        const s = g.shot;
+      // Paper squares going up
+      for (const s of g.shots) {
         s.y -= 430 * dt;
         let gone = s.y < 0;
         if (!gone) {
@@ -514,8 +517,9 @@
           g.ufo = null;
           sound.bonus(); buzz([10, 30, 10]);
         }
-        if (gone) g.shot = null;
+        if (gone) s.gone = true;
       }
+      g.shots = g.shots.filter(s => !s.gone);
 
       const fleet = living();
       if (!fleet.length) {
@@ -571,9 +575,9 @@
         d.y += g.L.dripV * dt;
         if (d.y > H - 10) d.gone = true;
         else if (chewShield(d.x, d.y, 7, 11, true)) d.gone = true;
-        else if (g.shot && hit(d.x, d.y, 7, 11, g.shot.x - 2, g.shot.y, 8, 8)) {
+        else if (g.shots.some(s => !s.gone && hit(d.x, d.y, 7, 11, s.x - 2, s.y, 8, 8) && (s.gone = true))) {
           // Paper meets drip: both gone
-          d.gone = true; g.shot = null;
+          d.gone = true;
           g.splats.push({ x: d.x + 3, y: d.y + 4, t: 0.2, small: true });
         } else if (g.dead <= 0 && hit(d.x, d.y, 7, 11, g.px - PLAYER_W / 2 + 3, PLAYER_Y - PLAYER_H / 2 + 4, PLAYER_W - 6, PLAYER_H - 4)) {
           d.gone = true;
@@ -601,8 +605,8 @@
     function playerHit() {
       g.lives--;
       g.splats.push({ x: g.px, y: PLAYER_Y, t: 0.6 });
-      g.shot = null;
-      sound.fart(); buzz([60, 40, 120]);
+      g.shots = [];
+      sound.plop(); buzz([60, 40, 120]);
       g.shake = still ? 0 : 0.35;
       if (g.lives <= 0) {
         flash('FLUSHED!', true, 1400);
@@ -654,12 +658,12 @@
         // Drips
         for (const d of g.drips) ctx.drawImage(spr.drip, d.x - 3.5, d.y - 2, 14, 14);
 
-        // Paper square
-        if (g.shot) {
+        // Paper squares
+        for (const s of g.shots) {
           ctx.fillStyle = '#FFFDF6';
-          ctx.fillRect(g.shot.x, g.shot.y, 4, 8);
+          ctx.fillRect(s.x, s.y, 4, 8);
           ctx.fillStyle = 'rgba(160,128,96,0.6)';
-          ctx.fillRect(g.shot.x, g.shot.y + 4, 4, 0.6);
+          ctx.fillRect(s.x, s.y + 4, 4, 0.6);
         }
 
         // Toilet (gone for a moment when hit, then blinks back in the middle)
@@ -745,7 +749,7 @@
         </div>
         <div class="ti-box" style="margin-top:8px">
           <div class="ti-lbl" style="margin-bottom:6px">Instructions</div>
-          <div class="ti-instr-text">You're the toilet. Drag anywhere to slide left and right, and you'll fire squares of dunny paper on your own.</div>
+          <div class="ti-instr-text">You're the toilet. Tap anywhere to fire a square of dunny paper (with a little toot). Drag to slide left and right; tap with another finger to fire while you drag.</div>
           <div class="ti-instr-text">Wipe out the whole fleet before it reaches the floor. Dodge the drips, or hide behind the toilet rolls (your paper goes straight through them, theirs doesn't). Lose all ${LIVES} toilets and you're flushed.</div>
           <div class="ti-lbl" style="margin:4px 0 8px">The fleet</div>
           <div class="ti-pieces">
@@ -825,12 +829,23 @@
     // ── INPUT ──
     // Drag anywhere on the play area: the toilet follows your finger sideways,
     // from wherever it was, so your thumb never has to cover it.
+    // Every touch fires too, so a second finger shoots while the first one steers.
     let drag = null;
+    function fire() {
+      // Two squares of paper in the air at most, with a short reload between taps
+      if (g.state !== 'play' || g.ending || g.dead > 0 || g.reload > 0 || g.shots.length >= 2) return;
+      g.shots.push({ x: g.px - 2, y: PLAYER_Y - PLAYER_H / 2 - 8 });
+      g.reload = 0.2;
+      sound.toot();
+    }
     function onDown(e) {
       if (g.state !== 'play') return;
       sound.init();
-      drag = { id: e.pointerId, x: e.clientX, px: g.px };
-      try { el.canvas.setPointerCapture(e.pointerId); } catch (err) {}
+      fire();
+      if (!drag) {
+        drag = { id: e.pointerId, x: e.clientX, px: g.px };
+        try { el.canvas.setPointerCapture(e.pointerId); } catch (err) {}
+      }
       e.preventDefault();
     }
     function onMove(e) {
@@ -846,6 +861,7 @@
       if (down && e.key === 'Escape' && opts.onExit) { opts.onExit(); return; }
       if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') { keys.l = down; e.preventDefault(); }
       if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') { keys.r = down; e.preventDefault(); }
+      if (e.key === ' ' || e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') { keys.fire = down; e.preventDefault(); }
     }
     function onVisible() {
       if (document.visibilityState === 'visible' && g.state === 'play') startLoop();
