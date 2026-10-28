@@ -515,7 +515,11 @@
     padding: 13px 14px; color: var(--cream); font-family: 'DM Mono', monospace; font-size: 16px; margin-top: 10px;
   }
   .code-row { margin-top: 10px; }
-  .code-row input { letter-spacing: 6px; }
+  .code-row input { letter-spacing: 6px; min-width: 0; }
+  .code-paste {
+    flex: none; background: none; border: 0; padding: 8px 0 8px 8px; cursor: pointer;
+    font-family: 'DM Mono', monospace; font-size: 12px; letter-spacing: 1px; text-transform: uppercase; color: var(--gold);
+  }
   .pool-select { padding: 8px 10px; font-size: 11px; width: auto; margin-top: 0; letter-spacing: 1px; }
   .pool-head .section-label { white-space: nowrap; }
   .pool-head .pool-select { min-width: 0; max-width: 60%; text-overflow: ellipsis; }
@@ -2628,6 +2632,7 @@
       <p class="pool-text" id="poolSentText">${sentText(v)}</p>
       <div class="input-row code-row">
         <input id="poolCode" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="8" aria-label="Login code">
+        ${navigator.clipboard && navigator.clipboard.readText ? '<button type="button" class="code-paste" data-act="paste-code">Paste</button>' : ''}
       </div>
       <div class="pool-btns"><button class="btn btn-start" data-act="verify" data-busy="Checking…">Let me in</button></div>
       <button class="pool-link" data-act="back">Use a different email</button>`;
@@ -2809,6 +2814,19 @@
     },
     // A typed code works inside the home screen app. A link in the email would
     // open in Safari, which on iPhone doesn't share its login with the app.
+    // Long-press paste is fiddly on a numeric keyboard, so offer a button
+    async 'paste-code'(el) {
+      el.disabled = false;
+      const input = document.getElementById('poolCode');
+      let text = '';
+      try { text = await navigator.clipboard.readText(); } catch (e) {}
+      const code = (text.match(/\b\d{6}\b/) || [''])[0];
+      if (!code) { input.placeholder = 'Copy the code first'; input.focus(); return 'done'; }
+      input.value = code;
+      // After this tap finishes, so the six digits can log straight in
+      setTimeout(() => input.dispatchEvent(new Event('input', { bubbles: true })), 0);
+      return 'done';
+    },
     async verify() {
       const token = (document.getElementById('poolCode').value || '').replace(/\D/g, '');
       if (token.length < 6) throw new Error('That code looks a few digits short.');
@@ -2994,7 +3012,12 @@
   // Keep the code box visible above the phone keyboard
   poolCard.addEventListener('focusin', (e) => {
     if (e.target.id === 'poolEmail') captcha.prime();
-    if (e.target.id === 'poolCode') setTimeout(() => e.target.scrollIntoView({ block: 'center', behavior: 'smooth' }), 300);
+    // Only scroll when the keyboard actually covers it, so a second tap (to paste) lands where it was aimed
+    if (e.target.id === 'poolCode') setTimeout(() => {
+      const r = e.target.getBoundingClientRect();
+      const h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+      if (r.top < 0 || r.bottom > h - 12) e.target.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    }, 300);
   });
 
   poolCard.addEventListener('change', async (e) => {
