@@ -619,13 +619,16 @@
   }
   .app-bar-icon[hidden] { display: none; }
   .app-bar-text .app-bar-btn { display: block; margin-top: 10px; }
-  /* Install hint: gold card so it stands out, ✕ in the top right corner */
-  .app-bar.is-install { background: var(--gold); border-color: var(--gold); color: var(--bg); padding-right: 40px; }
+  /* Install hint + new version: gold card so it stands out, ✕ in the top right corner */
+  .app-bar.is-install, .app-bar.is-update { background: var(--gold); border-color: var(--gold); color: var(--bg); padding-right: 40px; }
   .app-bar.is-install .app-bar-title,
-  .app-bar.is-install .app-bar-text b { color: var(--bg); }
-  .app-bar.is-install .app-bar-title { font-weight: 700; }
-  .app-bar.is-install .app-bar-btn { background: var(--bg); color: var(--gold); }
-  .app-bar.is-install .app-bar-x { color: var(--bg); opacity: 0.7; }
+  .app-bar.is-install .app-bar-text b, .app-bar.is-update .app-bar-text b { color: var(--bg); }
+  .app-bar.is-install .app-bar-title, .app-bar.is-update .app-bar-text b { font-weight: 700; }
+  .app-bar.is-install .app-bar-btn, .app-bar.is-update .app-bar-btn { background: var(--bg); color: var(--gold); }
+  .app-bar.is-install .app-bar-x, .app-bar.is-update .app-bar-x { color: var(--bg); opacity: 0.7; }
+  /* New version floats at the top of the screen, over the founder bar; below the test strip on previews */
+  .app-bar.is-update { top: calc(12px + env(safe-area-inset-top)); bottom: auto; z-index: 32; }
+  .is-test-build .app-bar.is-update { top: calc(36px + env(safe-area-inset-top)); }
   .app-bar.is-install .app-bar-icon { box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
 
   /* ── iPhone add to home screen guide ── */
@@ -2016,6 +2019,7 @@
     tag.className = 'test-build';
     tag.textContent = 'TEST BUILD · NOT THE LIVE APP';
     document.body.prepend(tag);
+    document.body.classList.add('is-test-build');
   }
 
   function paywallOn() {
@@ -3197,6 +3201,7 @@
       barKind = kind;
       document.getElementById('appBarIcon').hidden = kind !== 'install';
       bar.classList.toggle('is-install', kind === 'install');
+      bar.classList.toggle('is-update', kind === 'update');
       text.innerHTML = html;
       btn.hidden = !btnLabel;
       btn.textContent = btnLabel || '';
@@ -3279,6 +3284,10 @@
         if (!v || !loadedVersion || v === loadedVersion || running || seconds > 0) return;
         showBar('update', '<b>Fresh drop.</b> A new version of Gross Income is ready.', 'Refresh');
       } catch (e) {}
+    }
+    // ?freshdrop shows the bar now, to preview it
+    if (new URLSearchParams(location.search).has('freshdrop')) {
+      showBar('update', '<b>Fresh drop.</b> A new version of Gross Income is ready.', 'Refresh');
     }
     // Once soon after opening, in case a slow network meant the saved copy was shown
     setTimeout(checkForUpdate, 6000);
