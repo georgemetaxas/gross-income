@@ -515,7 +515,11 @@
     padding: 13px 14px; color: var(--cream); font-family: 'DM Mono', monospace; font-size: 16px; margin-top: 10px;
   }
   .code-row { margin-top: 10px; }
-  .code-row input { letter-spacing: 6px; }
+  .code-row input { letter-spacing: 6px; min-width: 0; }
+  .code-paste {
+    flex: none; background: none; border: 0; padding: 8px 0 8px 8px; cursor: pointer;
+    font-family: 'DM Mono', monospace; font-size: 12px; letter-spacing: 1px; text-transform: uppercase; color: var(--gold);
+  }
   .pool-select { padding: 8px 10px; font-size: 11px; width: auto; margin-top: 0; letter-spacing: 1px; }
   .pool-head .section-label { white-space: nowrap; }
   .pool-head .pool-select { min-width: 0; max-width: 60%; text-overflow: ellipsis; }
@@ -588,12 +592,12 @@
   footer { text-align: center; font-family: 'DM Mono', monospace; font-size: 10px; color: #3d2f1a; margin-top: 8px; }
 
 
-  /* Turnstile only draws here when it needs a tap; above sheets and bars */
+  /* Turnstile, only while Cloudflare wants a tap; above sheets and bars */
   .captcha-box {
-    position: fixed; left: 50%; transform: translateX(-50%); z-index: 50;
+    display: none; position: fixed; left: 50%; transform: translateX(-50%); z-index: 50;
     bottom: calc(16px + env(safe-area-inset-bottom));
   }
-  .captcha-box:empty { display: none; }
+  .captcha-box.show { display: block; }
 
   /* ── APP BAR: install hint + new version prompt ── */
   .app-bar {
@@ -2226,38 +2230,53 @@
   const sbReady = new Promise(r => { sbReadyResolve = r; });
   const poolCard = document.getElementById('poolCard');
 
-  // Runs the check in the background from the moment the email box gets focus, so a
-  // token is usually ready by the time "Email me a login code" is tapped. Only shows
-  // anything (a checkbox in #captchaBox) when Cloudflare isn't sure.
+  // Loads Turnstile when the email box gets focus, but only runs the check when
+  // "Email me a login code" is tapped. Most people never see it; if Cloudflare wants
+  // a tap, #captchaBox shows the checkbox and hides again once it's passed.
   const captcha = {
-    id: null, token: null, waiters: [], loading: null, failed: false,
+    id: null, token: null, running: false, waiters: [], loading: null, failed: false,
+    box: document.getElementById('captchaBox'),
     prime() {
-      if (!TURNSTILE_SITEKEY || this.loading) return;
+      if (!TURNSTILE_SITEKEY || this.loading) return this.loading;
       this.loading = new Promise((resolve, reject) => {
         const s = document.createElement('script');
         s.src = TURNSTILE_JS; s.async = true; s.onload = resolve; s.onerror = reject;
         document.head.appendChild(s);
       }).then(() => {
-        this.id = window.turnstile.render('#captchaBox', {
-          sitekey: TURNSTILE_SITEKEY, action: 'login', appearance: 'interaction-only',
-          callback: t => { this.token = t; this.waiters.splice(0).forEach(w => w(t)); },
+        const done = t => {
+          this.running = false;
+          this.box.classList.remove('show');
+          this.waiters.splice(0).forEach(w => w(t));
+        };
+        this.id = window.turnstile.render(this.box, {
+          sitekey: TURNSTILE_SITEKEY, action: 'login',
+          appearance: 'interaction-only', execution: 'execute', 'refresh-expired': 'manual',
+          'before-interactive-callback': () => this.box.classList.add('show'),
+          'after-interactive-callback': () => this.box.classList.remove('show'),
+          callback: t => { this.token = t; done(t); },
+          'error-callback': () => { done(); return true; },
           'expired-callback': () => { this.token = null; },
+          'timeout-callback': () => done(),
         });
       }).catch(() => { this.failed = true; this.waiters.splice(0).forEach(w => w()); });
+      return this.loading;
     },
     // A token, or undefined if the check couldn't run (Supabase then decides).
-    get() {
-      if (!TURNSTILE_SITEKEY || this.failed) return Promise.resolve();
-      this.prime();
-      if (this.token) return Promise.resolve(this.token);
+    async get() {
+      if (!TURNSTILE_SITEKEY) return;
+      await this.prime();
+      if (this.failed) return;
+      if (this.token) return this.token;
       return new Promise(resolve => {
         this.waiters.push(resolve);
         setTimeout(resolve, 60000);
+        if (!this.running) { this.running = true; window.turnstile.execute(this.box); }
       });
     },
-    // Tokens only work once: start on a fresh one for the next email.
+    // Tokens only work once: clear it so the next email gets a fresh check.
     used() {
       this.token = null;
+      this.box.classList.remove('show');
       if (this.id != null) window.turnstile.reset(this.id);
     },
   };
@@ -2613,6 +2632,7 @@
       <p class="pool-text" id="poolSentText">${sentText(v)}</p>
       <div class="input-row code-row">
         <input id="poolCode" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="8" aria-label="Login code">
+        ${navigator.clipboard && navigator.clipboard.readText ? '<button type="button" class="code-paste" data-act="paste-code">Paste</button>' : ''}
       </div>
       <div class="pool-btns"><button class="btn btn-start" data-act="verify" data-busy="Checking…">Let me in</button></div>
       <button class="pool-link" data-act="back">Use a different email</button>`;
@@ -2794,6 +2814,19 @@
     },
     // A typed code works inside the home screen app. A link in the email would
     // open in Safari, which on iPhone doesn't share its login with the app.
+    // Long-press paste is fiddly on a numeric keyboard, so offer a button
+    async 'paste-code'(el) {
+      el.disabled = false;
+      const input = document.getElementById('poolCode');
+      let text = '';
+      try { text = await navigator.clipboard.readText(); } catch (e) {}
+      const code = (text.match(/\b\d{6}\b/) || [''])[0];
+      if (!code) { input.placeholder = 'Copy the code first'; input.focus(); return 'done'; }
+      input.value = code;
+      // After this tap finishes, so the six digits can log straight in
+      setTimeout(() => input.dispatchEvent(new Event('input', { bubbles: true })), 0);
+      return 'done';
+    },
     async verify() {
       const token = (document.getElementById('poolCode').value || '').replace(/\D/g, '');
       if (token.length < 6) throw new Error('That code looks a few digits short.');
@@ -2979,7 +3012,12 @@
   // Keep the code box visible above the phone keyboard
   poolCard.addEventListener('focusin', (e) => {
     if (e.target.id === 'poolEmail') captcha.prime();
-    if (e.target.id === 'poolCode') setTimeout(() => e.target.scrollIntoView({ block: 'center', behavior: 'smooth' }), 300);
+    // Only scroll when the keyboard actually covers it, so a second tap (to paste) lands where it was aimed
+    if (e.target.id === 'poolCode') setTimeout(() => {
+      const r = e.target.getBoundingClientRect();
+      const h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+      if (r.top < 0 || r.bottom > h - 12) e.target.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    }, 300);
   });
 
   poolCard.addEventListener('change', async (e) => {
