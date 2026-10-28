@@ -588,12 +588,12 @@
   footer { text-align: center; font-family: 'DM Mono', monospace; font-size: 10px; color: #3d2f1a; margin-top: 8px; }
 
 
-  /* Turnstile only draws here when it needs a tap; above sheets and bars */
+  /* Turnstile, only while Cloudflare wants a tap; above sheets and bars */
   .captcha-box {
-    position: fixed; left: 50%; transform: translateX(-50%); z-index: 50;
+    display: none; position: fixed; left: 50%; transform: translateX(-50%); z-index: 50;
     bottom: calc(16px + env(safe-area-inset-bottom));
   }
-  .captcha-box:empty { display: none; }
+  .captcha-box.show { display: block; }
 
   /* ── APP BAR: install hint + new version prompt ── */
   .app-bar {
@@ -2226,38 +2226,53 @@
   const sbReady = new Promise(r => { sbReadyResolve = r; });
   const poolCard = document.getElementById('poolCard');
 
-  // Runs the check in the background from the moment the email box gets focus, so a
-  // token is usually ready by the time "Email me a login code" is tapped. Only shows
-  // anything (a checkbox in #captchaBox) when Cloudflare isn't sure.
+  // Loads Turnstile when the email box gets focus, but only runs the check when
+  // "Email me a login code" is tapped. Most people never see it; if Cloudflare wants
+  // a tap, #captchaBox shows the checkbox and hides again once it's passed.
   const captcha = {
-    id: null, token: null, waiters: [], loading: null, failed: false,
+    id: null, token: null, running: false, waiters: [], loading: null, failed: false,
+    box: document.getElementById('captchaBox'),
     prime() {
-      if (!TURNSTILE_SITEKEY || this.loading) return;
+      if (!TURNSTILE_SITEKEY || this.loading) return this.loading;
       this.loading = new Promise((resolve, reject) => {
         const s = document.createElement('script');
         s.src = TURNSTILE_JS; s.async = true; s.onload = resolve; s.onerror = reject;
         document.head.appendChild(s);
       }).then(() => {
-        this.id = window.turnstile.render('#captchaBox', {
-          sitekey: TURNSTILE_SITEKEY, action: 'login', appearance: 'interaction-only',
-          callback: t => { this.token = t; this.waiters.splice(0).forEach(w => w(t)); },
+        const done = t => {
+          this.running = false;
+          this.box.classList.remove('show');
+          this.waiters.splice(0).forEach(w => w(t));
+        };
+        this.id = window.turnstile.render(this.box, {
+          sitekey: TURNSTILE_SITEKEY, action: 'login',
+          appearance: 'interaction-only', execution: 'execute', 'refresh-expired': 'manual',
+          'before-interactive-callback': () => this.box.classList.add('show'),
+          'after-interactive-callback': () => this.box.classList.remove('show'),
+          callback: t => { this.token = t; done(t); },
+          'error-callback': () => { done(); return true; },
           'expired-callback': () => { this.token = null; },
+          'timeout-callback': () => done(),
         });
       }).catch(() => { this.failed = true; this.waiters.splice(0).forEach(w => w()); });
+      return this.loading;
     },
     // A token, or undefined if the check couldn't run (Supabase then decides).
-    get() {
-      if (!TURNSTILE_SITEKEY || this.failed) return Promise.resolve();
-      this.prime();
-      if (this.token) return Promise.resolve(this.token);
+    async get() {
+      if (!TURNSTILE_SITEKEY) return;
+      await this.prime();
+      if (this.failed) return;
+      if (this.token) return this.token;
       return new Promise(resolve => {
         this.waiters.push(resolve);
         setTimeout(resolve, 60000);
+        if (!this.running) { this.running = true; window.turnstile.execute(this.box); }
       });
     },
-    // Tokens only work once: start on a fresh one for the next email.
+    // Tokens only work once: clear it so the next email gets a fresh check.
     used() {
       this.token = null;
+      this.box.classList.remove('show');
       if (this.id != null) window.turnstile.reset(this.id);
     },
   };
