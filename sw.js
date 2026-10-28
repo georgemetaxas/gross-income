@@ -4,7 +4,7 @@
 // On a weak signal (bathroom wifi) the page waits at most NAV_TIMEOUT_MS for the network
 // before opening the saved copy; the fresh copy still lands in the cache for next time.
 // Other origins (Supabase, the CDN) are never touched.
-const CACHE = 'gi-v4';
+const CACHE = 'gi-v5';
 const NAV_TIMEOUT_MS = 4000;
 const SHELL = [
   './', 'manifest.webmanifest', 'icons/icon-192.png?v=2', 'icons/apple-touch-icon.png?v=2',
@@ -31,6 +31,10 @@ self.addEventListener('fetch', (e) => {
   // All pages share one cache entry, so the offline copy also covers links with a
   // query string (magic links, pool invites).
   const nav = req.mode === 'navigate';
+  // Other pages (privacy, stats) go straight to the network. Cloudflare redirects
+  // privacy.html to /privacy, and Safari refuses a redirected page from a worker.
+  const scope = new URL(self.registration.scope);
+  if (nav && url.pathname !== scope.pathname) return;
   const key = nav ? new URL('./', self.registration.scope).href : req;
   const network = fetch(nav ? new Request(url.href, { cache: 'no-cache', credentials: 'same-origin' }) : req)
     .then(res => {
