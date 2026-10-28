@@ -917,6 +917,19 @@
     45% { transform: translateY(-10px) scale(0.85, 1.2); opacity: 1; }
     100% { transform: translateY(-30px) scale(1); opacity: 0; }
   }
+  /* Plunging in: the plunger pumps over the sheet while a login code is checked */
+  .plunge-in {
+    position: absolute; inset: 0; z-index: 3; background: var(--surface2);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
+    border-radius: inherit; animation: fade-in 0.15s ease-out;
+  }
+  .plunge-in.out { animation: fade-out 0.2s ease-in forwards; }
+  .plunge-in svg { width: 46px; transform-origin: 50% 100%; animation: plunge 0.5s ease-in-out infinite; }
+  .plunge-in span { font-family: 'DM Mono', monospace; font-size: 12px; letter-spacing: 1px; color: var(--muted); }
+  @keyframes plunge {
+    0%, 100% { transform: translateY(-14px) scale(1); }
+    50% { transform: translateY(6px) scale(1.25, 0.8); }
+  }
   .puff {
     position: absolute; left: 50%; top: 80px; width: 12px; height: 12px; border-radius: 50%;
     background: rgba(245,234,214,0.6); pointer-events: none; z-index: 1;
@@ -2409,6 +2422,33 @@
     return { name: 'invite', preview, code };
   }
 
+  // Plunging in: a plunger pumps over the sheet for at least a second while the
+  // login code is checked, so it's seen even when Supabase answers instantly.
+  let plungeEl = null;
+  function plungeIn() {
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return { stop() {}, async done() {} };
+    const el = document.createElement('div');
+    el.className = 'plunge-in';
+    el.innerHTML = `<svg viewBox="0 0 34 60" aria-hidden="true">
+        <rect x="14" y="0" width="6" height="40" rx="3" fill="#B5793A"/>
+        <path d="M2,56 Q2,36 17,36 Q32,36 32,56 Z" fill="#C0392B"/>
+      </svg><span>Plunging you in…</span>`;
+    plungeEl = el;
+    if (document.activeElement) document.activeElement.blur(); // drop the keyboard
+    poolCard.scrollTop = 0;
+    poolCard.appendChild(el);
+    const minTime = new Promise(r => setTimeout(r, 1000));
+    const stop = () => { if (plungeEl === el) plungeEl = null; el.remove(); };
+    return {
+      stop,
+      async done() {
+        await minTime;
+        el.classList.add('out');
+        setTimeout(stop, 200);
+      },
+    };
+  }
+
   // ── RENDER ──
   const POOL_SHEET_HEAD = `<div class="hs-head">
       <div class="sheet-title">👑 Poop Pool</div>
@@ -2450,6 +2490,7 @@
       create: viewCreate, board: viewBoard,
     }[v.name](v);
     poolCard.innerHTML = POOL_SHEET_HEAD + html + `<div class="pool-msg">${esc(pool.msg)}</div>`;
+    if (plungeEl) poolCard.appendChild(plungeEl); // stays on top while login re-renders under it
     poolCard.hidden = false;
     poolCard.classList.toggle('stale', pool.stale);
     if (pool.sloshTab) {
@@ -2755,9 +2796,13 @@
     async verify() {
       const token = (document.getElementById('poolCode').value || '').replace(/\D/g, '');
       if (token.length < 6) throw new Error('That code looks a few digits short.');
-      const { error } = await pool.sb.auth.verifyOtp({ email: pool.view.email, token, type: 'email' });
-      if (error) throw new Error('That code didn\'t flush. Check it, or ask for a new one.');
-      await refreshPool(); return 'done';
+      const plunge = plungeIn();
+      try {
+        const { error } = await pool.sb.auth.verifyOtp({ email: pool.view.email, token, type: 'email' });
+        if (error) throw new Error('That code didn\'t flush. Check it, or ask for a new one.');
+        await refreshPool();
+      } catch (e) { plunge.stop(); throw e; }
+      await plunge.done(); return 'done';
     },
     async back() { pool.view = { name: 'pitch' }; },
     async decline() { writeJSON(POOL_INVITE_KEY, null); await refreshPool(); return 'done'; },
