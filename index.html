@@ -66,14 +66,14 @@
     background: var(--bg);
     color: var(--cream);
     font-family: 'DM Sans', sans-serif;
-    min-height: 100vh;
+    min-height: 100vh; min-height: 100dvh; /* dvh: no phantom scroll under Safari's toolbar */
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 24px 16px 48px;
+    padding: 14px 16px 16px;
     /* Home screen app draws under the notch and home bar */
-    padding-top: calc(24px + env(safe-area-inset-top));
-    padding-bottom: calc(48px + env(safe-area-inset-bottom));
+    padding-top: calc(14px + env(safe-area-inset-top));
+    padding-bottom: calc(16px + env(safe-area-inset-bottom));
     padding-left: max(16px, env(safe-area-inset-left));
     padding-right: max(16px, env(safe-area-inset-right));
     position: relative;
@@ -93,11 +93,11 @@
 
   /* ── HEADER ── */
   /* One row: logo, then wordmark with the tagline under it. Leaves room for the profile button. */
-  header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; padding: 4px 56px 0 2px; min-height: 52px; }
+  header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; padding: 2px 56px 0 2px; min-height: 48px; }
   .brand { display: inline-flex; flex-direction: column; align-items: flex-start; }
 
   .logo-mark {
-    width: 48px; height: 48px; display: block; flex: none;
+    width: 44px; height: 44px; display: block; flex: none;
     animation: bob 3.5s ease-in-out infinite;
     filter: drop-shadow(0 4px 16px rgba(245,200,66,0.3));
   }
@@ -156,11 +156,11 @@
   /* Branch previews only, so a preview added to the home screen isn't mistaken for the live app */
   .test-build {
     position: relative; z-index: 2; align-self: stretch; text-align: center;
-    margin: calc(-24px - env(safe-area-inset-top, 0px)) -16px 24px; padding: calc(env(safe-area-inset-top, 0px) + 5px) 12px 5px;
+    margin: calc(-14px - env(safe-area-inset-top, 0px)) -16px 14px; padding: calc(env(safe-area-inset-top, 0px) + 5px) 12px 5px;
     background: var(--amber); color: #1A1208; font: 500 11px/1.3 'DM Mono', monospace; letter-spacing: .12em;
   }
   .settings-btn {
-    position: absolute; top: 8px; right: 0;
+    position: absolute; top: 4px; right: 0;
     width: 44px; height: 44px; border-radius: 50%;
     background: rgba(245,200,66,0.1);
     border: 1px solid rgba(245,200,66,0.3);
@@ -302,12 +302,12 @@
     width: 100%; height: 130px; opacity: 0.45; pointer-events: none;
   }
 
-  .dashboard-top { padding: 20px 20px 0; position: relative; z-index: 2; }
+  .dashboard-top { padding: 16px 20px 0; position: relative; z-index: 2; }
 
   /* Earnings and time side by side, same size. .long shrinks both once the numbers get wide. */
-  .dash-header { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 10px; }
+  .dash-header { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 8px; }
   .dash-header > div { min-width: 0; }
-  .dash-header .dash-earned-amount, .dash-header .timer-digits { font-size: min(64px, 16.5vw); line-height: 1; }
+  .dash-header .dash-earned-amount, .dash-header .timer-digits { font-size: min(58px, 15vw); line-height: 1; }
   .dash-header.long .dash-earned-amount, .dash-header.long .timer-digits { font-size: min(48px, 12.5vw); }
   .dash-time-row { display: flex; align-items: center; gap: 6px; }
 
@@ -333,7 +333,7 @@
   .rate-badge {
     display: flex; align-items: baseline; justify-content: center; gap: 6px;
     background: var(--paper); border: 1px solid var(--border);
-    border-radius: 10px; padding: 8px 12px;
+    border-radius: 10px; padding: 6px 12px;
   }
 
   .rate-badge-val { font-family: 'Bebas Neue', sans-serif; font-size: 24px; color: var(--gold); letter-spacing: 1px; }
@@ -355,8 +355,8 @@
 
 
   /* ── BUTTONS ── */
-  .dash-btns { display: flex; gap: 8px; padding: 20px 20px 20px; position: relative; z-index: 2; }
-  .dash-btns .btn { min-height: 56px; }
+  .dash-btns { display: flex; gap: 8px; padding: 14px 20px 16px; position: relative; z-index: 2; }
+  .dash-btns .btn { min-height: 52px; }
   .dash-btns .btn-stop { border-width: 2px; }
   .dash-btns .btn-reset { width: 60px; border-width: 2px; }
 
@@ -453,10 +453,10 @@
     background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
     padding: 14px 18px; font-size: 13px; color: var(--muted);
     font-family: 'DM Mono', monospace; line-height: 1.6; text-align: center;
-    margin-bottom: 12px; opacity: 0; transition: opacity 0.6s;
+    margin-bottom: 12px; display: none;
   }
 
-  .fun-fact.visible { opacity: 1; }
+  .fun-fact.visible { display: block; animation: fade-in 0.6s ease-out; }
   .fun-fact span { color: var(--gold); }
 
   /* ── BOG HISTORY (top half of the lifetime card) ── */
@@ -589,7 +589,7 @@
 
   .no-salary-notice.visible { display: block; }
 
-  footer { text-align: center; font-family: 'DM Mono', monospace; font-size: 10px; color: #3d2f1a; margin-top: 8px; }
+  footer { text-align: center; font-family: 'DM Mono', monospace; font-size: 10px; color: #3d2f1a; margin-top: 2px; }
   footer a { color: inherit; }
 
 
@@ -704,7 +704,7 @@
   .arcade-card {
     background: linear-gradient(135deg, rgba(127,211,245,0.10), rgba(245,200,66,0.08));
     border: 1px solid rgba(245,200,66,0.35); border-radius: 20px;
-    padding: 16px 18px 18px; margin-bottom: 12px; width: 100%;
+    padding: 14px 16px 16px; margin-bottom: 12px; width: 100%;
   }
   /* Copy and mini timer button swap with the bog timer */
   .bog-running .arcade-idle, body:not(.bog-running) .arcade-live { display: none; }
@@ -712,13 +712,13 @@
   .arcade-head b { display: block; font-family: 'Bebas Neue', sans-serif; font-size: 24px; font-weight: 400; letter-spacing: 1.5px; color: var(--gold); line-height: 1.1; }
   /* One sideways-scrolling row so any number of games fits; the next tile peeks in at the edge. */
   .arcade-tiles {
-    display: flex; gap: 10px; margin: 10px -18px -16px; padding: 4px 18px 16px; /* room for the icon shadows */
-    overflow-x: auto; scroll-snap-type: x proximity; scroll-padding: 0 18px;
+    display: flex; gap: 10px; margin: 8px -16px -16px; padding: 4px 16px 14px; /* room for the icon shadows */
+    overflow-x: auto; scroll-snap-type: x proximity; scroll-padding: 0 16px;
     scrollbar-width: none; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain;
   }
   .arcade-tiles::-webkit-scrollbar { display: none; }
   .arcade-tile {
-    display: flex; flex-direction: column; align-items: center; gap: 7px;
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
     background: none; border: none; padding: 0; cursor: pointer; color: var(--cream);
     -webkit-tap-highlight-color: transparent;
   }
@@ -776,20 +776,20 @@
   /* Pre-launch announcement: sign in now to become a Founding Flusher */
   .founder-bar {
     position: relative; align-self: stretch;
-    margin: -24px -16px 16px; padding: 12px 44px 12px 16px;
-    padding-top: calc(12px + env(safe-area-inset-top));
+    margin: -14px -16px 12px; padding: 10px 40px 10px 16px;
+    padding-top: calc(10px + env(safe-area-inset-top));
     display: flex; justify-content: center;
     background: var(--green); color: var(--bg);
     box-shadow: 0 6px 20px rgba(76,175,110,0.25);
     font-size: 13px; line-height: 1.35;
   }
   .founder-bar[hidden] { display: none; }
-  .founder-bar-inner { flex: 1; max-width: 520px; display: flex; flex-direction: column; gap: 10px; }
+  .founder-bar-inner { flex: 1; max-width: 520px; display: flex; align-items: center; gap: 12px; }
   .founder-bar-text { flex: 1; }
   .founder-bar-text b { font-weight: 700; }
-  .founder-bar .founder-bar-btn { flex: none; width: auto; align-self: flex-start; font-size: 17px; padding: 11px 28px; }
+  .founder-bar .founder-bar-btn { flex: none; width: auto; font-size: 16px; padding: 9px 16px; }
   .founder-bar-x {
-    position: absolute; top: calc(4px + env(safe-area-inset-top)); right: 4px;
+    position: absolute; top: calc(2px + env(safe-area-inset-top)); right: 4px;
     width: 32px; height: 32px; border: 0; border-radius: 50%;
     background: transparent; color: var(--bg); font-size: 15px; cursor: pointer;
   }
@@ -820,31 +820,31 @@
   .home-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
   .home-tile {
     position: relative; display: flex; flex-direction: column; align-items: flex-start; text-align: left;
-    min-height: 150px; padding: 16px; border-radius: 20px; cursor: pointer; color: var(--cream);
+    min-height: 112px; padding: 14px 16px; border-radius: 20px; cursor: pointer; color: var(--cream);
     background: var(--surface); border: 1px solid rgba(245,200,66,0.3); font: inherit;
   }
   .tile-label { font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--heading); }
   .tile-arrow { position: absolute; top: 13px; right: 13px; color: var(--gold); }
-  .tile-big { font-family: 'Bebas Neue', sans-serif; font-size: 48px; letter-spacing: 1px; line-height: 1; color: var(--gold); margin-top: 12px; }
+  .tile-big { font-family: 'Bebas Neue', sans-serif; font-size: 38px; letter-spacing: 1px; line-height: 1; color: var(--gold); margin-top: 8px; }
   .tile-sub { font-size: 12px; line-height: 1.35; color: var(--muted); margin-top: auto; padding-top: 8px; }
-  .tile-bars { position: absolute; right: 16px; top: 52px; height: 30px; display: flex; align-items: flex-end; gap: 3px; }
+  .tile-bars { position: absolute; right: 16px; top: 42px; height: 30px; display: flex; align-items: flex-end; gap: 3px; }
   .tile-bars i { width: 7px; border-radius: 2px; background: var(--amber); }
   /* Signed out: Poop Pool turns gold and asks you to join */
   .home-tile.join { color: var(--bg); border: 0; background: linear-gradient(135deg, var(--gold), #f0a830); }
   .home-tile.join .tile-label { color: var(--bg); }
   .home-tile.join .tile-arrow, .home-tile.join .tile-sub { display: none; }
-  .home-tile.join .tile-big { color: var(--bg); font-size: 26px; margin-top: 36px; }
+  .home-tile.join .tile-big { color: var(--bg); font-size: 22px; margin-top: 30px; }
   .tile-join { display: none; }
   .home-tile.join .tile-join {
     display: block; margin-top: auto; align-self: stretch; text-align: center;
-    background: var(--bg); color: var(--gold); border-radius: 12px; padding: 8px 12px;
+    background: var(--bg); color: var(--gold); border-radius: 12px; padding: 7px 12px;
     font-family: 'Bebas Neue', sans-serif; font-size: 17px; letter-spacing: 1px;
   }
   .tile-join svg { vertical-align: -2px; margin-left: 2px; }
-  .tile-faces { display: none; position: absolute; top: 38px; left: 22px; }
+  .tile-faces { display: none; position: absolute; top: 33px; left: 22px; }
   .home-tile.join .tile-faces { display: flex; }
   .tile-faces span {
-    width: 26px; height: 26px; border-radius: 50%; margin-left: -6px; font-size: 13px;
+    width: 24px; height: 24px; border-radius: 50%; margin-left: -6px; font-size: 13px;
     display: flex; align-items: center; justify-content: center;
     background: #f6d766; border: 1.5px solid rgba(26,18,8,0.5);
   }
