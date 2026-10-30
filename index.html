@@ -804,7 +804,7 @@
   .paywall-kicker { font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 3px; color: var(--amber); }
   .paywall h2 { font-family: 'Bebas Neue', sans-serif; font-weight: 400; font-size: 38px; letter-spacing: 2px; color: var(--gold); line-height: 1; margin: 6px 0 10px; }
   .paywall p { font-size: 14px; line-height: 1.5; color: var(--cream); margin: 0 auto 14px; max-width: 340px; }
-  .paywall-games { list-style: none; padding: 0; margin: 0 auto 18px; max-width: 300px; text-align: left; }
+  .paywall-games { list-style: none; padding: 0; margin: 18px auto 0; max-width: 300px; text-align: left; }
   .paywall-games li { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
   .paywall-games li span:last-child { margin-left: auto; font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 1px; color: var(--muted); }
   .paywall-games li span.free-badge {
@@ -813,6 +813,23 @@
   }
   .paywall-games li.paywall-soon { color: var(--muted); font-style: italic; border-bottom: none; }
   .paywall .btn { width: 100%; max-width: 340px; }
+  .paywall-plans { display: flex; gap: 10px; max-width: 340px; margin: 0 auto 14px; }
+  .paywall-plan {
+    position: relative; flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px;
+    padding: 16px 8px 12px; border-radius: 12px; cursor: pointer;
+    background: var(--surface); border: 2px solid var(--border); color: var(--cream); font: inherit;
+  }
+  .paywall-plan.on { border-color: var(--gold); background: rgba(245,200,66,0.08); }
+  .paywall-plan b { font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); font-weight: 400; }
+  .paywall-plan.on b { color: var(--gold); }
+  .paywall-price { font-family: 'Bebas Neue', sans-serif; font-size: 30px; letter-spacing: 1px; line-height: 1.1; }
+  .paywall-price small { font-family: 'DM Sans', sans-serif; font-size: 12px; color: var(--muted); letter-spacing: 0; }
+  .paywall-note { font-size: 11px; color: var(--muted); }
+  .paywall-best {
+    position: absolute; top: -9px; left: 50%; transform: translateX(-50%); white-space: nowrap;
+    padding: 2px 8px; border-radius: 6px; background: var(--gold); color: var(--bg);
+    font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 1px;
+  }
   .paywall-small { font-size: 12px !important; color: var(--muted) !important; margin-top: 14px !important; }
   .paywall-small a, .paywall-small button { color: var(--gold); background: none; border: none; padding: 0; font: inherit; text-decoration: underline; cursor: pointer; }
   .paywall-msg { min-height: 18px; font-size: 13px; color: #ff8a65; margin-top: 10px; }
@@ -1996,14 +2013,20 @@
     else playing.since = Date.now();
   });
 
-  // ── GOLDEN THRONE (arcade unlock) ──
-  // A one-off purchase opens every game; Turd Snake stays free as a taster.
-  // On the web it's bought through a Stripe Payment Link, and the stripe-webhook
-  // function writes the row to entitlements. Setup: supabase/README.md.
+  // ── GOLDEN THRONE (arcade subscription) ──
+  // A monthly or yearly subscription opens every game; Turd Snake stays free as a taster.
+  // On the web it's bought through Stripe Payment Links, and the stripe-webhook
+  // function keeps the entitlements row up to date. Setup: supabase/README.md.
   const FREE_GAMES = ['turd-snake'];
-  const UNLOCK_PRICE = 'A$4.69';
-  // Live link (redirects to grossincome.com.au/?unlocked=1). Test link: buy.stripe.com/test_eVq4gBdzwgXYcn6anC0ZW00
-  const STRIPE_LINK = 'https://buy.stripe.com/eVq4gBdzwgXYcn6anC0ZW00';
+  // Payment Links redirect to grossincome.com.au/?unlocked=1. Yearly is listed first and picked by default.
+  const PLANS = {
+    yearly: { label: 'Yearly', price: 'A$24.99', per: 'year', note: 'A$2.08 a month · save 30%', link: '' },
+    monthly: { label: 'Monthly', price: 'A$2.99', per: 'month', note: 'Cancel anytime', link: '' },
+  };
+  // Stripe customer portal login link (Settings → Billing → Customer portal): cancel, switch plan, new card
+  const PORTAL_LINK = '';
+  // A renewal can land a little after the period ends, so don't lock anyone out the moment it does
+  const RENEW_GRACE_MS = 2 * 24 * 60 * 60 * 1000;
   // Accounts made before this keep the arcade free forever (founder SQL runs on the day).
   const FOUNDER_CUTOFF = '2026-11-02T00:00:00+11:00'; // Monday 2 Nov, midnight Sydney time
   // Free play for everyone until this date. Off on the live site until then;
@@ -2031,7 +2054,9 @@
     return /\.pages\.dev$|^localhost$/.test(location.hostname) || readJSON('gi.paywallPreview', false) === true
       || (PAYWALL_FROM !== null && Date.now() >= Date.parse(PAYWALL_FROM));
   }
-  function unlocked() { return !!readJSON(UNLOCK_KEY, null); }
+  function activeUnlock(u) { return !!u && (!u.expires || Date.parse(u.expires) + RENEW_GRACE_MS > Date.now()); }
+  function unlocked() { return activeUnlock(readJSON(UNLOCK_KEY, null)); }
+  let paywallPlan = 'yearly';
   function gameLocked(gm) { return paywallOn() && !unlocked() && !FREE_GAMES.includes(gm.id); }
 
   function renderArcade() {
@@ -2069,19 +2094,27 @@
     const free = x => FREE_GAMES.includes(x.id);
     const list = [...GAMES.filter(free), ...GAMES.filter(x => !free(x))].map(x =>
       `<li><span>${x.icon}</span><span>${x.name}</span>${free(x) ? '<span class="free-badge">FREE</span>' : '<span>🔒</span>'}</li>`).join('');
+    const plans = Object.entries(PLANS).map(([id, p]) => `
+      <button type="button" class="paywall-plan${id === paywallPlan ? ' on' : ''}" data-pay="plan" data-plan="${id}" aria-pressed="${id === paywallPlan}">
+        ${id === 'yearly' ? '<span class="paywall-best">BEST VALUE</span>' : ''}
+        <b>${p.label}</b><span class="paywall-price">${p.price}<small>/${p.per}</small></span><span class="paywall-note">${p.note}</span>
+      </button>`).join('');
+    const pick = PLANS[paywallPlan];
     const action = user
-      ? `<button class="btn btn-start" data-pay="buy">👑 Unlock for ${UNLOCK_PRICE}</button>
+      ? `<div class="paywall-plans">${plans}</div>
+         <button class="btn btn-start" data-pay="buy">👑 Get it for ${pick.price}/${pick.per}</button>
+         <p class="paywall-small">Renews every ${pick.per} until you cancel. Cancel anytime in Profile &amp; Crap.</p>
          <p class="paywall-small">Already paid? <button data-pay="check">Check again</button></p>`
       : `<button class="btn btn-start" data-pay="signin" data-game="${gm.id}">Sign in to unlock</button>
          <p class="paywall-small">Your unlock is saved to your Poop Pool login, so it follows you to any phone.</p>`;
-    return `<div class="paywall">
+    return `<div class="paywall" data-game="${gm.id}">
       <div class="paywall-icon" style="background:${gm.bg}">${gm.icon}</div>
       <div class="paywall-kicker">GOLDEN THRONE</div>
       <h2>Unlock the Bog Arcade</h2>
-      <p>${gm.name} and every other game, forever. Pay once, no subscription.</p>
-      <ul class="paywall-games">${list}<li class="paywall-soon"><span>⏳</span><span>More games dropping soon...</span><span></span></li></ul>
+      <p>${gm.name} and every other game, plus a new one every month.</p>
       ${action}
       <div class="paywall-msg" id="paywallMsg"></div>
+      <ul class="paywall-games">${list}<li class="paywall-soon"><span>⏳</span><span>A new game every month...</span><span></span></li></ul>
       <p class="paywall-small"><a href="privacy">Privacy &amp; terms</a></p>
     </div>`;
   }
@@ -2098,10 +2131,15 @@
         const email = document.getElementById('poolEmail');
         if (email) email.focus({ preventScroll: true });
       }, 50);
+    } else if (el.dataset.pay === 'plan') {
+      paywallPlan = el.dataset.plan;
+      const gm = GAMES.find(x => x.id === el.closest('.paywall').dataset.game);
+      if (gm) document.getElementById('gameRoot').innerHTML = paywallHtml(gm);
     } else if (el.dataset.pay === 'buy') {
-      if (!STRIPE_LINK) { msg.textContent = "Payments aren't switched on yet. Hang tight."; return; }
+      const link = PLANS[paywallPlan].link;
+      if (!link) { msg.textContent = "Payments aren't switched on yet. Hang tight."; return; }
       // Stripe sends people back to ?unlocked=1 (set on the Payment Link)
-      location.href = STRIPE_LINK + '?client_reference_id=' + encodeURIComponent(pool.user.id)
+      location.href = link + '?client_reference_id=' + encodeURIComponent(pool.user.id)
         + (pool.user.email ? '&prefilled_email=' + encodeURIComponent(pool.user.email) : '');
     } else if (el.dataset.pay === 'check') {
       el.disabled = true;
@@ -2392,12 +2430,13 @@
   async function loadUnlock() {
     if (!pool.user) return unlocked();
     const { data, error } = await pool.sb.from('entitlements')
-      .select('source').eq('user_id', pool.user.id).eq('product', 'golden_throne').maybeSingle();
+      .select('source, plan, status, expires_at').eq('user_id', pool.user.id).eq('product', 'golden_throne').maybeSingle();
     if (error) return unlocked(); // offline, or the table isn't set up yet: keep what we had
-    writeJSON(UNLOCK_KEY, data ? { user: pool.user.id, source: data.source } : null);
+    // Kept even once a subscription lapses, so Profile & Crap can say when it ended
+    writeJSON(UNLOCK_KEY, data ? { user: pool.user.id, source: data.source, plan: data.plan, status: data.status, expires: data.expires_at } : null);
     renderArcade();
     renderProfile();
-    return !!data;
+    return unlocked();
   }
   window.loadUnlock = loadUnlock;
 
@@ -2591,9 +2630,16 @@
       ? `<div class="sheet-pool on"><b>${esc(x.name)}</b><span class="pool-sub">CODE ${esc(x.invite_code)}</span></div>`
       : `<button class="sheet-pool" data-act="switch-pool" data-id="${x.id}"><b>${esc(x.name)}</b><span class="pool-sub" style="color:var(--muted)">SWITCH</span></button>`).join('');
     const unlock = readJSON(UNLOCK_KEY, null);
-    const throne = unlock
-      ? `<p class="pool-text">👑 Unlocked${unlock.source === 'founder' ? ' · <b>Founding Flusher</b>' : ''}. Every Bog Arcade game is yours.</p>`
-      : `<p class="pool-text">Unlock every Bog Arcade game for ${UNLOCK_PRICE}, once. Open a locked game in the Bog Arcade to buy.</p>`;
+    const day = d => new Date(d).toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Australia/Sydney' });
+    const manage = PORTAL_LINK && unlock && unlock.plan
+      ? `<p class="pool-text"><a class="pool-link" href="${PORTAL_LINK}${pool.user.email ? '?prefilled_email=' + encodeURIComponent(pool.user.email) : ''}" target="_blank" rel="noopener">Manage subscription</a></p>` : '';
+    const throne = !unlock
+      ? `<p class="pool-text">Every Bog Arcade game for ${PLANS.monthly.price} a month or ${PLANS.yearly.price} a year. Open a locked game in the Bog Arcade to sign up.</p>`
+      : !unlock.expires
+      ? `<p class="pool-text">👑 Unlocked${unlock.source === 'founder' ? ' · <b>Founding Flusher</b>' : ''}. Every Bog Arcade game is yours${unlock.source === 'founder' ? ', forever' : ''}.</p>`
+      : !activeUnlock(unlock)
+      ? `<p class="pool-text">Your Golden Throne ended on ${day(unlock.expires)}. Open a locked game in the Bog Arcade to come back.</p>${manage}`
+      : `<p class="pool-text">👑 Golden Throne · <b>${unlock.plan === 'yearly' ? 'Yearly' : 'Monthly'}</b>. ${unlock.status === 'canceling' ? 'Ends' : 'Renews'} ${day(unlock.expires)}.</p>${manage}`;
     panel.innerHTML = `
       ${unlock || paywallOn() ? `<div class="sheet-section"><span class="section-label">Golden Throne</span>${throne}</div>` : ''}
       <div class="sheet-section">

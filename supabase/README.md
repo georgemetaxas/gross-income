@@ -39,41 +39,45 @@ The leaderboard runs on Supabase. The site itself stays static.
 - Only the live site sends (add `?trackgames` to a preview link to test). Anyone can insert; nothing can be read through the API.
 - To see it: open grossincome.com.au/stats signed in (only accounts in `stats_admins`), or SQL Editor → `select * from game_popularity;`.
 - Give someone the stats page: `insert into stats_admins select id from auth.users where email = '…';`
-- The stats page also shows Founding Flushers, paid unlocks, accounts and conversion from `account_stats()` (same `stats_admins` gate). Its launch date is hard-coded to match `PAYWALL_FROM` in `index.html`; change both if launch moves.
+- The stats page also shows Founding Flushers, paid unlocks, accounts and conversion from `account_stats()` (same `stats_admins` gate). Its dates are hard-coded to match `FOUNDER_CUTOFF` and `PAYWALL_FROM` in `index.html`; change both places if either moves.
 
-## Golden Throne (arcade unlock)
+## Golden Throne (arcade subscription)
 
-A one-off purchase that opens every Bog Arcade game. Turd Snake stays free. Poop Pool stays free.
+A subscription that opens every Bog Arcade game: A$2.99 a month or A$24.99 a year. Turd Snake and Poop Pool stay free. Founding Flushers (accounts made before 2 Nov 2026) get it free forever. Everyone plays free until `PAYWALL_FROM` (4 Jan 2027).
 
 How it fits together:
 
-- `entitlements` table (in `schema.sql`): one row per unlocked person. People can only read their own row; only the webhook writes.
-- The app (`index.html`, `GOLDEN THRONE` section) locks the other games and shows a paywall. Buying needs a Poop Pool login, so the unlock follows the person to any device.
-- **Buy** opens a Stripe Payment Link with `?client_reference_id=<user id>`. Stripe calls `functions/stripe-webhook`, which writes the row. A full refund deletes it.
-- The paywall only shows on `*.pages.dev` previews, `localhost` and `?paywall` until `PAYWALL_FROM` is set in `index.html`. Live users see no change until then.
+- `entitlements` table (in `schema.sql`): one row per person. People can only read their own row; only the webhook writes. Founder and gift rows have no `expires_at` (forever). Stripe rows store the subscription id in `txn_id`, plus `plan`, `status` and `expires_at` (end of the paid period).
+- The app (`index.html`, `GOLDEN THRONE` section) unlocks while `expires_at` is empty or in the future (plus 2 days' grace for late renewals), and shows a yearly/monthly picker otherwise. Buying needs a Poop Pool login, so it follows the person to any device.
+- **Buy** opens the plan's Stripe Payment Link with `?client_reference_id=<user id>`. Stripe calls `functions/stripe-webhook`: checkout writes the row; renewals, cancels and failed cards update it.
+- **Manage subscription** in Profile & Crap opens Stripe's customer portal login link (`PORTAL_LINK`), where people cancel, switch plan or change card.
+- The paywall only shows on `*.pages.dev` previews, `localhost` and `?paywall` until `PAYWALL_FROM`.
 
 ### One-time setup
 
-1. **Database:** re-run `schema.sql` (adds `entitlements`).
-2. **Stripe:** create an account, then a Product "Golden Throne" with a one-off A$4.69 price, and a **Payment Link** for it.
-   - After payment: "Don't show confirmation page" → redirect to `https://grossincome.com.au/?unlocked=1`.
-   - Paste the link into `STRIPE_LINK` in `index.html`.
+1. **Database:** re-run `schema.sql` (adds the subscription columns and the new `account_stats()`).
+2. **Stripe** (test mode first, then again in live mode):
+   - Product "Golden Throne" with two recurring prices: A$2.99 monthly and A$24.99 yearly. Archive the old one-off A$4.69 price and its Payment Link.
+   - A **Payment Link** for each price. After payment: "Don't show confirmation page" → redirect to `https://grossincome.com.au/?unlocked=1`. Paste them into `PLANS.monthly.link` and `PLANS.yearly.link` in `index.html`.
+   - **Settings → Billing → Customer portal:** turn on cancel (at end of period), switch plan between the two prices, and update payment method. Copy its login link into `PORTAL_LINK`.
 3. **Webhook function:** with the Supabase CLI:
    ```
    supabase functions deploy stripe-webhook --no-verify-jwt
    supabase secrets set STRIPE_SECRET_KEY=sk_... STRIPE_WEBHOOK_SECRET=whsec_...
    ```
-   In Stripe → Developers → Webhooks, add `https://pngsoygqbvhlfkzdghtr.supabase.co/functions/v1/stripe-webhook` with the events `checkout.session.completed`, `checkout.session.async_payment_succeeded` and `charge.refunded`. Its signing secret is `STRIPE_WEBHOOK_SECRET`.
-4. **Test** in Stripe test mode first (test Payment Link, card 4242 4242 4242 4242) on a pages.dev preview.
+   In Stripe → Developers → Webhooks, the endpoint `https://pngsoygqbvhlfkzdghtr.supabase.co/functions/v1/stripe-webhook` needs the events `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `customer.subscription.updated`, `customer.subscription.deleted` and `charge.refunded`. Its signing secret is `STRIPE_WEBHOOK_SECRET`.
+4. **Test** on a pages.dev preview with card 4242 4242 4242 4242: subscribe, cancel in the portal (row shows `canceling`, still unlocked), and use a Stripe test clock to check a renewal moves `expires_at` on.
 
-### Launch day
+### Founder cut-off (2 Nov 2026)
 
-1. Set `PAYWALL_FROM` in `index.html` to the launch date a week ahead. Signed-out people then see "Sign in before … to keep the arcade free" under the arcade.
-2. On launch day, make everyone who signed up before it a Founding Flusher (SQL Editor; change the date):
-   ```sql
-   insert into public.entitlements (user_id, source)
-   select p.id, 'founder' from public.profiles p join auth.users u on u.id = p.id
-   where u.created_at < '2026-11-02T00:00:00+11:00'
-   on conflict do nothing;
-   ```
-3. Swap the test Payment Link for the live one.
+Make everyone who signed up before it a Founding Flusher (SQL Editor):
+```sql
+insert into public.entitlements (user_id, source)
+select p.id, 'founder' from public.profiles p join auth.users u on u.id = p.id
+where u.created_at < '2026-11-02T00:00:00+11:00'
+on conflict do nothing;
+```
+
+### Before free play ends (4 Jan 2027)
+
+Swap the test Payment Links and portal link for the live ones, and switch the Supabase secrets and webhook to live mode.

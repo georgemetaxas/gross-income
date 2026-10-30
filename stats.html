@@ -102,7 +102,7 @@
   const fmt = n => n.toLocaleString('en-AU');
   const fmtMins = secs => secs < 60 ? `${secs}s` : secs < 3600 ? `${Math.round(secs / 60)} min` : `${(secs / 3600).toFixed(1)} hr`;
   const nameOf = id => NAMES[id] || ['🎮', id];
-  const PRICE = 4.69; // Golden Throne, A$
+  const PRICES = { monthly: 2.99, yearly: 24.99 }; // Golden Throne, A$ (PLANS in index.html)
   const pct = (a, b) => b ? `${(a / b * 100).toFixed(a / b < 0.1 ? 1 : 0)}%` : '–';
   let days = 30;
   let sb;
@@ -179,17 +179,21 @@
     if (!a) return `<div class="section">Flushers & sales</div>
       <div class="card msg"><div class="big">🧾</div><p>Account numbers need the new account_stats() SQL run in Supabase.</p></div>`;
     const launched = Date.now() >= Date.parse(a.launch);
-    const launchDay = new Date(a.launch).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', timeZone: 'Australia/Sydney' });
-    // After launch the founder SQL should have granted everyone who was eligible
-    const founders = launched ? a.founders_granted : a.founders_eligible;
-    const founderNote = !launched ? `signed up so far · locks in ${launchDay}`
+    const day = d => new Date(d).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', timeZone: 'Australia/Sydney' });
+    const launchDay = day(a.launch);
+    // After the cut-off the founder SQL should have granted everyone who was eligible
+    const cutoffPassed = Date.now() >= Date.parse(a.founder_cutoff || a.launch);
+    const founders = cutoffPassed ? a.founders_granted : a.founders_eligible;
+    const subs = (a.active_monthly || 0) + (a.active_yearly || 0);
+    const mrr = (a.active_monthly || 0) * PRICES.monthly + (a.active_yearly || 0) * PRICES.yearly / 12;
+    const founderNote = !cutoffPassed ? `signed up so far · locks in ${day(a.founder_cutoff || a.launch)}`
       : a.founders_granted < a.founders_eligible ? `<span class="warn">${fmt(a.founders_eligible - a.founders_granted)} not unlocked yet: run the founder SQL</span>`
       : 'arcade free for life';
     return `<div class="section">Flushers & sales</div>
-      ${launched ? '' : `<p class="note">Paywall goes live ${launchDay}. Paid and conversion start counting then.</p>`}
+      ${launched ? '' : `<p class="note">Free play until ${launchDay}. Subscribers and conversion start counting then.</p>`}
       <div class="kpis">
         <div class="kpi"><div class="label">Founding Flushers</div><div class="v">${fmt(founders)}</div><div class="n">${founderNote}</div></div>
-        <div class="kpi"><div class="label">Paid unlocks</div><div class="v">${fmt(a.paid)}</div><div class="n">${launched ? `A$${(a.paid * PRICE).toFixed(2)} before fees` : `starts ${launchDay}`}</div></div>
+        <div class="kpi"><div class="label">Subscribers</div><div class="v">${fmt(subs)}</div><div class="n">${launched ? `${fmt(a.active_yearly || 0)} yearly · ${fmt(a.active_monthly || 0)} monthly · A$${mrr.toFixed(2)}/mo before fees${a.lapsed ? ` · ${fmt(a.lapsed)} lapsed` : ''}` : `starts ${launchDay}`}</div></div>
         <div class="kpi"><div class="label">Accounts</div><div class="v">${fmt(a.accounts)}</div><div class="n">${launched ? `${fmt(a.signups_since_launch)} since launch` : 'all time'}</div></div>
         <div class="kpi"><div class="label">Conversion</div><div class="v">${launched ? pct(a.paid, a.signups_since_launch) : '–'}</div><div class="n">${launched
           ? `of new sign-ups · ${a.paywall_hits_since_launch ? `1 per ${fmt(Math.round(a.paywall_hits_since_launch / Math.max(a.paid, 1)))} paywall hits` : 'no paywall hits yet'}`
