@@ -21,7 +21,7 @@ function subFields(sub: Stripe.Subscription) {
   const ended = sub.ended_at ?? Math.floor(Date.now() / 1000);
   return {
     plan: item?.price.recurring?.interval === 'year' ? 'yearly' : 'monthly',
-    status: sub.status === 'active' && sub.cancel_at_period_end ? 'canceling' : sub.status,
+    status: sub.status === 'active' && (sub.cancel_at_period_end || sub.cancel_at) ? 'canceling' : sub.status,
     expires_at: new Date((PAID.includes(sub.status) ? periodEnd : ended) * 1000).toISOString(),
   };
 }
