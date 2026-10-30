@@ -97,11 +97,13 @@
   .dr-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 16px; }
   .dr-grid .dr-val { font-size: 34px; }
   .dr-note { font-size: 14px; opacity: 0.8; margin-top: 12px; }
-  .dr-btn { width: 100%; border: none; border-radius: 16px; background: var(--gold, #f5c842); color: #1a1208;
+  .dr-btn { width: 100%; border: none; border-radius: 12px; background: var(--gold, #f5c842); color: #1a1208;
     font-family: 'Bebas Neue', sans-serif; font-size: 24px; letter-spacing: 3px; padding: 14px; cursor: pointer; margin-top: 4px; }
-  .dr-btn.ghost { background: transparent; color: var(--gold, #f5c842); border: 1.5px solid rgba(245,200,66,0.6); margin-top: 10px; }
-  .dr-link { background: none; border: none; color: var(--muted, #a08060); font-family: 'DM Mono', monospace; font-size: 11px;
-    letter-spacing: 1px; margin-top: 14px; cursor: pointer; text-decoration: underline; }
+  .dr-btn.ghost { background: transparent; color: var(--gold, #f5c842); border: 1.5px solid rgba(245,200,66,0.6); margin-top: 12px; }
+  .dr-link { width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; background: transparent;
+    color: var(--cream, #f5ead6); border: 1px solid rgba(245,234,214,0.28); border-radius: 12px; font-family: 'Bebas Neue', sans-serif;
+    font-size: 19px; letter-spacing: 2px; padding: 12px 14px; margin-top: 12px; cursor: pointer; }
+  .dr-link svg { color: var(--gold, #f5c842); flex: 0 0 auto; margin-top: -2px; }
   `;
 
   function injectCss() {
@@ -536,7 +538,7 @@
           <div class="dr-note">You caught ${g.caught} poo${g.caught === 1 ? '' : 's'} on company time.</div>
         </div>
         <button type="button" class="dr-btn" data-go><svg width="0.8em" height="0.8em" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="vertical-align:-0.05em"><path d="M7 4.8v14.4a1.2 1.2 0 0 0 1.8 1l11.6-7.2a1.2 1.2 0 0 0 0-2L8.8 3.8A1.2 1.2 0 0 0 7 4.8z"/></svg> One more run</button>
-        <button type="button" class="dr-link" data-exit>Back to the bog timer</button>`;
+        <button type="button" class="dr-link" data-exit><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="M11 18l-6-6 6-6"/></svg>Back to the bog timer</button>`;
       el.screen.hidden = false;
       el.screen.querySelector('[data-go]').onclick = newGame;
       el.screen.querySelector('[data-exit]').onclick = () => opts.onExit && opts.onExit();
