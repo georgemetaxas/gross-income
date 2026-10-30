@@ -236,6 +236,15 @@ create table if not exists public.entitlements (
   primary key (user_id, product)
 );
 
+-- Subscriptions (Nov 2026). Founder and gift rows leave these empty: free forever.
+-- For a Stripe subscription, txn_id is the subscription id (sub_…) and the webhook
+-- keeps status and expires_at (end of the paid period) up to date on every renewal,
+-- cancel or failed payment. The app unlocks while expires_at is in the future.
+alter table public.entitlements add column if not exists plan text check (plan in ('monthly', 'yearly'));
+alter table public.entitlements add column if not exists status text;
+alter table public.entitlements add column if not exists expires_at timestamptz;
+alter table public.entitlements add column if not exists stripe_customer_id text;
+
 alter table public.entitlements enable row level security;
 
 drop policy if exists "entitlements: read own" on public.entitlements;
@@ -314,15 +323,16 @@ grant execute on function public.game_stats(int) to authenticated;
 
 -- Founders and sales for the stats page. Same stats_admins gate as game_stats().
 -- Accounts = people with a profile (same rule as the founder SQL in README.md).
--- Founders: before launch, how many signed up so far (eligible); after launch,
--- how many founder unlocks exist (granted). Paid = store/Stripe unlocks since launch,
--- so leftover test purchases from before launch don't count.
+-- Founders: before the cut-off, how many signed up so far (eligible); after it,
+-- how many founder unlocks exist (granted). Subscribers = Stripe/store rows made
+-- since the paywall went live, so test purchases from before then don't count.
 create or replace function public.account_stats(p_days int default 30)
 returns jsonb
 language plpgsql stable security definer set search_path = public
 as $$
 declare
-  launch constant timestamptz := '2026-11-02T00:00:00+11:00'; -- PAYWALL_FROM in index.html
+  founder_cutoff constant timestamptz := '2026-11-02T00:00:00+11:00'; -- FOUNDER_CUTOFF in index.html
+  launch constant timestamptz := '2027-01-04T00:00:00+11:00';         -- PAYWALL_FROM in index.html
   since timestamptz := now() - make_interval(days => least(greatest(p_days, 1), 365));
 begin
   if not exists (select 1 from stats_admins where user_id = auth.uid()) then
@@ -330,15 +340,20 @@ begin
   end if;
   return (
     with acc as (select u.created_at from profiles p join auth.users u on u.id = p.id),
-         paid as (select created_at from entitlements
-                  where source in ('stripe', 'apple', 'google') and created_at >= launch)
+         paid as (select created_at, plan, expires_at from entitlements
+                  where source in ('stripe', 'apple', 'google') and created_at >= launch),
+         active as (select plan from paid where expires_at > now())
     select jsonb_build_object(
+      'founder_cutoff', founder_cutoff,
       'launch', launch,
       'accounts', (select count(*) from acc),
-      'founders_eligible', (select count(*) from acc where created_at < launch),
+      'founders_eligible', (select count(*) from acc where created_at < founder_cutoff),
       'founders_granted', (select count(*) from entitlements where source = 'founder'),
       'signups_since_launch', (select count(*) from acc where created_at >= launch),
       'paid', (select count(*) from paid),
+      'active_monthly', (select count(*) from active where plan = 'monthly'),
+      'active_yearly', (select count(*) from active where plan = 'yearly'),
+      'lapsed', (select count(*) from paid where expires_at <= now()),
       'paywall_hits_since_launch', (select count(*) from game_events
                                     where kind = 'open' and locked and at >= launch),
       'daily', coalesce((
