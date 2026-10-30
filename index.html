@@ -534,6 +534,7 @@
   .btn-ghost { background: transparent; color: var(--cream); border: 1px solid var(--border); }
   .btn-ghost:hover { border-color: var(--muted); }
   .btn-icon { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 11px 14px; font-size: 16px; }
+  .btn-plain { border: none; }
   .btn-icon svg { color: var(--gold); flex: 0 0 auto; margin-top: -2px; }
   .pool-link { background: none; border: none; color: var(--muted); font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 1px; text-decoration: underline; cursor: pointer; padding: 0; }
   .pool-msg { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--amber); margin-top: 10px; min-height: 1em; }
@@ -2661,7 +2662,7 @@
         ${navigator.clipboard && navigator.clipboard.readText ? '<button type="button" class="code-paste" data-act="paste-code">Paste</button>' : ''}
       </div>
       <div class="pool-btns"><button class="btn btn-start" data-act="verify" data-busy="Checking…">Let me in</button></div>
-      <div class="pool-btns"><button class="btn btn-ghost btn-icon" data-act="back"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="M11 18l-6-6 6-6"/></svg>Use a different email</button></div>`;
+      <div class="pool-btns"><button class="btn btn-ghost btn-icon btn-plain" data-act="back"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="M11 18l-6-6 6-6"/></svg>Use a different email</button></div>`;
   }
 
   function sentText(v) {
