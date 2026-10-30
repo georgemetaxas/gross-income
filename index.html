@@ -788,6 +788,7 @@
   .founder-bar-text { flex: 1; }
   .founder-bar-text b { font-weight: 700; }
   .founder-bar .founder-bar-btn { flex: none; width: auto; font-size: 16px; padding: 9px 16px; }
+  .founder-bar .founder-bar-btn[hidden] { display: none; }
   .founder-bar-x {
     position: absolute; top: calc(2px + env(safe-area-inset-top)); right: 4px;
     width: 32px; height: 32px; border: 0; border-radius: 50%;
@@ -2003,9 +2004,11 @@
   const UNLOCK_PRICE = 'A$4.69';
   // Live link (redirects to grossincome.com.au/?unlocked=1). Test link: buy.stripe.com/test_eVq4gBdzwgXYcn6anC0ZW00
   const STRIPE_LINK = 'https://buy.stripe.com/eVq4gBdzwgXYcn6anC0ZW00';
-  // Off on the live site until launch day (also the Founding Flusher cut-off).
-  // Previews, localhost and ?paywall show it now.
-  const PAYWALL_FROM = '2026-11-02T00:00:00+11:00'; // Monday 2 Nov, midnight Sydney time
+  // Accounts made before this keep the arcade free forever (founder SQL runs on the day).
+  const FOUNDER_CUTOFF = '2026-11-02T00:00:00+11:00'; // Monday 2 Nov, midnight Sydney time
+  // Free play for everyone until this date. Off on the live site until then;
+  // previews, localhost and ?paywall show it now.
+  const PAYWALL_FROM = '2027-01-04T00:00:00+11:00'; // Monday 4 Jan, midnight Sydney time
   const UNLOCK_KEY = 'gi.unlock.v1';
   // The locked game someone tapped before signing in, so login brings them back to it
   const PENDING_UNLOCK_KEY = 'gi.pendingUnlock';
@@ -2040,14 +2043,21 @@
     renderFounderBar();
   }
 
-  // Before launch: people who sign in now become Founding Flushers and keep the arcade free
+  // Before the cut-off: people who sign in now become Founding Flushers and keep the arcade free.
+  // After it, until the paywall: everyone gets free play, so just say when that ends.
   let founderBarClosed = false;
   function renderFounderBar() {
     const bar = document.getElementById('founderBar');
-    const soon = PAYWALL_FROM !== null && Date.now() < Date.parse(PAYWALL_FROM);
-    bar.hidden = founderBarClosed || !(soon && !unlocked() && !(typeof pool !== 'undefined' && pool.user));
-    if (!bar.hidden) document.getElementById('founderBarText').innerHTML =
-      `<b>👑 You're a Founding Flusher!</b> Sign in to Poop Pool before ${new Date(PAYWALL_FROM).toLocaleDateString('en-AU', { day: 'numeric', month: 'long', timeZone: 'Australia/Sydney' })} to keep the arcade free, forever.`;
+    const now = Date.now();
+    const day = d => new Date(d).toLocaleDateString('en-AU', { day: 'numeric', month: 'long', timeZone: 'Australia/Sydney' });
+    const founderSoon = now < Date.parse(FOUNDER_CUTOFF);
+    const freePlay = !founderSoon && PAYWALL_FROM !== null && now < Date.parse(PAYWALL_FROM);
+    const signedIn = typeof pool !== 'undefined' && pool.user;
+    bar.hidden = founderBarClosed || unlocked() || !((founderSoon && !signedIn) || freePlay);
+    document.getElementById('founderBarBtn').hidden = !founderSoon;
+    if (!bar.hidden) document.getElementById('founderBarText').innerHTML = founderSoon
+      ? `<b>👑 You're a Founding Flusher!</b> Sign in to Poop Pool before ${day(FOUNDER_CUTOFF)} to keep the arcade free, forever.`
+      : `<b>🎮 Free play!</b> Every Bog Arcade game is free for everyone until ${day(PAYWALL_FROM)}.`;
   }
   document.getElementById('founderBarBtn').onclick = () => openHomeSheet('pool');
   document.getElementById('founderBarX').onclick = () => { founderBarClosed = true; renderFounderBar(); };
