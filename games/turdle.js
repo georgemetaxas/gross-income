@@ -167,10 +167,10 @@
   .td-bigstars { font-size: 40px; letter-spacing: 6px; margin: 2px 0 10px; }
   .td-btn { width: 100%; border: none; border-radius: 12px; background: var(--gold, #f5c842); color: #1a1208;
     font-family: 'Bebas Neue', sans-serif; font-size: 24px; letter-spacing: 3px; padding: 14px; cursor: pointer; margin-top: 4px; }
-  .td-btn.ghost { background: transparent; color: var(--gold, #f5c842); border: 1.5px solid rgba(245,200,66,0.6); margin-top: 12px; }
+  .td-btn.ghost { background: transparent; color: var(--gold, #f5c842); border: 1.5px solid rgba(245,200,66,0.6); margin-top: 20px; }
   .td-link { width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; background: transparent;
     color: var(--cream, #f5ead6); border: none; border-radius: 12px; font-family: 'Bebas Neue', sans-serif;
-    font-size: 19px; letter-spacing: 2px; padding: 12px 14px; margin-top: 12px; cursor: pointer; }
+    font-size: 19px; letter-spacing: 2px; padding: 12px 14px; margin-top: 20px; cursor: pointer; }
   .td-link svg { color: var(--gold, #f5c842); flex: 0 0 auto; margin-top: -2px; }
   `;
 
