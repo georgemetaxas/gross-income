@@ -6,7 +6,12 @@
 import Stripe from 'npm:stripe@17.7.0';
 import { createClient } from 'npm:@supabase/supabase-js@2.45.4';
 
-const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY')!);
+// Live keys, plus optional test-mode keys so Stripe test checkouts work on previews
+// against the same database (STRIPE_TEST_SECRET_KEY / STRIPE_TEST_WEBHOOK_SECRET).
+const live = new Stripe(Deno.env.get('STRIPE_SECRET_KEY')!);
+const testKey = Deno.env.get('STRIPE_TEST_SECRET_KEY');
+const test = testKey ? new Stripe(testKey) : null;
+const SECRETS = [Deno.env.get('STRIPE_WEBHOOK_SECRET'), Deno.env.get('STRIPE_TEST_WEBHOOK_SECRET')].filter(Boolean) as string[];
 const crypto = Stripe.createSubtleCryptoProvider();
 const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -29,14 +34,15 @@ function subFields(sub: Stripe.Subscription) {
 const fail = (error: unknown) => { console.error(error); return new Response('DB error', { status: 500 }); }; // a 500 makes Stripe retry
 
 Deno.serve(async (req) => {
-  let event: Stripe.Event;
-  try {
-    event = await stripe.webhooks.constructEventAsync(
-      await req.text(), req.headers.get('stripe-signature') ?? '',
-      Deno.env.get('STRIPE_WEBHOOK_SECRET')!, undefined, crypto);
-  } catch (e) {
-    return new Response('Bad signature', { status: 400 });
+  const body = await req.text();
+  const sig = req.headers.get('stripe-signature') ?? '';
+  let event: Stripe.Event | null = null;
+  for (const secret of SECRETS) {
+    try { event = await live.webhooks.constructEventAsync(body, sig, secret, undefined, crypto); break; } catch { /* try the next one */ }
   }
+  if (!event) return new Response('Bad signature', { status: 400 });
+  const stripe = event.livemode ? live : test;
+  if (!stripe) return new Response('No test key', { status: 500 });
 
   if (event.type === 'checkout.session.completed' || event.type === 'checkout.session.async_payment_succeeded') {
     const s = event.data.object as Stripe.Checkout.Session;

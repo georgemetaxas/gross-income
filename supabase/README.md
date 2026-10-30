@@ -63,7 +63,9 @@ How it fits together:
 3. **Webhook function:** with the Supabase CLI:
    ```
    supabase functions deploy stripe-webhook --no-verify-jwt
-   supabase secrets set STRIPE_SECRET_KEY=sk_... STRIPE_WEBHOOK_SECRET=whsec_...
+   supabase secrets set STRIPE_SECRET_KEY=sk_live_... STRIPE_WEBHOOK_SECRET=whsec_...
+   # optional, so test-mode checkouts on previews work too:
+   supabase secrets set STRIPE_TEST_SECRET_KEY=sk_test_... STRIPE_TEST_WEBHOOK_SECRET=whsec_...
    ```
    In Stripe → Developers → Webhooks, the endpoint `https://pngsoygqbvhlfkzdghtr.supabase.co/functions/v1/stripe-webhook` needs the events `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `customer.subscription.updated`, `customer.subscription.deleted` and `charge.refunded`. Its signing secret is `STRIPE_WEBHOOK_SECRET`.
 4. **Test** on a pages.dev preview with card 4242 4242 4242 4242: subscribe, cancel in the portal (row shows `canceling`, still unlocked), and use a Stripe test clock to check a renewal moves `expires_at` on.
