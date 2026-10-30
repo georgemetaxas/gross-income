@@ -736,6 +736,17 @@
     padding: calc(10px + env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) calc(12px + env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
   }
   .game-layer[hidden] { display: none; }
+  /* Rapid taps during play were selecting text and popping iOS's Copy menu */
+  .game-layer {
+    user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+  }
+  /* Close/dismiss buttons draw an SVG ✕, not a text glyph, so a tap can't select it */
+  .sheet-close, .mini-timer-x, .app-bar-x, .founder-bar-x, .hist-del {
+    display: inline-flex; align-items: center; justify-content: center;
+    user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+  }
+  .x-icon { display: block; flex-shrink: 0; pointer-events: none; }
   .game-open { overflow: hidden; }
   /* The game covers the home screen: stop painting it (wave, glow, logo) so the game gets the phone's full speed */
   .game-open .wrapper { visibility: hidden; }
@@ -967,7 +978,7 @@
     <div class="founder-bar-text" id="founderBarText"></div>
     <button type="button" class="btn btn-start founder-bar-btn" id="founderBarBtn">Sign in</button>
   </div>
-  <button type="button" class="founder-bar-x" id="founderBarX" aria-label="Dismiss">✕</button>
+  <button type="button" class="founder-bar-x" id="founderBarX" aria-label="Dismiss"><svg class="x-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
 </div>
 <div class="wrapper">
 
@@ -1003,7 +1014,7 @@
     <!-- Sheet header (only when reopened from settings) -->
     <div class="sheet-head">
       <div class="sheet-title">Profile &amp; Crap</div>
-      <button type="button" class="sheet-close" onclick="closeSettings()" aria-label="Close">✕</button>
+      <button type="button" class="sheet-close" onclick="closeSettings()" aria-label="Close"><svg class="x-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
     </div>
 
     <!-- Who's signed in (filled by the Poop Pool script) -->
@@ -1091,7 +1102,7 @@
   <div class="lifetime-card" id="lifetimeCard" role="dialog" aria-modal="true" aria-label="Bog Stats">
     <div class="hs-head">
       <div class="sheet-title">🧻 Bog Stats</div>
-      <button type="button" class="sheet-close" onclick="closeHomeSheet()" aria-label="Close">✕</button>
+      <button type="button" class="sheet-close" onclick="closeHomeSheet()" aria-label="Close"><svg class="x-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
     </div>
     <div class="stats-body" id="statsBody">
       <div class="stats-inner">
@@ -1158,7 +1169,7 @@
     <div class="mini-timer-earned" id="miniTimerEarned">$0.00</div>
     <button type="button" class="mini-timer-btn arcade-live" id="miniTimerStop" onclick="finishFromGame()">■ Finish Up</button>
     <button type="button" class="mini-timer-btn arcade-idle" id="miniTimerStart" onclick="startFromGame()"><svg width="0.8em" height="0.8em" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="vertical-align:-0.05em"><path d="M7 4.8v14.4a1.2 1.2 0 0 0 1.8 1l11.6-7.2a1.2 1.2 0 0 0 0-2L8.8 3.8A1.2 1.2 0 0 0 7 4.8z"/></svg> Start a Bog</button>
-    <button type="button" class="mini-timer-x" onclick="closeGame()" aria-label="Close game">✕</button>
+    <button type="button" class="mini-timer-x" onclick="closeGame()" aria-label="Close game"><svg class="x-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
   </div>
   <div class="game-root" id="gameRoot"></div>
 </div>
@@ -1167,12 +1178,12 @@
   <img class="app-bar-icon" id="appBarIcon" src="icons/apple-touch-icon.png" alt="" width="44" height="44" hidden>
   <div class="app-bar-text" id="appBarText"></div>
   <button type="button" class="app-bar-btn" id="appBarBtn" hidden></button>
-  <button type="button" class="app-bar-x" id="appBarX" aria-label="Dismiss">✕</button>
+  <button type="button" class="app-bar-x" id="appBarX" aria-label="Dismiss"><svg class="x-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
 </div>
 
 <div class="app-bar" id="unlockBar" role="status" hidden>
   <div class="app-bar-text"><b>👑 Golden Throne unlocked.</b> Every Bog Arcade game is yours, on any device you sign in on.</div>
-  <button type="button" class="app-bar-x" onclick="this.parentNode.hidden = true" aria-label="Dismiss">✕</button>
+  <button type="button" class="app-bar-x" onclick="this.parentNode.hidden = true" aria-label="Dismiss"><svg class="x-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
 </div>
 
 <!-- iPhone "Show me" guide: Safari has no install button, so we show the three taps -->
@@ -1181,7 +1192,7 @@
   <div class="a2hs-sheet">
     <div class="sheet-head" style="display:flex">
       <div class="sheet-title" id="a2hsTitle">Add to Home Screen</div>
-      <button type="button" class="sheet-close" data-close aria-label="Close">✕</button>
+      <button type="button" class="sheet-close" data-close aria-label="Close"><svg class="x-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
     </div>
     <ol class="a2hs-steps">
       <li data-v="26">
@@ -1757,7 +1768,7 @@
       const row = document.createElement('div');
       row.className = 'history-row';
       row.innerHTML = `<span>${when}</span><span class="row-info">${fmtDuration(s.secs)} · <b>${fmtExact(s.earned)}</b></span>` +
-        `<button type="button" class="hist-del" data-start="${s.start}" aria-label="Delete this bog">×</button>`;
+        `<button type="button" class="hist-del" data-start="${s.start}" aria-label="Delete this bog"><svg class="x-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>`;
       list.appendChild(row);
     });
     if (sessions.length) {
@@ -1926,7 +1937,7 @@
     if (!btn.classList.contains('armed')) {
       document.querySelectorAll('#historyList .armed').forEach(disarm);
       btn.classList.add('armed');
-      btn.dataset.label = btn.textContent;
+      btn.dataset.label = btn.innerHTML;
       btn.textContent = btn.classList.contains('hist-clear') ? 'Tap again to delete all' : 'DELETE?';
       clearTimeout(armTimer);
       armTimer = setTimeout(() => disarm(btn), 3000);
@@ -1940,7 +1951,7 @@
 
   function disarm(btn) {
     btn.classList.remove('armed');
-    if (btn.dataset.label) btn.textContent = btn.dataset.label;
+    if (btn.dataset.label) btn.innerHTML = btn.dataset.label;
   }
 
   // ── BOG ARCADE ──
@@ -2487,7 +2498,7 @@
   // ── RENDER ──
   const POOL_SHEET_HEAD = `<div class="hs-head">
       <div class="sheet-title">👑 Poop Pool</div>
-      <button type="button" class="sheet-close" onclick="closeHomeSheet()" aria-label="Close">✕</button>
+      <button type="button" class="sheet-close" onclick="closeHomeSheet()" aria-label="Close"><svg class="x-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
     </div>
     <svg class="plunger" id="plunger" viewBox="0 0 34 60" aria-hidden="true">
       <rect x="14" y="0" width="6" height="40" rx="3" fill="#B5793A"/>
