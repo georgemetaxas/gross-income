@@ -713,7 +713,7 @@
   .arcade-head b { display: block; font-family: 'Bebas Neue', sans-serif; font-size: 24px; font-weight: 400; letter-spacing: 1.5px; color: var(--gold); line-height: 1.1; }
   /* One sideways-scrolling row so any number of games fits; the next tile peeks in at the edge. */
   .arcade-tiles {
-    display: flex; gap: 10px; margin: 8px -16px -16px; padding: 4px 16px 14px; /* room for the icon shadows */
+    display: flex; gap: 10px; margin: 2px -16px -16px; padding: 10px 16px 14px; /* room for the icon shadows + NEW badge */
     overflow-x: auto; scroll-snap-type: x proximity; scroll-padding: 0 16px;
     scrollbar-width: none; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain;
   }
@@ -730,6 +730,20 @@
     transition: transform 0.12s ease;
   }
   .arcade-tile:active .arcade-icon { transform: scale(0.92); }
+  /* Mystery tile for next month's game: dashed outline, gold "?", slow glow. Not a button. */
+  .arcade-soon { cursor: default; }
+  .arcade-soon:active .arcade-icon { transform: none; }
+  .arcade-soon .arcade-icon {
+    background: rgba(245,200,66,0.06); border: 1.5px dashed rgba(245,200,66,0.6); box-shadow: none;
+    font-family: 'Bebas Neue', sans-serif; font-size: 40px; color: var(--gold);
+    animation: soonGlow 2.4s ease-in-out infinite;
+  }
+  .arcade-soon .arcade-name { color: var(--gold); }
+  @keyframes soonGlow {
+    0%, 100% { box-shadow: 0 0 0 rgba(245,200,66,0); }
+    50% { box-shadow: 0 0 16px rgba(245,200,66,0.35); }
+  }
+  @media (prefers-reduced-motion: reduce) { .arcade-soon .arcade-icon { animation: none; } }
   .arcade-name { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; text-align: center; line-height: 1.2; }
   .game-layer {
     position: fixed; inset: 0; z-index: 40; background: var(--bg);
@@ -784,6 +798,10 @@
     position: absolute; top: -5px; right: -5px; width: 22px; height: 22px; border-radius: 50%;
     background: var(--bg); border: 1px solid var(--gold); font-size: 11px;
     display: flex; align-items: center; justify-content: center;
+  }
+  .arcade-new {
+    position: absolute; top: -6px; left: -6px; padding: 2px 5px; border-radius: 6px;
+    background: var(--green); color: #fff; font-family: 'DM Mono', monospace; font-size: 9px; font-weight: 500; letter-spacing: 1px;
   }
   /* Pre-launch announcement: sign in now to become a Founding Flusher */
   .founder-bar {
@@ -1960,6 +1978,9 @@
   // A game file sets window[global] = { mount(el, { hourly, onExit }) } and
   // mount returns { destroy() }. Add a game by adding a line here.
   // The card is always shown; a running bog timer keeps going underneath, shrunk to a bar at the top.
+  // held: true keeps a finished game in the code but off the arcade until its monthly drop.
+  // dropped: 'YYYY-MM-DD' on a released monthly game pins it first with a NEW badge for 30 days.
+  // The last tile is always a mystery "Dropping soon" placeholder (not playable).
   const GAMES = [
     { id: 'dung-run', name: 'Dung Run', icon: '🚽', file: 'games/dung-run.js', global: 'DungRun',
       bg: 'linear-gradient(145deg,#2a6f8f,#123447)' },
@@ -1967,7 +1988,7 @@
       bg: 'linear-gradient(145deg,#4caf6e,#1f5a34)' },
     { id: 'stool-swap', name: 'Stool Swap', icon: '🌽', file: 'games/stool-swap.js', global: 'StoolSwap',
       bg: 'linear-gradient(145deg,#f5c842,#e07b00)' },
-    { id: 'fling-bonus', name: 'Fling Bonus', icon: '🐒', file: 'games/fling-bonus.js', global: 'FlingBonus',
+    { id: 'fling-bonus', name: 'Fling Bonus', icon: '🐒', file: 'games/fling-bonus.js', global: 'FlingBonus', held: true,
       bg: 'linear-gradient(145deg,#e07b00,#7a3a00)' },
     { id: 'wrap-up', name: 'Wrap Up', icon: '🧩', file: 'games/wrap-up.js', global: 'WrapUp',
       bg: 'linear-gradient(145deg,#ff7aa8,#24306b)' },
@@ -1976,6 +1997,15 @@
     { id: 'turd-invaders', name: 'Turd Invaders', icon: '🛸', file: 'games/turd-invaders.js', global: 'TurdInvaders',
       bg: 'linear-gradient(145deg,#3a2a6b,#0e0a05)' },
   ];
+  const ARCADE = GAMES.filter(gm => !gm.held);
+  // Next monthly game drop (Sydney date). The tile reads "Drops 1 Dec"; once the date
+  // passes it falls back to "Dropping soon" until this is moved to the next drop.
+  const NEXT_DROP = '2026-12-01T00:00:00+11:00';
+  function dropLabel() {
+    const t = Date.parse(NEXT_DROP);
+    if (!(Date.now() < t)) return 'Dropping soon';
+    return 'Drops ' + new Date(t).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', timeZone: 'Australia/Sydney' }).replace(' ', '\u00a0'); // keep "1 Dec" on one line
+  }
   let game = null;
   const gameScripts = {};
 
@@ -2046,12 +2076,40 @@
   function unlocked() { return !!readJSON(UNLOCK_KEY, null); }
   function gameLocked(gm) { return paywallOn() && !unlocked() && !FREE_GAMES.includes(gm.id); }
 
+  // Tile order: new drops first, then the last game played, then the rest shuffled once a
+  // day (same order all day, new one overnight). The free game always sits in the first 3.
+  const LAST_GAME_KEY = 'gi.arcade.last';
+  const isNew = gm => gm.dropped && Date.now() - Date.parse(gm.dropped) < 30 * 864e5;
+  function arcadeOrder() {
+    const fresh = ARCADE.filter(isNew).sort((a, b) => b.dropped.localeCompare(a.dropped));
+    const last = ARCADE.find(gm => gm.id === readJSON(LAST_GAME_KEY, null) && !fresh.includes(gm));
+    const rest = ARCADE.filter(gm => !fresh.includes(gm) && gm !== last);
+    // Seeded shuffle: the seed is today's Sydney date, e.g. 20261101
+    let seed = +new Date().toLocaleDateString('en-CA', { timeZone: 'Australia/Sydney' }).replace(/-/g, '');
+    const rand = () => { // mulberry32
+      let t = seed = (seed + 0x6D2B79F5) | 0;
+      t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+    for (let i = rest.length - 1; i > 0; i--) { const j = Math.floor(rand() * (i + 1)); [rest[i], rest[j]] = [rest[j], rest[i]]; }
+    const list = [...fresh, ...(last ? [last] : []), ...rest];
+    FREE_GAMES.forEach(id => {
+      const i = list.findIndex(gm => gm.id === id);
+      if (i > 2) list.splice(2, 0, ...list.splice(i, 1));
+    });
+    return list;
+  }
+
   function renderArcade() {
-    document.getElementById('arcadeTiles').innerHTML = GAMES.map(gm => `
+    document.getElementById('arcadeTiles').innerHTML = arcadeOrder().map(gm => `
       <button type="button" class="arcade-tile" onclick="openGame('${gm.id}')">
-        <span class="arcade-icon" style="background:${gm.bg}" aria-hidden="true">${gm.icon}${gameLocked(gm) ? '<span class="arcade-lock">🔒</span>' : ''}</span>
+        <span class="arcade-icon" style="background:${gm.bg}" aria-hidden="true">${gm.icon}${gameLocked(gm) ? '<span class="arcade-lock">🔒</span>' : isNew(gm) ? '<span class="arcade-new">NEW</span>' : ''}</span>
         <span class="arcade-name">${gm.name}</span>
-      </button>`).join('');
+      </button>`).join('') + `
+      <div class="arcade-tile arcade-soon" role="img" aria-label="New game: ${dropLabel()}">
+        <span class="arcade-icon" aria-hidden="true">?</span>
+        <span class="arcade-name" aria-hidden="true">${dropLabel()}</span>
+      </div>`;
     renderFounderBar();
   }
 
@@ -2079,7 +2137,7 @@
     const user = typeof pool !== 'undefined' && pool.user;
     // Free games first so the taster is the first thing people see
     const free = x => FREE_GAMES.includes(x.id);
-    const list = [...GAMES.filter(free), ...GAMES.filter(x => !free(x))].map(x =>
+    const list = [...ARCADE.filter(free), ...ARCADE.filter(x => !free(x))].map(x =>
       `<li><span>${x.icon}</span><span>${x.name}</span>${free(x) ? '<span class="free-badge">FREE</span>' : '<span>🔒</span>'}</li>`).join('');
     const action = user
       ? `<button class="btn btn-start" data-pay="buy">👑 Unlock for ${UNLOCK_PRICE}</button>
@@ -2148,6 +2206,7 @@
     history.pushState({ game: true }, '');
     const locked = gameLocked(gm);
     trackGame({ game: gm.id, kind: 'open', locked });
+    writeJSON(LAST_GAME_KEY, gm.id);
     if (locked) { root.innerHTML = paywallHtml(gm); return; }
     root.innerHTML = '<div class="game-loading">Unblocking the pipes…</div>';
     try { await loadGame(gm); } catch (e) {
@@ -2168,6 +2227,8 @@
     document.getElementById('gameLayer').hidden = true;
     document.body.classList.remove('game-open');
     wave.resume();
+    renderArcade(); // last-played game moves up front
+    document.getElementById('arcadeTiles').scrollLeft = 0;
   }
 
   // Closing goes through history so the phone's back gesture closes the game too
