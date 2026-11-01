@@ -2787,7 +2787,7 @@
     const unlock = readJSON(UNLOCK_KEY, null);
     const day = d => new Date(d).toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Australia/Sydney' });
     const manage = PORTAL_LINK && unlock && unlock.plan
-      ? `<div class="pool-btns"><a class="btn btn-ghost btn-icon" href="${PORTAL_LINK}${pool.user.email ? '?prefilled_email=' + encodeURIComponent(pool.user.email) : ''}" target="_blank" rel="noopener"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>Manage subscription</a></div>` : '';
+      ? `<div class="pool-btns"><button class="btn btn-ghost btn-icon" data-act="manage-sub"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>Manage subscription</button></div>` : '';
     const throne = !unlock
       ? `<p class="pool-text">Every Bog Arcade game for ${PLANS.monthly.price} a month or ${PLANS.yearly.price} a year. Open a locked game in the Bog Arcade to sign up.</p>`
       : !unlock.expires
@@ -3140,6 +3140,16 @@
       if (error) throw error;
       writeJSON(POOL_CURRENT_KEY, null);
       await refreshPool(); return 'done';
+    },
+    async 'manage-sub'(el) {
+      // Straight into this person's Stripe billing page. Apple Pay / Google Pay can save a
+      // different email on the Stripe customer, so the portal's email login may not reach them.
+      const { data, error } = await pool.sb.functions.invoke('billing-portal');
+      setTimeout(() => { el.disabled = false; }, 3000); // usable again if they come back
+      if (!error && data && data.url) { location.href = data.url; return 'done'; }
+      // Fallback: Stripe's email login
+      location.href = PORTAL_LINK + (pool.user.email ? '?prefilled_email=' + encodeURIComponent(pool.user.email) : '');
+      return 'done';
     },
     async 'delete-ask'() { pool.confirmDelete = true; renderProfile(); return 'done'; },
     async 'delete-cancel'() { pool.confirmDelete = false; renderProfile(); return 'done'; },
