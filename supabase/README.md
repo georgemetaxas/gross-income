@@ -51,7 +51,7 @@ How it fits together:
 - `entitlements` table (in `schema.sql`): one row per person. People can only read their own row; only the webhook writes. Founder and gift rows have no `expires_at` (forever). Stripe rows store the subscription id in `txn_id`, plus `plan`, `status` and `expires_at` (end of the paid period).
 - The app (`index.html`, `GOLDEN THRONE` section) unlocks while `expires_at` is empty or in the future (plus 2 days' grace for late renewals), and shows a yearly/monthly picker otherwise. Buying needs a Poop Pool login, so it follows the person to any device.
 - **Buy** opens the plan's Stripe Payment Link with `?client_reference_id=<user id>`. Stripe calls `functions/stripe-webhook`: checkout writes the row; renewals, cancels and failed cards update it.
-- **Manage subscription** in Profile & Crap opens Stripe's customer portal login link (`PORTAL_LINK`), where people cancel, switch plan or change card.
+- **Manage subscription** in Profile & Crap calls `functions/billing-portal`, which opens a Stripe customer portal session for the person's stored `stripe_customer_id` (cancel, switch plan, change card). No email login: Apple Pay / Google Pay can save a different email on the Stripe customer. If the function fails, it falls back to the portal's email login link (`PORTAL_LINK`).
 - The paywall only shows on `*.pages.dev` previews, `localhost` and `?paywall` until `PAYWALL_FROM`.
 
 ### One-time setup
@@ -61,13 +61,16 @@ How it fits together:
    - Product "Golden Throne" with two recurring prices: A$2.99 monthly and A$24.99 yearly. Archive the old one-off A$4.69 price and its Payment Link.
    - A **Payment Link** for each price. After payment: "Don't show confirmation page" → redirect to `https://grossincome.com.au/?unlocked=1`. Paste them into `PLANS.monthly.link` and `PLANS.yearly.link` in `index.html`.
    - **Settings → Billing → Customer portal:** turn on cancel (at end of period), switch plan between the two prices, and update payment method. Copy its login link into `PORTAL_LINK`.
-3. **Webhook function:** with the Supabase CLI:
+3. **Functions:** with the Supabase CLI:
    ```
    supabase functions deploy stripe-webhook --no-verify-jwt
    supabase secrets set STRIPE_SECRET_KEY=sk_live_... STRIPE_WEBHOOK_SECRET=whsec_...
    # optional, so test-mode checkouts on previews work too:
    supabase secrets set STRIPE_TEST_SECRET_KEY=sk_test_... STRIPE_TEST_WEBHOOK_SECRET=whsec_...
+   supabase functions deploy billing-portal
    ```
+   `STRIPE_SECRET_KEY` can be a restricted key (`rk_live_…`) with only **Subscriptions: Read** (webhook) and **Customer portal: Write** (billing-portal).
+
    In Stripe → Developers → Webhooks, the endpoint `https://pngsoygqbvhlfkzdghtr.supabase.co/functions/v1/stripe-webhook` needs the events `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `customer.subscription.updated`, `customer.subscription.deleted` and `charge.refunded`. Its signing secret is `STRIPE_WEBHOOK_SECRET`.
 4. **Test** on a pages.dev preview with card 4242 4242 4242 4242: subscribe, cancel in the portal (row shows `canceling`, still unlocked), and use a Stripe test clock to check a renewal moves `expires_at` on.
 
