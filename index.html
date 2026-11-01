@@ -2692,8 +2692,17 @@
   window.renderProfile = renderProfile;
 
   function signOutHtml() {
+    // Delete my account asks once more before it goes (pool.confirmDelete)
+    const del = !pool.user || pool.sheetEdit ? '' : pool.confirmDelete ? `
+      <p class="pool-text" style="margin-top:14px">This deletes your throne name, the bogs you've uploaded${readJSON(UNLOCK_KEY, null) ? ', your pool spots and your Golden Throne unlock' : ' and your pool spots'}. Pools you run pass to a mate. Your Bog Log and salary stay on this phone. It can't be undone.</p>
+      <div class="pool-btns">
+        <button class="btn btn-ghost" data-act="delete-cancel">Keep it</button>
+        <button class="btn btn-stop" data-act="delete-account" data-busy="Deleting…">Delete everything</button>
+      </div>` : `
+      <div class="pool-btns"><button class="btn btn-ghost" data-act="delete-ask" style="color:var(--muted);border-color:transparent">Delete my account</button></div>`;
     return `<div class="sheet-section">
       <div class="pool-btns" style="margin-top:0"><button class="btn btn-ghost" data-act="signout" data-busy="Signing out…">Sign out</button></div>
+      ${del}
       ${pool.sheetEdit ? '' : `<div class="pool-msg">${esc(pool.msg)}</div>`}
     </div>`;
   }
@@ -3007,9 +3016,21 @@
       writeJSON(POOL_CURRENT_KEY, null);
       await refreshPool(); return 'done';
     },
-    async signout() {
-      await pool.sb.auth.signOut();
-      pool.profile = null; pool.pools = []; pool.sheetEdit = false;
+    async 'delete-ask'() { pool.confirmDelete = true; renderProfile(); return 'done'; },
+    async 'delete-cancel'() { pool.confirmDelete = false; renderProfile(); return 'done'; },
+    async 'delete-account'() {
+      const { error } = await pool.sb.rpc('delete_my_account');
+      if (error) throw error;
+      // The login is gone on the server, so only clear it here
+      await pool.sb.auth.signOut({ scope: 'local' }).catch(() => {});
+      pool.confirmDelete = false;
+      writeJSON(POOL_CURRENT_KEY, null);
+      writeJSON(POOL_DELETED_KEY, []);
+      return actions.signout(true);
+    },
+    async signout(gone) {
+      if (gone !== true) await pool.sb.auth.signOut();
+      pool.profile = null; pool.pools = []; pool.sheetEdit = false; pool.confirmDelete = false;
       writeJSON(POOL_SYNCED_KEY, null);
       writeJSON(UNLOCK_KEY, null);
       await refreshPool(); return 'done';
@@ -3047,7 +3068,7 @@
   }
 
   // Taps that only change the screen, so they work before Supabase has loaded
-  const LOCAL_ACTS = new Set(['emoji', 'settings', 'sheet-edit', 'sheet-cancel', 'sheet-signin', 'sheet-setup', 'sheet-new-pool']);
+  const LOCAL_ACTS = new Set(['emoji', 'settings', 'delete-ask', 'delete-cancel', 'sheet-edit', 'sheet-cancel', 'sheet-signin', 'sheet-setup', 'sheet-new-pool']);
 
   async function onPoolClick(e) {
     const root = e.currentTarget;
