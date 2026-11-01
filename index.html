@@ -534,7 +534,7 @@
   .pool-btns .btn { flex: 1; }
   .btn-ghost { background: transparent; color: var(--cream); border: 1px solid var(--border); }
   .btn-ghost:hover { border-color: var(--muted); }
-  .btn-icon { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 11px 14px; font-size: 16px; }
+  .btn-icon { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 11px 14px; font-size: 16px; text-decoration: none; }
   .btn-plain { border: none; }
   .btn-inline { flex: 0 0 auto; }
   .btn-icon svg { color: var(--gold); flex: 0 0 auto; margin-top: -2px; }
@@ -2787,7 +2787,7 @@
     const unlock = readJSON(UNLOCK_KEY, null);
     const day = d => new Date(d).toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Australia/Sydney' });
     const manage = PORTAL_LINK && unlock && unlock.plan
-      ? `<p class="pool-text"><a class="pool-link" href="${PORTAL_LINK}${pool.user.email ? '?prefilled_email=' + encodeURIComponent(pool.user.email) : ''}" target="_blank" rel="noopener">Manage subscription</a></p>` : '';
+      ? `<div class="pool-btns"><a class="btn btn-ghost btn-icon" href="${PORTAL_LINK}${pool.user.email ? '?prefilled_email=' + encodeURIComponent(pool.user.email) : ''}" target="_blank" rel="noopener"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>Manage subscription</a></div>` : '';
     const throne = !unlock
       ? `<p class="pool-text">Every Bog Arcade game for ${PLANS.monthly.price} a month or ${PLANS.yearly.price} a year. Open a locked game in the Bog Arcade to sign up.</p>`
       : !unlock.expires
