@@ -836,23 +836,23 @@
   }
   .game-open .founder-bar { display: none; }
   .paywall { height: 100%; overflow-y: auto; text-align: center; padding: 18px 6px 24px; }
-  .paywall-icon {
-    width: 84px; height: 84px; border-radius: 24px; margin: 6px auto 14px;
-    display: flex; align-items: center; justify-content: center; font-size: 44px;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.4), inset 0 0 0 1px rgba(255,255,255,0.12);
-  }
   .paywall-kicker { font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 3px; color: var(--amber); }
   .paywall h2 { font-family: 'Bebas Neue', sans-serif; font-weight: 400; font-size: 38px; letter-spacing: 2px; color: var(--gold); line-height: 1; margin: 6px 0 10px; }
   .paywall p { font-size: 14px; line-height: 1.5; color: var(--cream); margin: 0 auto 14px; max-width: 340px; }
-  .paywall-games { list-style: none; padding: 0; margin: 18px auto 0; max-width: 300px; text-align: left; }
-  .paywall-games li { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
-  .paywall-games li span:last-child { margin-left: auto; font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 1px; color: var(--muted); }
-  .paywall-games li span.free-badge {
-    background: var(--green); color: #fff; border-radius: 999px; padding: 3px 8px;
-    font-size: 10px; font-weight: 500; letter-spacing: 1.5px; line-height: 1;
-  }
-  .paywall-games li.paywall-soon { color: var(--muted); font-style: italic; border-bottom: none; }
   .paywall .btn { width: 100%; max-width: 340px; }
+  .paywall-grid {
+    list-style: none; padding: 0; margin: 0 auto 20px; max-width: 340px;
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px 8px;
+  }
+  .paywall-grid li { position: relative; display: flex; flex-direction: column; align-items: center; gap: 5px; }
+  .paywall-grid .arcade-icon { width: 52px; height: 52px; border-radius: 15px; font-size: 28px; }
+  .paywall-grid .arcade-soon .arcade-icon { font-size: 32px; }
+  .paywall-grid li.on .arcade-icon { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--gold); }
+  .paywall-grid .arcade-name { font-size: 9px; }
+  .paywall-grid .free-badge {
+    position: absolute; top: -6px; right: 0; background: var(--green); color: #fff; border-radius: 999px;
+    padding: 3px 6px; font-family: 'DM Mono', monospace; font-size: 8px; letter-spacing: 1px; line-height: 1;
+  }
   .paywall-plans { display: flex; gap: 10px; max-width: 340px; margin: 0 auto 14px; }
   .paywall-plan {
     position: relative; flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px;
@@ -2237,8 +2237,11 @@
     const user = typeof pool !== 'undefined' && pool.user;
     // Free games first so the taster is the first thing people see
     const free = x => FREE_GAMES.includes(x.id);
-    const list = [...ARCADE.filter(free), ...ARCADE.filter(x => !free(x))].map(x =>
-      `<li><span>${x.icon}</span><span>${x.name}</span>${free(x) ? '<span class="free-badge">FREE</span>' : '<span>🔒</span>'}</li>`).join('');
+    // Every game they get, up front: the tapped one ringed in gold, then next month's mystery drop
+    const grid = [...ARCADE.filter(free), ...ARCADE.filter(x => !free(x))].map(x => `
+      <li class="${x.id === gm.id ? 'on' : ''}"><span class="arcade-icon" style="background:${x.bg}" aria-hidden="true">${x.icon}</span>
+        <span class="arcade-name">${x.name}</span>${free(x) ? '<span class="free-badge">FREE</span>' : ''}</li>`).join('')
+      + `<li class="arcade-soon"><span class="arcade-icon" aria-hidden="true">?</span><span class="arcade-name">${dropLabel()}</span></li>`;
     const plans = Object.entries(PLANS).map(([id, p]) => `
       <button type="button" class="paywall-plan${id === paywallPlan ? ' on' : ''}" data-pay="plan" data-plan="${id}" aria-pressed="${id === paywallPlan}">
         ${id === 'yearly' ? '<span class="paywall-best">FIBRE-RICH SAVINGS</span>' : ''}
@@ -2253,13 +2256,12 @@
       : `<button class="btn btn-start" data-pay="signin" data-game="${gm.id}">Sign in to unlock</button>
          <p class="paywall-small">Your unlock is saved to your Poop Pool login, so it follows you to any phone.</p>`;
     return `<div class="paywall" data-game="${gm.id}">
-      <div class="paywall-icon" style="background:${gm.bg}">${gm.icon}</div>
       <div class="paywall-kicker">GOLDEN THRONE</div>
       <h2>Unlock the Bog Arcade</h2>
-      <p>${gm.name} and every other game, plus a new one every month.</p>
+      <p>Every game below, plus a new one every month.</p>
+      <ul class="paywall-grid">${grid}</ul>
       ${action}
       <div class="paywall-msg" id="paywallMsg"></div>
-      <ul class="paywall-games">${list}<li class="paywall-soon"><span>⏳</span><span>A new game every month...</span><span></span></li></ul>
       <p class="paywall-small"><a href="privacy">Privacy &amp; terms</a></p>
     </div>`;
   }
