@@ -535,6 +535,7 @@
   .btn-ghost:hover { border-color: var(--muted); }
   .btn-icon { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 11px 14px; font-size: 16px; }
   .btn-plain { border: none; }
+  .btn-inline { flex: 0 0 auto; }
   .btn-icon svg { color: var(--gold); flex: 0 0 auto; margin-top: -2px; }
   .pool-link { background: none; border: none; color: var(--muted); font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 1px; text-decoration: underline; cursor: pointer; padding: 0; }
   .pool-msg { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--amber); margin-top: 10px; min-height: 1em; }
@@ -2656,7 +2657,7 @@
       <div class="pool-msg">${esc(pool.msg)}</div>` : `
       <div class="profile-id"><div class="profile-av">${esc(p.emoji || '💩')}</div>
         <div class="profile-who"><b>${esc(p.display_name)}</b><span>${esc(pool.user.email || '')}</span></div>
-        <button class="pool-link" data-act="sheet-edit">Edit</button></div>`;
+        <button class="btn btn-ghost btn-icon btn-inline" data-act="sheet-edit"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>Edit</button></div>`;
 
     const cur = currentPool();
     const owner = cur && cur.owner_id === pool.user.id;
@@ -2684,7 +2685,7 @@
           ${owner ? '<button class="btn btn-ghost" data-act="new-code" data-busy="Flushing…">New invite code</button>' : ''}
           <button class="btn btn-stop" data-act="leave" data-busy="Leaving…">Leave pool</button>
         </div>` : ''}
-        <div class="pool-foot"><button class="pool-link" data-act="sheet-new-pool">+ Start a new pool</button></div>
+        <div class="pool-btns"><button class="btn btn-ghost btn-icon" data-act="sheet-new-pool"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Start a new pool</button></div>
       </div>
       ${signOutHtml()}`;
   }
