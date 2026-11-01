@@ -23,6 +23,7 @@ The leaderboard runs on Supabase. The site itself stays static.
 
 - The publishable key is public on purpose. What protects the data is row level security plus the grants at the end of `schema.sql` (LOCKDOWN): signed-out visitors can only call `pool_preview()` and add `game_events`; signed-in people only touch their own rows, and pools change only through the functions. Re-run that section after adding a table, and give any new table RLS.
 - **Login CAPTCHA:** the app runs a Cloudflare Turnstile check (widget "Gross Income login", hostnames `grossincome.com.au` and `gross-income.pages.dev`, which covers previews) before asking for a login email. Site key is `TURNSTILE_SITEKEY` in `index.html`. Supabase checks the token once it's switched on: Authentication → Attack Protection → Enable CAPTCHA, provider Turnstile, paste the widget's secret key. Turn it on only after the app sends tokens, or every login fails.
+- **Delete my account** (profile sheet) calls `delete_my_account()`, which deletes the `auth.users` row; the cascades remove the profile, sessions, pool spots and entitlements. Owned pools pass to the next mate. Any new table holding personal data needs `on delete cascade` to `auth.users` too.
 - `_headers` sets a Content-Security-Policy. A new outside service (ads, analytics, another CDN) won't load until its host is added there.
 - `supabase-js` loads with an integrity hash (`SUPABASE_JS_SRI` in `index.html`, and in `stats.html`). Bumping the version means updating the hash too.
 
