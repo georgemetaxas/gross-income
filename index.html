@@ -309,6 +309,7 @@
   .dash-header > div { min-width: 0; }
   .dash-header .dash-earned-amount, .dash-header .timer-digits { font-size: min(58px, 15vw); line-height: 1; }
   .dash-header.long .dash-earned-amount, .dash-header.long .timer-digits { font-size: min(48px, 12.5vw); }
+  .dash-header.xlong .dash-earned-amount, .dash-header.xlong .timer-digits { font-size: min(40px, 10vw); }
   .dash-time-row { display: flex; align-items: center; gap: 6px; }
 
   .dash-earned-label {
@@ -791,7 +792,15 @@
     .mini-timer-btn { font-size: 14px; letter-spacing: 1px; padding: 7px 8px; }
     .mini-timer-x { width: 32px; height: 32px; }
   }
-  .game-root { flex: 1; min-height: 0; width: 100%; max-width: 520px; margin: 0 auto; }
+  .game-root { flex: 1; min-height: 0; width: 100%; max-width: 520px; margin: 0 auto; position: relative; }
+  /* Paused: shown over a game when you come back from locking the phone */
+  .gi-paused {
+    position: absolute; inset: 0; z-index: 50; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+    background: rgba(26,18,8,0.82); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
+    animation: fade-in 0.2s ease-out; cursor: pointer; touch-action: none;
+  }
+  .gi-paused b { font-family: 'Bebas Neue', sans-serif; font-size: 44px; letter-spacing: 2px; color: var(--gold); font-weight: 400; line-height: 1; }
+  .gi-paused span { font-family: 'DM Mono', monospace; font-size: 12px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--cream); }
   .game-loading { text-align: center; font-family: 'DM Mono', monospace; font-size: 12px; color: var(--muted); padding-top: 40px; }
   /* ── GOLDEN THRONE: lock badge on arcade tiles + paywall in the game layer ── */
   .arcade-icon { position: relative; }
@@ -883,8 +892,9 @@
   .tile-faces span:nth-child(2) { position: relative; z-index: 1; }
 
   /* "Backing one out": the tile strains, then the sheet pushes up with a little overshoot */
-  .home-tile.strain { animation: strain 0.14s ease-out; }
-  @keyframes strain { 50% { transform: scale(1.04, 0.95); } }
+  /* A slow plunge: the tile squashes down like a plunger, then springs as the sheet pops out */
+  .home-tile.strain { animation: strain 0.32s cubic-bezier(0.3, 0, 0.4, 1); transform-origin: 50% 100%; }
+  @keyframes strain { 55% { transform: scale(1.07, 0.86); } 80% { transform: scale(0.98, 1.03); } }
   .hs-head {
     position: sticky; top: -24px; z-index: 2; display: flex; align-items: center; justify-content: space-between;
     margin: -24px -24px 8px; padding: 22px 24px 12px; background: var(--surface2);
@@ -907,10 +917,11 @@
   .hs-closing .sheet-backdrop { animation: fade-out 0.22s ease-in forwards; }
   @keyframes fade-in { from { opacity: 0; } }
   @keyframes fade-out { to { opacity: 0; } }
-  .hs-in { animation: back-one-out 0.46s cubic-bezier(0.2, 1.25, 0.35, 1); }
+  .hs-in { animation: back-one-out 0.72s cubic-bezier(0.2, 1.2, 0.35, 1); }
   @keyframes back-one-out {
     0% { transform: translateY(100%) scale(0.94, 0.86); }
-    55% { transform: translateY(-1.5%) scale(1, 1.03); }
+    50% { transform: translateY(-2.5%) scale(0.99, 1.04); }
+    75% { transform: translateY(0.6%) scale(1, 0.99); }
   }
   .hs-out { animation: plop-down 0.22s ease-in forwards; }
   @keyframes plop-down { to { transform: translateY(100%); } }
@@ -924,13 +935,13 @@
   #poolCard .pool-head:not(:has(select)) { display: none; }
 
   /* Toilet roll: rows unroll one after another as the stats sheet opens */
-  .hs-fresh .history-row, .hs-fresh .lifetime-grid > div { animation: unroll 0.3s ease-out both; }
+  .hs-fresh .history-row, .hs-fresh .lifetime-grid > div { animation: unroll 0.42s ease-out 0.18s both; }
   @keyframes unroll { from { opacity: 0; transform: translateY(-8px) scaleY(0.6); } }
-  .hs-fresh .history-row:nth-child(2), .hs-fresh .lifetime-grid > div:nth-child(2) { animation-delay: 0.04s; }
-  .hs-fresh .history-row:nth-child(3), .hs-fresh .lifetime-grid > div:nth-child(3) { animation-delay: 0.08s; }
-  .hs-fresh .history-row:nth-child(4), .hs-fresh .lifetime-grid > div:nth-child(4) { animation-delay: 0.12s; }
-  .hs-fresh .history-row:nth-child(5) { animation-delay: 0.16s; }
-  .hs-fresh .history-row:nth-child(n+6) { animation-delay: 0.2s; }
+  .hs-fresh .history-row:nth-child(2), .hs-fresh .lifetime-grid > div:nth-child(2) { animation-delay: 0.25s; }
+  .hs-fresh .history-row:nth-child(3), .hs-fresh .lifetime-grid > div:nth-child(3) { animation-delay: 0.32s; }
+  .hs-fresh .history-row:nth-child(4), .hs-fresh .lifetime-grid > div:nth-child(4) { animation-delay: 0.39s; }
+  .hs-fresh .history-row:nth-child(5) { animation-delay: 0.46s; }
+  .hs-fresh .history-row:nth-child(n+6) { animation-delay: 0.52s; }
 
   /* Flush swirl: the bog's earnings spin down into the Bog Stats tile */
   .flush-chip {
@@ -1621,6 +1632,26 @@
     }, 900);
   }
 
+  // Each time Bog Stats opens, the portfolio counts up again as the rows unroll
+  function countUpLifetime() {
+    if (revealing || savedSalary <= 0 || reducedMotion()) return;
+    const daily = getHourlyRate() * 8;
+    const targets = { ltWeekly: daily * 5, ltMonthly: daily * 21, ltYearly: daily * 250, ltCareer: daily * 250 * 40 };
+    const els = Object.keys(targets).map(id => [document.getElementById(id), targets[id]]);
+    els.forEach(([el]) => { el.textContent = fmt(0); });
+    revealing = true;
+    cancelAnimationFrame(revealFrame);
+    const START = performance.now() + 350, DURATION = 1100;
+    function tick(now) {
+      const t = Math.max(0, Math.min((now - START) / DURATION, 1));
+      const e = 1 - Math.pow(1 - t, 3);
+      els.forEach(([el, target]) => { el.textContent = fmt(target * e); });
+      if (t < 1 && homeSheet === 'stats') revealFrame = requestAnimationFrame(tick);
+      else { revealing = false; refreshAll(); }
+    }
+    revealFrame = requestAnimationFrame(tick);
+  }
+
   // ── REFRESH ALL ──
   function refreshAll() {
     const hourly = getHourlyRate();
@@ -1633,8 +1664,10 @@
     document.getElementById('miniTimerEarned').textContent = fmtExact(earned);
     document.getElementById('ratePerMin').textContent = perMin >= 10 ? fmt(perMin) : fmtExact(perMin);
     // $10.00+ or 100+ minutes no longer fit side by side at 64px
-    document.getElementById('dashHeader').classList.toggle('long',
-      document.getElementById('dashEarned').textContent.length + document.getElementById('timerDisplay').textContent.length > 10);
+    const dashLen = document.getElementById('dashEarned').textContent.length + document.getElementById('timerDisplay').textContent.length;
+    document.getElementById('dashHeader').classList.toggle('long', dashLen > 10);
+    // $1000.00+ (or 1000+ minutes) ran into the timer, so one more step down
+    document.getElementById('dashHeader').classList.toggle('xlong', dashLen > 12);
 
     // Don't stomp on the skeleton / count-up while the reveal is running
     if (revealing) return;
@@ -1828,27 +1861,35 @@
   const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
   const homeSheets = { stats: 'lifetimeCard', pool: 'poolCard' };
   let homeSheet = null;
+  // Pending open/close steps. A new tap cancels them, so quick taps can't leave
+  // a sheet marked open but hidden (which made its tile stop working).
+  let hsTimers = [];
+  const hsLater = (fn, ms) => hsTimers.push(setTimeout(fn, ms));
+  function hsCancel() { hsTimers.forEach(clearTimeout); hsTimers = []; }
 
   function openHomeSheet(name, tile) {
     if (homeSheet === name) return;
     if (homeSheet) closeHomeSheet(true);
+    hsCancel();
+    document.body.classList.remove('hs-open', 'hs-closing', 'hs-stats', 'hs-pool');
     closeSettings();
+    homeSheet = name;
     const go = () => {
       const el = document.getElementById(homeSheets[name]);
-      homeSheet = name;
       document.body.classList.add('hs-open', 'hs-' + name);
       document.body.classList.remove('hs-closing');
       el.style.transform = '';
       el.scrollTop = 0;
       el.classList.remove('hs-out');
       el.classList.add('hs-in', 'hs-fresh');
-      setTimeout(() => el.classList.remove('hs-in', 'hs-fresh'), 700);
+      hsLater(() => el.classList.remove('hs-in', 'hs-fresh'), 1200);
+      if (name === 'stats') countUpLifetime();
     };
     if (tile && !reducedMotion()) {
       tile.classList.remove('strain');
       void tile.offsetWidth;
       tile.classList.add('strain');
-      setTimeout(go, 110);
+      hsLater(go, 240);
     } else go();
   }
 
@@ -1857,16 +1898,18 @@
     const name = homeSheet;
     const el = document.getElementById(homeSheets[name]);
     homeSheet = null;
+    hsCancel();
     const done = () => {
       document.body.classList.remove('hs-open', 'hs-closing', 'hs-' + name);
-      el.classList.remove('hs-out', 'hs-in');
+      el.classList.remove('hs-out', 'hs-in', 'hs-fresh');
       el.style.transform = '';
     };
-    if (now === true) return done();
+    // Closed before it finished opening: just reset
+    if (now === true || !document.body.classList.contains('hs-' + name)) return done();
     document.body.classList.add('hs-closing');
     el.classList.remove('hs-in');
     el.classList.add('hs-out');
-    setTimeout(done, 230);
+    hsLater(done, 230);
   }
 
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closeHomeSheet(); });
@@ -2007,7 +2050,31 @@
     if (!(Date.now() < t)) return 'Dropping soon';
     return 'Drops ' + new Date(t).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', timeZone: 'Australia/Sydney' }).replace(' ', '\u00a0'); // keep "1 Dec" on one line
   }
+  // Games call this when you come back to the app mid-play: a "Paused" cover that
+  // carries on when tapped (or on any key). Calling it again just swaps the callback.
+  window.GIPause = function (root, onResume) {
+    let el = root.querySelector('.gi-paused');
+    if (!el) {
+      el = document.createElement('div');
+      el.className = 'gi-paused';
+      el.setAttribute('role', 'button');
+      el.innerHTML = '<b>Paused 🧻</b><span>Tap to carry on</span>';
+      root.appendChild(el);
+    }
+    const go = e => {
+      if (e) { e.preventDefault(); e.stopPropagation(); }
+      el.remove();
+      window.removeEventListener('keydown', key, true);
+      onResume();
+    };
+    const key = e => { if (e.key !== 'Escape') go(e); };
+    el.onpointerdown = go;
+    window.removeEventListener('keydown', el._key, true);
+    el._key = key;
+    window.addEventListener('keydown', key, true);
+  };
   let game = null;
+  let gameOpenId = 0; // bumps on every open and close, so a slow load can't mount a game that was already closed
   const gameScripts = {};
 
   // ── GAME STATS ──
@@ -2201,6 +2268,7 @@
   async function openGame(id) {
     const gm = GAMES.find(x => x.id === id) || GAMES[0];
     if (game || !document.getElementById('gameLayer').hidden) return;
+    const openId = ++gameOpenId;
     const root = document.getElementById('gameRoot');
     document.getElementById('gameLayer').hidden = false;
     document.body.classList.add('game-open');
@@ -2211,18 +2279,22 @@
     if (locked) { root.innerHTML = paywallHtml(gm); return; }
     root.innerHTML = '<div class="game-loading">Unblocking the pipes…</div>';
     try { await loadGame(gm); } catch (e) {
+      if (openId !== gameOpenId) return;
       root.innerHTML = `<div class="game-loading">${gm.name} didn't load. Check your signal and try again.</div>`;
       return;
     }
-    if (document.getElementById('gameLayer').hidden) return;
+    if (openId !== gameOpenId || document.getElementById('gameLayer').hidden) return;
     // Only pays while a bog is running, so "Paid to play" is $0 off the bog
     game = window[gm.global].mount(root, { hourly: () => running ? getHourlyRate() : 0, onExit: closeGame });
     playing = { id: gm.id, since: Date.now() };
   }
 
   function hideGame() {
+    gameOpenId++;
     trackPlayTime();
     playing = null;
+    const paused = document.querySelector('#gameRoot .gi-paused');
+    if (paused) window.removeEventListener('keydown', paused._key, true);
     if (game) { game.destroy(); game = null; }
     document.getElementById('gameRoot').innerHTML = '';
     document.getElementById('gameLayer').hidden = true;
