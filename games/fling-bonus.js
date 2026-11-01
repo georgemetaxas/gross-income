@@ -753,7 +753,12 @@
     function onKey(e) {
       if (e.key === 'Escape' && opts.onExit) opts.onExit();
     }
-    function onVisible() { if (document.visibilityState === 'visible' && g.state !== 'over' && g.state !== 'title') startLoop(); }
+    // Phone locked or app switched mid-run: stop, then wait for a tap so nobody comes back to a lost life
+    function onVisible() {
+      if (!(g.state !== 'over' && g.state !== 'title')) return;
+      if (document.visibilityState === 'hidden') { if (frame) cancelAnimationFrame(frame); frame = null; return; }
+      if (window.GIPause) window.GIPause(root, () => { if (alive) startLoop(); }); else startLoop();
+    }
 
     el.mute.onclick = () => { sound.muted = !sound.muted; save(MUTE_KEY, sound.muted); sound.init(); renderMute(); };
     el.stage.addEventListener('pointerdown', onDown);

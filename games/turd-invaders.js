@@ -865,8 +865,11 @@
       if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') { keys.r = down; e.preventDefault(); }
       if (e.key === ' ' || e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') { keys.fire = down; e.preventDefault(); }
     }
+    // Phone locked or app switched mid-wave: stop, then wait for a tap so nobody comes back to a lost life
     function onVisible() {
-      if (document.visibilityState === 'visible' && g.state === 'play') startLoop();
+      if (g.state !== 'play') return;
+      if (document.visibilityState === 'hidden') { if (frame) cancelAnimationFrame(frame); frame = null; return; }
+      if (window.GIPause) window.GIPause(root, () => { if (alive) startLoop(); }); else startLoop();
     }
 
     el.mute.onclick = () => { sound.muted = !sound.muted; save(MUTE_KEY, sound.muted); sound.init(); renderMute(); };
