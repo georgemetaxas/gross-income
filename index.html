@@ -730,6 +730,20 @@
     transition: transform 0.12s ease;
   }
   .arcade-tile:active .arcade-icon { transform: scale(0.92); }
+  /* Mystery tile for next month's game: dashed outline, gold "?", slow glow. Not a button. */
+  .arcade-soon { cursor: default; }
+  .arcade-soon:active .arcade-icon { transform: none; }
+  .arcade-soon .arcade-icon {
+    background: rgba(245,200,66,0.06); border: 1.5px dashed rgba(245,200,66,0.6); box-shadow: none;
+    font-family: 'Bebas Neue', sans-serif; font-size: 40px; color: var(--gold);
+    animation: soonGlow 2.4s ease-in-out infinite;
+  }
+  .arcade-soon .arcade-name { color: var(--gold); }
+  @keyframes soonGlow {
+    0%, 100% { box-shadow: 0 0 0 rgba(245,200,66,0); }
+    50% { box-shadow: 0 0 16px rgba(245,200,66,0.35); }
+  }
+  @media (prefers-reduced-motion: reduce) { .arcade-soon .arcade-icon { animation: none; } }
   .arcade-name { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; text-align: center; line-height: 1.2; }
   .game-layer {
     position: fixed; inset: 0; z-index: 40; background: var(--bg);
@@ -1960,6 +1974,8 @@
   // A game file sets window[global] = { mount(el, { hourly, onExit }) } and
   // mount returns { destroy() }. Add a game by adding a line here.
   // The card is always shown; a running bog timer keeps going underneath, shrunk to a bar at the top.
+  // held: true keeps a finished game in the code but off the arcade until its monthly drop.
+  // The last tile is always a mystery "Dropping soon" placeholder (not playable).
   const GAMES = [
     { id: 'dung-run', name: 'Dung Run', icon: '🚽', file: 'games/dung-run.js', global: 'DungRun',
       bg: 'linear-gradient(145deg,#2a6f8f,#123447)' },
@@ -1967,7 +1983,7 @@
       bg: 'linear-gradient(145deg,#4caf6e,#1f5a34)' },
     { id: 'stool-swap', name: 'Stool Swap', icon: '🌽', file: 'games/stool-swap.js', global: 'StoolSwap',
       bg: 'linear-gradient(145deg,#f5c842,#e07b00)' },
-    { id: 'fling-bonus', name: 'Fling Bonus', icon: '🐒', file: 'games/fling-bonus.js', global: 'FlingBonus',
+    { id: 'fling-bonus', name: 'Fling Bonus', icon: '🐒', file: 'games/fling-bonus.js', global: 'FlingBonus', held: true,
       bg: 'linear-gradient(145deg,#e07b00,#7a3a00)' },
     { id: 'wrap-up', name: 'Wrap Up', icon: '🧩', file: 'games/wrap-up.js', global: 'WrapUp',
       bg: 'linear-gradient(145deg,#ff7aa8,#24306b)' },
@@ -1976,6 +1992,7 @@
     { id: 'turd-invaders', name: 'Turd Invaders', icon: '🛸', file: 'games/turd-invaders.js', global: 'TurdInvaders',
       bg: 'linear-gradient(145deg,#3a2a6b,#0e0a05)' },
   ];
+  const ARCADE = GAMES.filter(gm => !gm.held);
   let game = null;
   const gameScripts = {};
 
@@ -2047,11 +2064,15 @@
   function gameLocked(gm) { return paywallOn() && !unlocked() && !FREE_GAMES.includes(gm.id); }
 
   function renderArcade() {
-    document.getElementById('arcadeTiles').innerHTML = GAMES.map(gm => `
+    document.getElementById('arcadeTiles').innerHTML = ARCADE.map(gm => `
       <button type="button" class="arcade-tile" onclick="openGame('${gm.id}')">
         <span class="arcade-icon" style="background:${gm.bg}" aria-hidden="true">${gm.icon}${gameLocked(gm) ? '<span class="arcade-lock">🔒</span>' : ''}</span>
         <span class="arcade-name">${gm.name}</span>
-      </button>`).join('');
+      </button>`).join('') + `
+      <div class="arcade-tile arcade-soon" role="img" aria-label="New game dropping soon">
+        <span class="arcade-icon" aria-hidden="true">?</span>
+        <span class="arcade-name" aria-hidden="true">Dropping soon</span>
+      </div>`;
     renderFounderBar();
   }
 
@@ -2079,7 +2100,7 @@
     const user = typeof pool !== 'undefined' && pool.user;
     // Free games first so the taster is the first thing people see
     const free = x => FREE_GAMES.includes(x.id);
-    const list = [...GAMES.filter(free), ...GAMES.filter(x => !free(x))].map(x =>
+    const list = [...ARCADE.filter(free), ...ARCADE.filter(x => !free(x))].map(x =>
       `<li><span>${x.icon}</span><span>${x.name}</span>${free(x) ? '<span class="free-badge">FREE</span>' : '<span>🔒</span>'}</li>`).join('');
     const action = user
       ? `<button class="btn btn-start" data-pay="buy">👑 Unlock for ${UNLOCK_PRICE}</button>
