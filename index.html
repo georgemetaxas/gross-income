@@ -1993,6 +1993,14 @@
       bg: 'linear-gradient(145deg,#3a2a6b,#0e0a05)' },
   ];
   const ARCADE = GAMES.filter(gm => !gm.held);
+  // Next monthly game drop (Sydney date). The tile reads "Drops 1 Dec"; once the date
+  // passes it falls back to "Dropping soon" until this is moved to the next drop.
+  const NEXT_DROP = '2026-12-01T00:00:00+11:00';
+  function dropLabel() {
+    const t = Date.parse(NEXT_DROP);
+    if (!(Date.now() < t)) return 'Dropping soon';
+    return 'Drops ' + new Date(t).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', timeZone: 'Australia/Sydney' }).replace(' ', '\u00a0'); // keep "1 Dec" on one line
+  }
   let game = null;
   const gameScripts = {};
 
@@ -2069,9 +2077,9 @@
         <span class="arcade-icon" style="background:${gm.bg}" aria-hidden="true">${gm.icon}${gameLocked(gm) ? '<span class="arcade-lock">🔒</span>' : ''}</span>
         <span class="arcade-name">${gm.name}</span>
       </button>`).join('') + `
-      <div class="arcade-tile arcade-soon" role="img" aria-label="New game dropping soon">
+      <div class="arcade-tile arcade-soon" role="img" aria-label="New game: ${dropLabel()}">
         <span class="arcade-icon" aria-hidden="true">?</span>
-        <span class="arcade-name" aria-hidden="true">Dropping soon</span>
+        <span class="arcade-name" aria-hidden="true">${dropLabel()}</span>
       </div>`;
     renderFounderBar();
   }
