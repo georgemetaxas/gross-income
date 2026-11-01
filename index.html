@@ -2137,11 +2137,11 @@
   // Payment Links redirect to grossincome.com.au/?unlocked=1. Yearly is listed first and picked by default.
   // TEST MODE links (redirect to this branch's preview). Swap for live links before 4 Jan.
   const PLANS = {
-    yearly: { label: 'Yearly', price: 'A$24.99', per: 'year', note: 'A$2.08 a month · save 30%', link: 'https://buy.stripe.com/test_bJebJ3eDA7no72M2Va0ZW01' },
-    monthly: { label: 'Monthly', price: 'A$2.99', per: 'month', note: 'Cancel anytime', link: 'https://buy.stripe.com/test_5kQ9AV2US8rs72M3Ze0ZW02' },
+    yearly: { label: 'Yearly', price: 'A$24.99', per: 'year', note: 'A$2.08 a month · save 30%', link: 'https://buy.stripe.com/bJebJ3eDA7no72M2Va0ZW01' },
+    monthly: { label: 'Monthly', price: 'A$2.99', per: 'month', note: 'Cancel anytime', link: 'https://buy.stripe.com/5kQ9AV2US8rs72M3Ze0ZW02' },
   };
   // Stripe customer portal login link (Settings → Billing → Customer portal): cancel, switch plan, new card
-  const PORTAL_LINK = 'https://billing.stripe.com/p/login/test_eVq4gBdzwgXYcn6anC0ZW00';
+  const PORTAL_LINK = 'https://billing.stripe.com/p/login/eVq4gBdzwgXYcn6anC0ZW00';
   // A renewal can land a little after the period ends, so don't lock anyone out the moment it does
   const RENEW_GRACE_MS = 2 * 24 * 60 * 60 * 1000;
   // Accounts made before this keep the arcade free forever (founder SQL runs on the day).

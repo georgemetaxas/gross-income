@@ -81,6 +81,8 @@ where u.created_at < '2026-11-02T00:00:00+11:00'
 on conflict do nothing;
 ```
 
-### Before free play ends (4 Jan 2027)
+Delete any test-mode rows first (`delete from entitlements where source = 'stripe'` before anyone can pay), or those people won't get their founder row.
 
-Swap the test Payment Links and portal link for the live ones, and switch the Supabase secrets and webhook to live mode.
+### Live mode (done 1 Nov 2026)
+
+`index.html` uses the live Payment Links and portal link, the live webhook has all five events, and Supabase has both live and test secrets. Previews use the live links too, so test-card checkouts need a temporary swap back to the `test_` links.
