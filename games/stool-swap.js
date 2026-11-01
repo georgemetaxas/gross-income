@@ -95,11 +95,13 @@
   .ss-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 16px; }
   .ss-grid .ss-val { font-size: 32px; }
   .ss-bigstars { font-size: 40px; letter-spacing: 6px; margin: 2px 0 10px; }
-  .ss-btn { width: 100%; border: none; border-radius: 16px; background: var(--gold, #f5c842); color: #1a1208;
+  .ss-btn { width: 100%; border: none; border-radius: 12px; background: var(--gold, #f5c842); color: #1a1208;
     font-family: 'Bebas Neue', sans-serif; font-size: 24px; letter-spacing: 3px; padding: 14px; cursor: pointer; margin-top: 4px; }
-  .ss-btn.ghost { background: transparent; color: var(--gold, #f5c842); border: 1.5px solid rgba(245,200,66,0.6); margin-top: 10px; }
-  .ss-link { background: none; border: none; color: var(--muted, #a08060); font-family: 'DM Mono', monospace; font-size: 11px;
-    letter-spacing: 1px; margin-top: 14px; cursor: pointer; text-decoration: underline; }
+  .ss-btn.ghost { background: transparent; color: var(--gold, #f5c842); border: 1.5px solid rgba(245,200,66,0.6); margin-top: 20px; }
+  .ss-link { width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; background: transparent;
+    color: var(--cream, #f5ead6); border: none; border-radius: 12px; font-family: 'Bebas Neue', sans-serif;
+    font-size: 19px; letter-spacing: 2px; padding: 12px 14px; margin-top: 20px; cursor: pointer; }
+  .ss-link svg { color: var(--gold, #f5c842); flex: 0 0 auto; margin-top: -2px; }
   `;
 
   function injectCss() {
@@ -835,8 +837,8 @@
         ${more ? '<button type="button" class="ss-btn" data-next><svg width="0.8em" height="0.8em" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="vertical-align:-0.05em"><path d="M7 4.8v14.4a1.2 1.2 0 0 0 1.8 1l11.6-7.2a1.2 1.2 0 0 0 0-2L8.8 3.8A1.2 1.2 0 0 0 7 4.8z"/></svg> Next level</button>' :
           '<div class="ss-note" style="font-size:14px;opacity:0.8;margin-bottom:8px">That\'s every level so far. More bowls coming soon.</div>'}
         <button type="button" class="ss-btn ghost" data-again>↺ Play again</button>
-        <button type="button" class="ss-link" data-levels>All levels</button>
-        <button type="button" class="ss-link" data-exit style="margin-top:6px">Back to the bog timer</button>`;
+        <button type="button" class="ss-link" data-levels><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5"/></svg>All levels</button>
+        <button type="button" class="ss-link" data-exit><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="M11 18l-6-6 6-6"/></svg>Back to the bog timer</button>`;
       el.screen.hidden = false;
       wireEnd(more);
     }
@@ -856,8 +858,8 @@
           <div><div class="ss-lbl">Paid to play</div><div class="ss-val green">${paid}</div></div>
         </div>
         <button type="button" class="ss-btn" data-again>↺ Try again</button>
-        <button type="button" class="ss-link" data-levels>All levels</button>
-        <button type="button" class="ss-link" data-exit style="margin-top:6px">Back to the bog timer</button>`;
+        <button type="button" class="ss-link" data-levels><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5"/></svg>All levels</button>
+        <button type="button" class="ss-link" data-exit><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="M11 18l-6-6 6-6"/></svg>Back to the bog timer</button>`;
       el.screen.hidden = false;
       wireEnd(false);
     }

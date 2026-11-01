@@ -215,11 +215,33 @@ begin
 end;
 $$;
 
+-- Delete account (Profile & Crap → Delete my account). Removes the person's login
+-- and, through the cascades, their profile, uploaded bogs, pool spots and unlocks.
+-- Pools they own pass to the mate who joined next, so a pool doesn't vanish for
+-- everyone else; a pool with nobody left goes with them.
+create or replace function public.delete_my_account()
+returns void language plpgsql security definer set search_path = public as $$
+declare
+  me uuid := auth.uid();
+begin
+  if me is null then raise exception 'Log in first'; end if;
+  update pools p set owner_id = (
+      select m.user_id from pool_members m
+      where m.pool_id = p.id and m.user_id <> me
+      order by m.joined_at limit 1)
+    where p.owner_id = me
+      and exists (select 1 from pool_members m where m.pool_id = p.id and m.user_id <> me);
+  delete from auth.users where id = me;
+end;
+$$;
+
 revoke execute on function public.new_invite_code() from public, anon, authenticated;
 grant execute on function public.pool_preview(text) to anon, authenticated;
 grant execute on function public.create_pool(text), public.join_pool(text),
   public.regenerate_invite_code(uuid), public.pool_leaderboard(uuid, timestamptz)
   to authenticated;
+revoke execute on function public.delete_my_account() from public, anon;
+grant execute on function public.delete_my_account() to authenticated;
 
 -- ── GOLDEN THRONE (arcade unlock) ──
 -- One row per person who has unlocked the Bog Arcade. People can read their own

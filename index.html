@@ -309,6 +309,7 @@
   .dash-header > div { min-width: 0; }
   .dash-header .dash-earned-amount, .dash-header .timer-digits { font-size: min(58px, 15vw); line-height: 1; }
   .dash-header.long .dash-earned-amount, .dash-header.long .timer-digits { font-size: min(48px, 12.5vw); }
+  .dash-header.xlong .dash-earned-amount, .dash-header.xlong .timer-digits { font-size: min(40px, 10vw); }
   .dash-time-row { display: flex; align-items: center; gap: 6px; }
 
   .dash-earned-label {
@@ -534,6 +535,8 @@
   .btn-ghost { background: transparent; color: var(--cream); border: 1px solid var(--border); }
   .btn-ghost:hover { border-color: var(--muted); }
   .btn-icon { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 11px 14px; font-size: 16px; }
+  .btn-plain { border: none; }
+  .btn-inline { flex: 0 0 auto; }
   .btn-icon svg { color: var(--gold); flex: 0 0 auto; margin-top: -2px; }
   .pool-link { background: none; border: none; color: var(--muted); font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 1px; text-decoration: underline; cursor: pointer; padding: 0; }
   .pool-msg { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--amber); margin-top: 10px; min-height: 1em; }
@@ -712,7 +715,7 @@
   .arcade-head b { display: block; font-family: 'Bebas Neue', sans-serif; font-size: 24px; font-weight: 400; letter-spacing: 1.5px; color: var(--gold); line-height: 1.1; }
   /* One sideways-scrolling row so any number of games fits; the next tile peeks in at the edge. */
   .arcade-tiles {
-    display: flex; gap: 10px; margin: 8px -16px -16px; padding: 4px 16px 14px; /* room for the icon shadows */
+    display: flex; gap: 10px; margin: 2px -16px -16px; padding: 10px 16px 14px; /* room for the icon shadows + NEW badge */
     overflow-x: auto; scroll-snap-type: x proximity; scroll-padding: 0 16px;
     scrollbar-width: none; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain;
   }
@@ -729,6 +732,20 @@
     transition: transform 0.12s ease;
   }
   .arcade-tile:active .arcade-icon { transform: scale(0.92); }
+  /* Mystery tile for next month's game: dashed outline, gold "?", slow glow. Not a button. */
+  .arcade-soon { cursor: default; }
+  .arcade-soon:active .arcade-icon { transform: none; }
+  .arcade-soon .arcade-icon {
+    background: rgba(245,200,66,0.06); border: 1.5px dashed rgba(245,200,66,0.6); box-shadow: none;
+    font-family: 'Bebas Neue', sans-serif; font-size: 40px; color: var(--gold);
+    animation: soonGlow 2.4s ease-in-out infinite;
+  }
+  .arcade-soon .arcade-name { color: var(--gold); }
+  @keyframes soonGlow {
+    0%, 100% { box-shadow: 0 0 0 rgba(245,200,66,0); }
+    50% { box-shadow: 0 0 16px rgba(245,200,66,0.35); }
+  }
+  @media (prefers-reduced-motion: reduce) { .arcade-soon .arcade-icon { animation: none; } }
   .arcade-name { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; text-align: center; line-height: 1.2; }
   .game-layer {
     position: fixed; inset: 0; z-index: 40; background: var(--bg);
@@ -736,6 +753,17 @@
     padding: calc(10px + env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) calc(12px + env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
   }
   .game-layer[hidden] { display: none; }
+  /* Rapid taps during play were selecting text and popping iOS's Copy menu */
+  .game-layer {
+    user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+  }
+  /* Close/dismiss buttons draw an SVG ✕, not a text glyph, so a tap can't select it */
+  .sheet-close, .mini-timer-x, .app-bar-x, .founder-bar-x, .hist-del {
+    display: inline-flex; align-items: center; justify-content: center;
+    user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+  }
+  .x-icon { display: block; flex-shrink: 0; pointer-events: none; }
   .game-open { overflow: hidden; }
   /* The game covers the home screen: stop painting it (wave, glow, logo) so the game gets the phone's full speed */
   .game-open .wrapper { visibility: hidden; }
@@ -764,7 +792,15 @@
     .mini-timer-btn { font-size: 14px; letter-spacing: 1px; padding: 7px 8px; }
     .mini-timer-x { width: 32px; height: 32px; }
   }
-  .game-root { flex: 1; min-height: 0; width: 100%; max-width: 520px; margin: 0 auto; }
+  .game-root { flex: 1; min-height: 0; width: 100%; max-width: 520px; margin: 0 auto; position: relative; }
+  /* Paused: shown over a game when you come back from locking the phone */
+  .gi-paused {
+    position: absolute; inset: 0; z-index: 50; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+    background: rgba(26,18,8,0.82); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
+    animation: fade-in 0.2s ease-out; cursor: pointer; touch-action: none;
+  }
+  .gi-paused b { font-family: 'Bebas Neue', sans-serif; font-size: 44px; letter-spacing: 2px; color: var(--gold); font-weight: 400; line-height: 1; }
+  .gi-paused span { font-family: 'DM Mono', monospace; font-size: 12px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--cream); }
   .game-loading { text-align: center; font-family: 'DM Mono', monospace; font-size: 12px; color: var(--muted); padding-top: 40px; }
   /* ── GOLDEN THRONE: lock badge on arcade tiles + paywall in the game layer ── */
   .arcade-icon { position: relative; }
@@ -772,6 +808,10 @@
     position: absolute; top: -5px; right: -5px; width: 22px; height: 22px; border-radius: 50%;
     background: var(--bg); border: 1px solid var(--gold); font-size: 11px;
     display: flex; align-items: center; justify-content: center;
+  }
+  .arcade-new {
+    position: absolute; top: -6px; left: -6px; padding: 2px 5px; border-radius: 6px;
+    background: var(--green); color: #fff; font-family: 'DM Mono', monospace; font-size: 9px; font-weight: 500; letter-spacing: 1px;
   }
   /* Pre-launch announcement: sign in now to become a Founding Flusher */
   .founder-bar {
@@ -869,8 +909,9 @@
   .tile-faces span:nth-child(2) { position: relative; z-index: 1; }
 
   /* "Backing one out": the tile strains, then the sheet pushes up with a little overshoot */
-  .home-tile.strain { animation: strain 0.14s ease-out; }
-  @keyframes strain { 50% { transform: scale(1.04, 0.95); } }
+  /* A slow plunge: the tile squashes down like a plunger, then springs as the sheet pops out */
+  .home-tile.strain { animation: strain 0.32s cubic-bezier(0.3, 0, 0.4, 1); transform-origin: 50% 100%; }
+  @keyframes strain { 55% { transform: scale(1.07, 0.86); } 80% { transform: scale(0.98, 1.03); } }
   .hs-head {
     position: sticky; top: -24px; z-index: 2; display: flex; align-items: center; justify-content: space-between;
     margin: -24px -24px 8px; padding: 22px 24px 12px; background: var(--surface2);
@@ -893,10 +934,11 @@
   .hs-closing .sheet-backdrop { animation: fade-out 0.22s ease-in forwards; }
   @keyframes fade-in { from { opacity: 0; } }
   @keyframes fade-out { to { opacity: 0; } }
-  .hs-in { animation: back-one-out 0.46s cubic-bezier(0.2, 1.25, 0.35, 1); }
+  .hs-in { animation: back-one-out 0.72s cubic-bezier(0.2, 1.2, 0.35, 1); }
   @keyframes back-one-out {
     0% { transform: translateY(100%) scale(0.94, 0.86); }
-    55% { transform: translateY(-1.5%) scale(1, 1.03); }
+    50% { transform: translateY(-2.5%) scale(0.99, 1.04); }
+    75% { transform: translateY(0.6%) scale(1, 0.99); }
   }
   .hs-out { animation: plop-down 0.22s ease-in forwards; }
   @keyframes plop-down { to { transform: translateY(100%); } }
@@ -910,13 +952,13 @@
   #poolCard .pool-head:not(:has(select)) { display: none; }
 
   /* Toilet roll: rows unroll one after another as the stats sheet opens */
-  .hs-fresh .history-row, .hs-fresh .lifetime-grid > div { animation: unroll 0.3s ease-out both; }
+  .hs-fresh .history-row, .hs-fresh .lifetime-grid > div { animation: unroll 0.42s ease-out 0.18s both; }
   @keyframes unroll { from { opacity: 0; transform: translateY(-8px) scaleY(0.6); } }
-  .hs-fresh .history-row:nth-child(2), .hs-fresh .lifetime-grid > div:nth-child(2) { animation-delay: 0.04s; }
-  .hs-fresh .history-row:nth-child(3), .hs-fresh .lifetime-grid > div:nth-child(3) { animation-delay: 0.08s; }
-  .hs-fresh .history-row:nth-child(4), .hs-fresh .lifetime-grid > div:nth-child(4) { animation-delay: 0.12s; }
-  .hs-fresh .history-row:nth-child(5) { animation-delay: 0.16s; }
-  .hs-fresh .history-row:nth-child(n+6) { animation-delay: 0.2s; }
+  .hs-fresh .history-row:nth-child(2), .hs-fresh .lifetime-grid > div:nth-child(2) { animation-delay: 0.25s; }
+  .hs-fresh .history-row:nth-child(3), .hs-fresh .lifetime-grid > div:nth-child(3) { animation-delay: 0.32s; }
+  .hs-fresh .history-row:nth-child(4), .hs-fresh .lifetime-grid > div:nth-child(4) { animation-delay: 0.39s; }
+  .hs-fresh .history-row:nth-child(5) { animation-delay: 0.46s; }
+  .hs-fresh .history-row:nth-child(n+6) { animation-delay: 0.52s; }
 
   /* Flush swirl: the bog's earnings spin down into the Bog Stats tile */
   .flush-chip {
@@ -984,7 +1026,7 @@
     <div class="founder-bar-text" id="founderBarText"></div>
     <button type="button" class="btn btn-start founder-bar-btn" id="founderBarBtn">Sign in</button>
   </div>
-  <button type="button" class="founder-bar-x" id="founderBarX" aria-label="Dismiss">✕</button>
+  <button type="button" class="founder-bar-x" id="founderBarX" aria-label="Dismiss"><svg class="x-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
 </div>
 <div class="wrapper">
 
@@ -1020,7 +1062,7 @@
     <!-- Sheet header (only when reopened from settings) -->
     <div class="sheet-head">
       <div class="sheet-title">Profile &amp; Crap</div>
-      <button type="button" class="sheet-close" onclick="closeSettings()" aria-label="Close">✕</button>
+      <button type="button" class="sheet-close" onclick="closeSettings()" aria-label="Close"><svg class="x-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
     </div>
 
     <!-- Who's signed in (filled by the Poop Pool script) -->
@@ -1108,7 +1150,7 @@
   <div class="lifetime-card" id="lifetimeCard" role="dialog" aria-modal="true" aria-label="Bog Stats">
     <div class="hs-head">
       <div class="sheet-title">🧻 Bog Stats</div>
-      <button type="button" class="sheet-close" onclick="closeHomeSheet()" aria-label="Close">✕</button>
+      <button type="button" class="sheet-close" onclick="closeHomeSheet()" aria-label="Close"><svg class="x-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
     </div>
     <div class="stats-body" id="statsBody">
       <div class="stats-inner">
@@ -1175,7 +1217,7 @@
     <div class="mini-timer-earned" id="miniTimerEarned">$0.00</div>
     <button type="button" class="mini-timer-btn arcade-live" id="miniTimerStop" onclick="finishFromGame()">■ Finish Up</button>
     <button type="button" class="mini-timer-btn arcade-idle" id="miniTimerStart" onclick="startFromGame()"><svg width="0.8em" height="0.8em" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="vertical-align:-0.05em"><path d="M7 4.8v14.4a1.2 1.2 0 0 0 1.8 1l11.6-7.2a1.2 1.2 0 0 0 0-2L8.8 3.8A1.2 1.2 0 0 0 7 4.8z"/></svg> Start a Bog</button>
-    <button type="button" class="mini-timer-x" onclick="closeGame()" aria-label="Close game">✕</button>
+    <button type="button" class="mini-timer-x" onclick="closeGame()" aria-label="Close game"><svg class="x-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
   </div>
   <div class="game-root" id="gameRoot"></div>
 </div>
@@ -1184,12 +1226,12 @@
   <img class="app-bar-icon" id="appBarIcon" src="icons/apple-touch-icon.png" alt="" width="44" height="44" hidden>
   <div class="app-bar-text" id="appBarText"></div>
   <button type="button" class="app-bar-btn" id="appBarBtn" hidden></button>
-  <button type="button" class="app-bar-x" id="appBarX" aria-label="Dismiss">✕</button>
+  <button type="button" class="app-bar-x" id="appBarX" aria-label="Dismiss"><svg class="x-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
 </div>
 
 <div class="app-bar" id="unlockBar" role="status" hidden>
   <div class="app-bar-text"><b>👑 Golden Throne unlocked.</b> Every Bog Arcade game is yours, on any device you sign in on.</div>
-  <button type="button" class="app-bar-x" onclick="this.parentNode.hidden = true" aria-label="Dismiss">✕</button>
+  <button type="button" class="app-bar-x" onclick="this.parentNode.hidden = true" aria-label="Dismiss"><svg class="x-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
 </div>
 
 <!-- iPhone "Show me" guide: Safari has no install button, so we show the three taps -->
@@ -1198,7 +1240,7 @@
   <div class="a2hs-sheet">
     <div class="sheet-head" style="display:flex">
       <div class="sheet-title" id="a2hsTitle">Add to Home Screen</div>
-      <button type="button" class="sheet-close" data-close aria-label="Close">✕</button>
+      <button type="button" class="sheet-close" data-close aria-label="Close"><svg class="x-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
     </div>
     <ol class="a2hs-steps">
       <li data-v="26">
@@ -1607,6 +1649,26 @@
     }, 900);
   }
 
+  // Each time Bog Stats opens, the portfolio counts up again as the rows unroll
+  function countUpLifetime() {
+    if (revealing || savedSalary <= 0 || reducedMotion()) return;
+    const daily = getHourlyRate() * 8;
+    const targets = { ltWeekly: daily * 5, ltMonthly: daily * 21, ltYearly: daily * 250, ltCareer: daily * 250 * 40 };
+    const els = Object.keys(targets).map(id => [document.getElementById(id), targets[id]]);
+    els.forEach(([el]) => { el.textContent = fmt(0); });
+    revealing = true;
+    cancelAnimationFrame(revealFrame);
+    const START = performance.now() + 350, DURATION = 1100;
+    function tick(now) {
+      const t = Math.max(0, Math.min((now - START) / DURATION, 1));
+      const e = 1 - Math.pow(1 - t, 3);
+      els.forEach(([el, target]) => { el.textContent = fmt(target * e); });
+      if (t < 1 && homeSheet === 'stats') revealFrame = requestAnimationFrame(tick);
+      else { revealing = false; refreshAll(); }
+    }
+    revealFrame = requestAnimationFrame(tick);
+  }
+
   // ── REFRESH ALL ──
   function refreshAll() {
     const hourly = getHourlyRate();
@@ -1619,8 +1681,10 @@
     document.getElementById('miniTimerEarned').textContent = fmtExact(earned);
     document.getElementById('ratePerMin').textContent = perMin >= 10 ? fmt(perMin) : fmtExact(perMin);
     // $10.00+ or 100+ minutes no longer fit side by side at 64px
-    document.getElementById('dashHeader').classList.toggle('long',
-      document.getElementById('dashEarned').textContent.length + document.getElementById('timerDisplay').textContent.length > 10);
+    const dashLen = document.getElementById('dashEarned').textContent.length + document.getElementById('timerDisplay').textContent.length;
+    document.getElementById('dashHeader').classList.toggle('long', dashLen > 10);
+    // $1000.00+ (or 1000+ minutes) ran into the timer, so one more step down
+    document.getElementById('dashHeader').classList.toggle('xlong', dashLen > 12);
 
     // Don't stomp on the skeleton / count-up while the reveal is running
     if (revealing) return;
@@ -1774,7 +1838,7 @@
       const row = document.createElement('div');
       row.className = 'history-row';
       row.innerHTML = `<span>${when}</span><span class="row-info">${fmtDuration(s.secs)} · <b>${fmtExact(s.earned)}</b></span>` +
-        `<button type="button" class="hist-del" data-start="${s.start}" aria-label="Delete this bog">×</button>`;
+        `<button type="button" class="hist-del" data-start="${s.start}" aria-label="Delete this bog"><svg class="x-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>`;
       list.appendChild(row);
     });
     if (sessions.length) {
@@ -1814,27 +1878,35 @@
   const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
   const homeSheets = { stats: 'lifetimeCard', pool: 'poolCard' };
   let homeSheet = null;
+  // Pending open/close steps. A new tap cancels them, so quick taps can't leave
+  // a sheet marked open but hidden (which made its tile stop working).
+  let hsTimers = [];
+  const hsLater = (fn, ms) => hsTimers.push(setTimeout(fn, ms));
+  function hsCancel() { hsTimers.forEach(clearTimeout); hsTimers = []; }
 
   function openHomeSheet(name, tile) {
     if (homeSheet === name) return;
     if (homeSheet) closeHomeSheet(true);
+    hsCancel();
+    document.body.classList.remove('hs-open', 'hs-closing', 'hs-stats', 'hs-pool');
     closeSettings();
+    homeSheet = name;
     const go = () => {
       const el = document.getElementById(homeSheets[name]);
-      homeSheet = name;
       document.body.classList.add('hs-open', 'hs-' + name);
       document.body.classList.remove('hs-closing');
       el.style.transform = '';
       el.scrollTop = 0;
       el.classList.remove('hs-out');
       el.classList.add('hs-in', 'hs-fresh');
-      setTimeout(() => el.classList.remove('hs-in', 'hs-fresh'), 700);
+      hsLater(() => el.classList.remove('hs-in', 'hs-fresh'), 1200);
+      if (name === 'stats') countUpLifetime();
     };
     if (tile && !reducedMotion()) {
       tile.classList.remove('strain');
       void tile.offsetWidth;
       tile.classList.add('strain');
-      setTimeout(go, 110);
+      hsLater(go, 240);
     } else go();
   }
 
@@ -1843,16 +1915,24 @@
     const name = homeSheet;
     const el = document.getElementById(homeSheets[name]);
     homeSheet = null;
+    hsCancel();
     const done = () => {
       document.body.classList.remove('hs-open', 'hs-closing', 'hs-' + name);
-      el.classList.remove('hs-out', 'hs-in');
+      el.classList.remove('hs-out', 'hs-in', 'hs-fresh');
       el.style.transform = '';
+      // Closing the pool sheet on the code screen is the way out for a typo'd email:
+      // next open shows the email box again, filled in, ready to fix and resend.
+      if (name === 'pool' && pool.view && pool.view.name === 'sent') {
+        pool.view = Object.assign({}, pool.view.from || { name: 'pitch' }, { email: pool.view.email });
+        renderPool();
+      }
     };
-    if (now === true) return done();
+    // Closed before it finished opening: just reset
+    if (now === true || !document.body.classList.contains('hs-' + name)) return done();
     document.body.classList.add('hs-closing');
     el.classList.remove('hs-in');
     el.classList.add('hs-out');
-    setTimeout(done, 230);
+    hsLater(done, 230);
   }
 
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closeHomeSheet(); });
@@ -1943,7 +2023,7 @@
     if (!btn.classList.contains('armed')) {
       document.querySelectorAll('#historyList .armed').forEach(disarm);
       btn.classList.add('armed');
-      btn.dataset.label = btn.textContent;
+      btn.dataset.label = btn.innerHTML;
       btn.textContent = btn.classList.contains('hist-clear') ? 'Tap again to delete all' : 'DELETE?';
       clearTimeout(armTimer);
       armTimer = setTimeout(() => disarm(btn), 3000);
@@ -1957,7 +2037,7 @@
 
   function disarm(btn) {
     btn.classList.remove('armed');
-    if (btn.dataset.label) btn.textContent = btn.dataset.label;
+    if (btn.dataset.label) btn.innerHTML = btn.dataset.label;
   }
 
   // ── BOG ARCADE ──
@@ -1965,6 +2045,9 @@
   // A game file sets window[global] = { mount(el, { hourly, onExit }) } and
   // mount returns { destroy() }. Add a game by adding a line here.
   // The card is always shown; a running bog timer keeps going underneath, shrunk to a bar at the top.
+  // held: true keeps a finished game in the code but off the arcade until its monthly drop.
+  // dropped: 'YYYY-MM-DD' on a released monthly game pins it first with a NEW badge for 30 days.
+  // The last tile is always a mystery "Dropping soon" placeholder (not playable).
   const GAMES = [
     { id: 'dung-run', name: 'Dung Run', icon: '🚽', file: 'games/dung-run.js', global: 'DungRun',
       bg: 'linear-gradient(145deg,#2a6f8f,#123447)' },
@@ -1972,7 +2055,7 @@
       bg: 'linear-gradient(145deg,#4caf6e,#1f5a34)' },
     { id: 'stool-swap', name: 'Stool Swap', icon: '🌽', file: 'games/stool-swap.js', global: 'StoolSwap',
       bg: 'linear-gradient(145deg,#f5c842,#e07b00)' },
-    { id: 'fling-bonus', name: 'Fling Bonus', icon: '🐒', file: 'games/fling-bonus.js', global: 'FlingBonus',
+    { id: 'fling-bonus', name: 'Fling Bonus', icon: '🐒', file: 'games/fling-bonus.js', global: 'FlingBonus', held: true,
       bg: 'linear-gradient(145deg,#e07b00,#7a3a00)' },
     { id: 'wrap-up', name: 'Wrap Up', icon: '🧩', file: 'games/wrap-up.js', global: 'WrapUp',
       bg: 'linear-gradient(145deg,#ff7aa8,#24306b)' },
@@ -1981,7 +2064,40 @@
     { id: 'turd-invaders', name: 'Turd Invaders', icon: '🛸', file: 'games/turd-invaders.js', global: 'TurdInvaders',
       bg: 'linear-gradient(145deg,#3a2a6b,#0e0a05)' },
   ];
+  const ARCADE = GAMES.filter(gm => !gm.held);
+  // Next monthly game drop (Sydney date). The tile reads "Drops 1 Dec"; once the date
+  // passes it falls back to "Dropping soon" until this is moved to the next drop.
+  const NEXT_DROP = '2026-12-01T00:00:00+11:00';
+  function dropLabel() {
+    const t = Date.parse(NEXT_DROP);
+    if (!(Date.now() < t)) return 'Dropping soon';
+    return 'Drops ' + new Date(t).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', timeZone: 'Australia/Sydney' }).replace(' ', '\u00a0'); // keep "1 Dec" on one line
+  }
+  // Games call this when you come back to the app mid-play: a "Paused" cover that
+  // carries on when tapped (or on any key). Calling it again just swaps the callback.
+  window.GIPause = function (root, onResume) {
+    let el = root.querySelector('.gi-paused');
+    if (!el) {
+      el = document.createElement('div');
+      el.className = 'gi-paused';
+      el.setAttribute('role', 'button');
+      el.innerHTML = '<b>Paused 🧻</b><span>Tap to carry on</span>';
+      root.appendChild(el);
+    }
+    const go = e => {
+      if (e) { e.preventDefault(); e.stopPropagation(); }
+      el.remove();
+      window.removeEventListener('keydown', key, true);
+      onResume();
+    };
+    const key = e => { if (e.key !== 'Escape') go(e); };
+    el.onpointerdown = go;
+    window.removeEventListener('keydown', el._key, true);
+    el._key = key;
+    window.addEventListener('keydown', key, true);
+  };
   let game = null;
+  let gameOpenId = 0; // bumps on every open and close, so a slow load can't mount a game that was already closed
   const gameScripts = {};
 
   // ── GAME STATS ──
@@ -2060,12 +2176,40 @@
   let paywallPlan = 'yearly';
   function gameLocked(gm) { return paywallOn() && !unlocked() && !FREE_GAMES.includes(gm.id); }
 
+  // Tile order: new drops first, then the last game played, then the rest shuffled once a
+  // day (same order all day, new one overnight). The free game always sits in the first 3.
+  const LAST_GAME_KEY = 'gi.arcade.last';
+  const isNew = gm => gm.dropped && Date.now() - Date.parse(gm.dropped) < 30 * 864e5;
+  function arcadeOrder() {
+    const fresh = ARCADE.filter(isNew).sort((a, b) => b.dropped.localeCompare(a.dropped));
+    const last = ARCADE.find(gm => gm.id === readJSON(LAST_GAME_KEY, null) && !fresh.includes(gm));
+    const rest = ARCADE.filter(gm => !fresh.includes(gm) && gm !== last);
+    // Seeded shuffle: the seed is today's Sydney date, e.g. 20261101
+    let seed = +new Date().toLocaleDateString('en-CA', { timeZone: 'Australia/Sydney' }).replace(/-/g, '');
+    const rand = () => { // mulberry32
+      let t = seed = (seed + 0x6D2B79F5) | 0;
+      t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+    for (let i = rest.length - 1; i > 0; i--) { const j = Math.floor(rand() * (i + 1)); [rest[i], rest[j]] = [rest[j], rest[i]]; }
+    const list = [...fresh, ...(last ? [last] : []), ...rest];
+    FREE_GAMES.forEach(id => {
+      const i = list.findIndex(gm => gm.id === id);
+      if (i > 2) list.splice(2, 0, ...list.splice(i, 1));
+    });
+    return list;
+  }
+
   function renderArcade() {
-    document.getElementById('arcadeTiles').innerHTML = GAMES.map(gm => `
+    document.getElementById('arcadeTiles').innerHTML = arcadeOrder().map(gm => `
       <button type="button" class="arcade-tile" onclick="openGame('${gm.id}')">
-        <span class="arcade-icon" style="background:${gm.bg}" aria-hidden="true">${gm.icon}${gameLocked(gm) ? '<span class="arcade-lock">🔒</span>' : ''}</span>
+        <span class="arcade-icon" style="background:${gm.bg}" aria-hidden="true">${gm.icon}${gameLocked(gm) ? '<span class="arcade-lock">🔒</span>' : isNew(gm) ? '<span class="arcade-new">NEW</span>' : ''}</span>
         <span class="arcade-name">${gm.name}</span>
-      </button>`).join('');
+      </button>`).join('') + `
+      <div class="arcade-tile arcade-soon" role="img" aria-label="New game: ${dropLabel()}">
+        <span class="arcade-icon" aria-hidden="true">?</span>
+        <span class="arcade-name" aria-hidden="true">${dropLabel()}</span>
+      </div>`;
     renderFounderBar();
   }
 
@@ -2093,7 +2237,7 @@
     const user = typeof pool !== 'undefined' && pool.user;
     // Free games first so the taster is the first thing people see
     const free = x => FREE_GAMES.includes(x.id);
-    const list = [...GAMES.filter(free), ...GAMES.filter(x => !free(x))].map(x =>
+    const list = [...ARCADE.filter(free), ...ARCADE.filter(x => !free(x))].map(x =>
       `<li><span>${x.icon}</span><span>${x.name}</span>${free(x) ? '<span class="free-badge">FREE</span>' : '<span>🔒</span>'}</li>`).join('');
     const plans = Object.entries(PLANS).map(([id, p]) => `
       <button type="button" class="paywall-plan${id === paywallPlan ? ' on' : ''}" data-pay="plan" data-plan="${id}" aria-pressed="${id === paywallPlan}">
@@ -2169,32 +2313,40 @@
   async function openGame(id) {
     const gm = GAMES.find(x => x.id === id) || GAMES[0];
     if (game || !document.getElementById('gameLayer').hidden) return;
+    const openId = ++gameOpenId;
     const root = document.getElementById('gameRoot');
     document.getElementById('gameLayer').hidden = false;
     document.body.classList.add('game-open');
     history.pushState({ game: true }, '');
     const locked = gameLocked(gm);
     trackGame({ game: gm.id, kind: 'open', locked });
+    writeJSON(LAST_GAME_KEY, gm.id);
     if (locked) { root.innerHTML = paywallHtml(gm); return; }
     root.innerHTML = '<div class="game-loading">Unblocking the pipes…</div>';
     try { await loadGame(gm); } catch (e) {
+      if (openId !== gameOpenId) return;
       root.innerHTML = `<div class="game-loading">${gm.name} didn't load. Check your signal and try again.</div>`;
       return;
     }
-    if (document.getElementById('gameLayer').hidden) return;
+    if (openId !== gameOpenId || document.getElementById('gameLayer').hidden) return;
     // Only pays while a bog is running, so "Paid to play" is $0 off the bog
     game = window[gm.global].mount(root, { hourly: () => running ? getHourlyRate() : 0, onExit: closeGame });
     playing = { id: gm.id, since: Date.now() };
   }
 
   function hideGame() {
+    gameOpenId++;
     trackPlayTime();
     playing = null;
+    const paused = document.querySelector('#gameRoot .gi-paused');
+    if (paused) window.removeEventListener('keydown', paused._key, true);
     if (game) { game.destroy(); game = null; }
     document.getElementById('gameRoot').innerHTML = '';
     document.getElementById('gameLayer').hidden = true;
     document.body.classList.remove('game-open');
     wave.resume();
+    renderArcade(); // last-played game moves up front
+    document.getElementById('arcadeTiles').scrollLeft = 0;
   }
 
   // Closing goes through history so the phone's back gesture closes the game too
@@ -2527,7 +2679,7 @@
   // ── RENDER ──
   const POOL_SHEET_HEAD = `<div class="hs-head">
       <div class="sheet-title">👑 Poop Pool</div>
-      <button type="button" class="sheet-close" onclick="closeHomeSheet()" aria-label="Close">✕</button>
+      <button type="button" class="sheet-close" onclick="closeHomeSheet()" aria-label="Close"><svg class="x-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
     </div>
     <svg class="plunger" id="plunger" viewBox="0 0 34 60" aria-hidden="true">
       <rect x="14" y="0" width="6" height="40" rx="3" fill="#B5793A"/>
@@ -2623,7 +2775,7 @@
       <div class="pool-msg">${esc(pool.msg)}</div>` : `
       <div class="profile-id"><div class="profile-av">${esc(p.emoji || '💩')}</div>
         <div class="profile-who"><b>${esc(p.display_name)}</b><span>${esc(pool.user.email || '')}</span></div>
-        <button class="pool-link" data-act="sheet-edit">Edit</button></div>`;
+        <button class="btn btn-ghost btn-icon btn-inline" data-act="sheet-edit"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>Edit</button></div>`;
 
     const cur = currentPool();
     const owner = cur && cur.owner_id === pool.user.id;
@@ -2658,15 +2810,24 @@
           ${owner ? '<button class="btn btn-ghost" data-act="new-code" data-busy="Flushing…">New invite code</button>' : ''}
           <button class="btn btn-stop" data-act="leave" data-busy="Leaving…">Leave pool</button>
         </div>` : ''}
-        <div class="pool-foot"><button class="pool-link" data-act="sheet-new-pool">+ Start a new pool</button></div>
+        <div class="pool-btns"><button class="btn btn-ghost btn-icon" data-act="sheet-new-pool"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Start a new pool</button></div>
       </div>
       ${signOutHtml()}`;
   }
   window.renderProfile = renderProfile;
 
   function signOutHtml() {
+    // Delete my account asks once more before it goes (pool.confirmDelete)
+    const del = !pool.user || pool.sheetEdit ? '' : pool.confirmDelete ? `
+      <p class="pool-text" style="margin-top:14px">This deletes your throne name, the bogs you've uploaded${readJSON(UNLOCK_KEY, null) ? ', your pool spots and your Golden Throne unlock' : ' and your pool spots'}. Pools you run pass to a mate. Your Bog Log and salary stay on this phone. It can't be undone.</p>
+      <div class="pool-btns">
+        <button class="btn btn-ghost" data-act="delete-cancel">Keep it</button>
+        <button class="btn btn-stop" data-act="delete-account" data-busy="Deleting…">Delete everything</button>
+      </div>` : `
+      <div class="pool-btns"><button class="btn btn-ghost" data-act="delete-ask" style="color:var(--muted);border-color:transparent">Delete my account</button></div>`;
     return `<div class="sheet-section">
       <div class="pool-btns" style="margin-top:0"><button class="btn btn-ghost" data-act="signout" data-busy="Signing out…">Sign out</button></div>
+      ${del}
       ${pool.sheetEdit ? '' : `<div class="pool-msg">${esc(pool.msg)}</div>`}
     </div>`;
   }
@@ -2696,8 +2857,7 @@
         <input id="poolCode" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="8" aria-label="Login code">
         ${navigator.clipboard && navigator.clipboard.readText ? '<button type="button" class="code-paste" data-act="paste-code">Paste</button>' : ''}
       </div>
-      <div class="pool-btns"><button class="btn btn-start" data-act="verify" data-busy="Checking…">Let me in</button></div>
-      <button class="pool-link" data-act="back">Use a different email</button>`;
+      <div class="pool-btns"><button class="btn btn-start" data-act="verify" data-busy="Checking…">Let me in</button></div>`;
   }
 
   function sentText(v) {
@@ -2852,7 +3012,7 @@
       if (!/^\S+@\S+\.\S+$/.test(email)) throw new Error('That email looks blocked up.');
       // Move to the code screen straight away; sending the email takes a few seconds.
       const from = pool.view;
-      pool.view = { name: 'sent', email, sending: true };
+      pool.view = { name: 'sent', email, sending: true, from };
       renderPool();
       // On phones, don't pop the keyboard: it covers the screen and they're off to Mail first.
       // Desktop keeps the focus so the code can be typed or pasted straight in.
@@ -2900,7 +3060,6 @@
       } catch (e) { plunge.stop(); throw e; }
       await plunge.done(); return 'done';
     },
-    async back() { pool.view = { name: 'pitch' }; },
     async decline() { writeJSON(POOL_INVITE_KEY, null); await refreshPool(); return 'done'; },
     async join(el, root) {
       await saveShareMoney(!root.querySelector('.js-minutes').checked);
@@ -2980,9 +3139,21 @@
       writeJSON(POOL_CURRENT_KEY, null);
       await refreshPool(); return 'done';
     },
-    async signout() {
-      await pool.sb.auth.signOut();
-      pool.profile = null; pool.pools = []; pool.sheetEdit = false;
+    async 'delete-ask'() { pool.confirmDelete = true; renderProfile(); return 'done'; },
+    async 'delete-cancel'() { pool.confirmDelete = false; renderProfile(); return 'done'; },
+    async 'delete-account'() {
+      const { error } = await pool.sb.rpc('delete_my_account');
+      if (error) throw error;
+      // The login is gone on the server, so only clear it here
+      await pool.sb.auth.signOut({ scope: 'local' }).catch(() => {});
+      pool.confirmDelete = false;
+      writeJSON(POOL_CURRENT_KEY, null);
+      writeJSON(POOL_DELETED_KEY, []);
+      return actions.signout(true);
+    },
+    async signout(gone) {
+      if (gone !== true) await pool.sb.auth.signOut();
+      pool.profile = null; pool.pools = []; pool.sheetEdit = false; pool.confirmDelete = false;
       writeJSON(POOL_SYNCED_KEY, null);
       writeJSON(UNLOCK_KEY, null);
       await refreshPool(); return 'done';
@@ -3020,7 +3191,7 @@
   }
 
   // Taps that only change the screen, so they work before Supabase has loaded
-  const LOCAL_ACTS = new Set(['emoji', 'settings', 'sheet-edit', 'sheet-cancel', 'sheet-signin', 'sheet-setup', 'sheet-new-pool']);
+  const LOCAL_ACTS = new Set(['emoji', 'settings', 'delete-ask', 'delete-cancel', 'sheet-edit', 'sheet-cancel', 'sheet-signin', 'sheet-setup', 'sheet-new-pool']);
 
   async function onPoolClick(e) {
     const root = e.currentTarget;
