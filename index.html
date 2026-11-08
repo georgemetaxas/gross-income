@@ -875,7 +875,7 @@
   .paywall-msg { min-height: 18px; font-size: 13px; color: #ff8a65; margin-top: 10px; }
 
   /* ── HOME TILES: Bog Stats + Poop Pool open as sheets ── */
-  .home-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  .home-tiles { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; margin-bottom: 12px; }
   .home-tile {
     position: relative; display: flex; flex-direction: column; align-items: flex-start; text-align: left;
     min-height: 112px; padding: 14px 16px; border-radius: 20px; cursor: pointer; color: var(--cream);
@@ -883,9 +883,20 @@
   }
   .tile-label { font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--heading); }
   .tile-arrow { position: absolute; top: 13px; right: 13px; color: var(--gold); }
+  /* Keep the label clear of the ↗ arrow; small phones get a tighter label so it stays on one line */
+  .tile-label { max-width: calc(100% - 22px); }
+  @media (max-width: 374px) { .tile-label { font-size: 10px; letter-spacing: 1px; } }
+  @media (max-width: 339px) { .tile-label { letter-spacing: 0.6px; } }
   .tile-big { font-family: 'Bebas Neue', sans-serif; font-size: 38px; letter-spacing: 1px; line-height: 1; color: var(--gold); margin-top: 8px; }
   .tile-sub { font-size: 12px; line-height: 1.35; color: var(--muted); margin-top: auto; padding-top: 8px; }
-  .tile-bars { position: absolute; right: 16px; top: 42px; height: 30px; display: flex; align-items: flex-end; gap: 3px; }
+  /* Time and bars share a row so they can never overlap; fitStatsTile() shrinks the
+     time, then stacks the bars underneath when a long total runs out of room */
+  .tile-row { display: flex; align-items: flex-end; gap: 10px; width: 100%; margin-top: 8px; }
+  .tile-row .tile-big { flex: 1 1 auto; min-width: 0; margin-top: 0; white-space: nowrap; overflow: hidden; }
+  .tile-bars { flex: none; height: 30px; display: flex; align-items: flex-end; gap: 3px; margin-bottom: 3px; }
+  .tile-bars:empty { display: none; }
+  .tile-row.stacked { flex-direction: column; align-items: flex-start; gap: 8px; }
+  .tile-row.stacked .tile-big { width: 100%; }
   .tile-bars i { width: 7px; border-radius: 2px; background: var(--amber); }
   /* Signed out: Poop Pool turns gold and asks you to join */
   .home-tile.join { color: var(--bg); border: 0; background: linear-gradient(135deg, var(--gold), #f0a830); }
@@ -1133,8 +1144,10 @@
   <div class="home-tiles">
     <button type="button" class="home-tile" id="statsTile" onclick="openHomeSheet('stats', this)">
       <span class="tile-label">🧻 Bog Stats</span><svg class="tile-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7"/><path d="M8 7h9v9"/></svg>
-      <span class="tile-big" id="tileStatsBig">0m</span>
-      <span class="tile-bars" id="tileBars" aria-hidden="true"></span>
+      <span class="tile-row">
+        <span class="tile-big" id="tileStatsBig">0m</span>
+        <span class="tile-bars" id="tileBars" aria-hidden="true"></span>
+      </span>
       <span class="tile-sub" id="tileStatsSub">No bogs yet</span>
     </button>
     <button type="button" class="home-tile" id="poolTile" onclick="openHomeSheet('pool', this)">
@@ -1870,7 +1883,30 @@
     const max = Math.max(1, ...last.map(x => x.secs));
     document.getElementById('tileBars').innerHTML =
       last.map(x => `<i style="height:${Math.max(4, Math.round(x.secs / max * 30))}px"></i>`).join('');
+    fitStatsTile();
   }
+
+  // Keep the time and the bars apart on any width. Side by side, the time can shrink
+  // to 30px; past that the bars move under the time (all 7 kept) and the time goes
+  // back to full size, shrinking only if it's wider than the whole tile.
+  function fitStatsTile() {
+    const big = document.getElementById('tileStatsBig');
+    const row = big.parentElement;
+    if (!big.offsetParent) return; // hidden, nothing to measure
+    const tooWide = () => big.scrollWidth > big.clientWidth;
+    const fit = min => {
+      let size = 38;
+      big.style.fontSize = '';
+      while (tooWide() && size > min) big.style.fontSize = (--size) + 'px';
+      return !tooWide();
+    };
+    row.classList.remove('stacked');
+    if (fit(30)) return;
+    row.classList.add('stacked');
+    fit(14);
+  }
+  window.addEventListener('resize', fitStatsTile);
+  if (document.fonts) document.fonts.ready.then(fitStatsTile);
 
   // ── HOME SHEETS (Bog Stats, Poop Pool) ──
   // A tile strains, then its sheet "backs one out" from the bottom. Swipe the top
