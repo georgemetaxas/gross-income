@@ -883,6 +883,10 @@
   }
   .tile-label { font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--heading); }
   .tile-arrow { position: absolute; top: 13px; right: 13px; color: var(--gold); }
+  /* Keep the label clear of the ↗ arrow; small phones get a tighter label so it stays on one line */
+  .tile-label { max-width: calc(100% - 22px); }
+  @media (max-width: 374px) { .tile-label { font-size: 10px; letter-spacing: 1px; } }
+  @media (max-width: 339px) { .tile-label { letter-spacing: 0.6px; } }
   .tile-big { font-family: 'Bebas Neue', sans-serif; font-size: 38px; letter-spacing: 1px; line-height: 1; color: var(--gold); margin-top: 8px; }
   .tile-sub { font-size: 12px; line-height: 1.35; color: var(--muted); margin-top: auto; padding-top: 8px; }
   /* Time and bars share a row so they can never overlap; fitStatsTile() shrinks the
