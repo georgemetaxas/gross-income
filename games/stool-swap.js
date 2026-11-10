@@ -777,7 +777,7 @@
       el.msg.hidden = true;
       const p = progress();
       el.screen.innerHTML = `
-        <div class="ss-hero">🌽</div>
+        <div class="ss-hero"><img class="game-hero-art" src="icons/games/stool-swap.svg" alt="" width="112" height="112"></div>
         <div class="ss-title">Stool Swap</div>
         <div class="ss-sub">Match 3 weird things found in poo</div>
         <div class="ss-levels">

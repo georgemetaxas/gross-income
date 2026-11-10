@@ -672,7 +672,7 @@
       g.state = 'title';
       el.msg.hidden = true;
       el.screen.innerHTML = `
-        <div class="fb-hero">🐒</div>
+        <div class="fb-hero"><img class="game-hero-art" src="icons/games/fling-bonus.svg" alt="" width="112" height="112"></div>
         <div class="fb-title">Fling Bonus</div>
         <div class="fb-sub">Fling a turd for the corner office</div>
         <div class="fb-box">

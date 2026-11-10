@@ -494,7 +494,7 @@
       g.state = 'title';
       const best = load(BEST_KEY, 0);
       el.screen.innerHTML = `
-        <div class="dr-hero">🚽</div>
+        <div class="dr-hero"><img class="game-hero-art" src="icons/games/dung-run.svg" alt="" width="112" height="112"></div>
         <div class="dr-title">Dung Run</div>
         <div class="dr-sub">Catch every poo. Dodge the Clean Squad.</div>
         <div class="dr-box">

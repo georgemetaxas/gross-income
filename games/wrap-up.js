@@ -601,7 +601,7 @@
       clearInterval(clock); clearTimeout(endTimer);
       const p = progress();
       el.screen.innerHTML = `
-        <div class="wu-hero">🧩</div>
+        <div class="wu-hero"><img class="game-hero-art" src="icons/games/wrap-up.svg" alt="" width="112" height="112"></div>
         <div class="wu-title">Wrap Up</div>
         <div class="wu-sub">Piece the wrapper back together.<br>It lets one rip when you finish</div>
         <div class="wu-box">
