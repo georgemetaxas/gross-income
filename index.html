@@ -2103,8 +2103,13 @@
       bg: 'linear-gradient(145deg,#f5ead6,#a0652f)' },
     { id: 'turd-invaders', name: 'Turd Invaders', icon: '🛸', file: 'games/turd-invaders.js', global: 'TurdInvaders',
       bg: 'linear-gradient(145deg,#3a2a6b,#0e0a05)' },
+    { id: 'step-in-it', name: 'Step In It', icon: '👟', file: 'games/step-in-it.js', global: 'StepInIt', held: true,
+      bg: 'linear-gradient(145deg,#7a9a3a,#2e4f1c)' },
+    { id: 'mah-dung', name: 'Mah-Dung', icon: '🀄', file: 'games/mah-dung.js', global: 'MahDung', held: true,
+      bg: 'linear-gradient(145deg,#2f8f86,#123f3b)' },
   ];
-  const ARCADE = GAMES.filter(gm => !gm.held);
+  // Branch previews (and localhost) show held games too, so they can be played before their drop
+  const ARCADE = GAMES.filter(gm => !gm.held || /\.gross-income\.pages\.dev$|^localhost$/.test(location.hostname));
   // Next monthly game drop (Sydney date). The tile reads "Drops 1 Dec"; once the date
   // passes it falls back to "Dropping soon" until this is moved to the next drop.
   const NEXT_DROP = '2026-12-01T00:00:00+11:00';
