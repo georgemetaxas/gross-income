@@ -2107,6 +2107,9 @@
       bg: 'linear-gradient(145deg,#7a9a3a,#2e4f1c)' },
     { id: 'mah-dung', name: 'Mah-Dung', icon: '🀄', file: 'games/mah-dung.js', global: 'MahDung', held: true,
       bg: 'linear-gradient(145deg,#2f8f86,#123f3b)' },
+    // Locked in as the June 2027 drop
+    { id: 'backed-up', name: 'Backed Up', icon: '🪠', file: 'games/backed-up.js', global: 'BackedUp', held: true,
+      bg: 'linear-gradient(145deg,#3f8fd0,#17375c)' },
   ];
   // Branch previews (and localhost) show held games too, so they can be played before their drop
   const ARCADE = GAMES.filter(gm => !gm.held || /\.gross-income\.pages\.dev$|^localhost$/.test(location.hostname));
