@@ -153,7 +153,6 @@
     background: #fff; opacity: 0.85; transform: rotate(-14deg); pointer-events: none; }
   .md-tile svg { display: block; width: 0.85em; height: 1.25em; }
   .md-tile span { pointer-events: none; position: relative; filter: drop-shadow(0 1.5px 0 rgba(63,35,12,0.35)); }
-  .md-tile.blocked { filter: brightness(0.66) saturate(0.6); }
   .md-tile.on { background: linear-gradient(170deg, #fff3b8, #f5c842); transform: translate(-2px, -4px) rotate(-3deg);
     box-shadow: var(--d) var(--d) 0 -1px #e07b00, calc(var(--d) + 2px) calc(var(--d) + 2px) 0 -1px #3f230c, 0 0 0 3px #e07b00, 0 8px 16px rgba(0,0,0,0.5); }
   .md-tile.hint { animation: mdHint 0.6s ease-in-out infinite alternate; }
@@ -331,7 +330,7 @@
       paint();
     }
 
-    // Blocked tiles are dimmed so it's clear what can be played
+    // Blocked tiles look the same as free ones (spotting them is the game); the class is only for aria
     function paint() {
       g.tiles.forEach(t => {
         if (!t.el) return;
@@ -504,7 +503,7 @@
         <div class="md-box" style="margin-top:8px">
           <div class="md-lbl" style="margin-bottom:6px">Instructions</div>
           <div class="md-instr-text">Tap two matching tiles to clear them. Clear the whole stack to win.</div>
-          <div class="md-instr-text">You can only take a tile that's free: nothing on top of it, and nothing on its left or its right. Stuck tiles look darker.</div>
+          <div class="md-instr-text">You can only take a tile that's free: nothing on top of it, and nothing on its left or its right. Tap a stuck one and it wobbles.</div>
           <div class="md-instr-text">Every stack can be cleared. 💨 Hint shows a pair but adds ${HINT_SECS} seconds. No pairs left? The stack gets shuffled for you.</div>
         </div>`;
       el.screen.hidden = false;
