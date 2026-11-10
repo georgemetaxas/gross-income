@@ -8,7 +8,7 @@
 // window.MahDung.mount(el, { hourly: () => number, onExit: () => void })
 // draws the game into el and returns { destroy() }.
 (function () {
-  // Tile faces. Level n uses the first `faces` of these, 4 of each.
+  // Tile faces. Each level uses the first `faces` of these.
   // Heavy on the foods that send you running to the bog, plus cameos from the other
   // games: Turd Snake's menu and U-bend, the Fling Bonus monkey, Dung Run's plunger.
   const FACES = ['💩', '🌮', '🌶️', '☕', '🧻', '🍛', 'hot-sauce', '🌽', '🍕', '🌯', '🪠', '🐒', '🪰', '🥦', '🧀', '🥛', '🌀', '🫘'];
@@ -38,17 +38,32 @@
     for (let j = 0; j < rows; j++) for (let i = 0; i < cols; i++) out.push([layer, x0 + i * 2, y0 + j * 2]);
     return out;
   }
-  // Add a level by adding a line: tiles must be a multiple of 4, faces = tiles / 4.
+  // Add a level by adding a line: tiles must be a multiple of 4. Up to 72 tiles every face
+  // shows up 4 times; bigger stacks reuse all 18 faces, so some appear 6 times.
   // par = seconds for 3 stars (2 stars inside double).
   const LEVELS = [
-    { name: 'Half Flush', sub: '24 tiles · 2 layers', par: 60,
+    { name: 'Half Flush', par: 60,
       tiles: [...rect(0, 0, 0, 5, 4), ...rect(1, 3, 2, 2, 2)] },
-    { name: 'Full Flush', sub: '48 tiles · 2 layers', par: 180,
+    { name: 'Full Flush', par: 180,
       tiles: [...rect(0, 0, 0, 6, 6), ...rect(1, 2, 3, 4, 3)] },
-    { name: 'The Big Clog', sub: '72 tiles · 4 layers', par: 360,
+    { name: 'The Big Clog', par: 360,
       tiles: [...rect(0, 0, 0, 6, 8), ...rect(1, 2, 4, 4, 4), ...rect(2, 4, 5, 2, 3), ...rect(3, 4, 7, 2, 1)] },
+    // Two arms and a bend at the bottom, stacked 3 high up the arms
+    { name: 'The U-Bend', par: 330,
+      tiles: [...rect(0, 0, 0, 2, 8), ...rect(0, 8, 0, 2, 8), ...rect(0, 4, 12, 2, 2),
+        ...rect(1, 1, 1, 1, 6), ...rect(1, 9, 1, 1, 6), ...rect(1, 4, 13, 2, 1),
+        ...rect(2, 1, 4, 1, 3), ...rect(2, 9, 4, 1, 3)] },
+    // A stepped pyramid, 3 layers high in the middle
+    { name: 'Porcelain Pyramid', par: 420,
+      tiles: [...rect(0, 0, 0, 6, 7), ...rect(1, 2, 2, 4, 5), ...rect(2, 4, 4, 2, 3)] },
+    // Every layer sits half a tile over the one below, so nearly everything starts buried
+    { name: 'Total Blockage', par: 600,
+      tiles: [...rect(0, 0, 0, 6, 8), ...rect(1, 1, 1, 5, 7), ...rect(2, 3, 4, 3, 3)] },
   ];
-  LEVELS.forEach(L => { L.faces = L.tiles.length / 4; });
+  LEVELS.forEach(L => {
+    L.faces = Math.min(FACES.length, L.tiles.length / 4);
+    L.sub = L.tiles.length + ' tiles · ' + (Math.max(...L.tiles.map(t => t[0])) + 1) + ' layers';
+  });
   const HINT_SECS = 15;
   const PROGRESS_KEY = 'gi.mahdung.v1';
   const MUTE_KEY = 'gi.mahdung.muted';
