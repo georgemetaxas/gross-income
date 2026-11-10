@@ -738,7 +738,7 @@
       const p = progress();
       const open = i => preview || i <= p.unlocked;
       el.screen.innerHTML = `
-        <div class="ti-hero" data-hero></div>
+        <div class="ti-hero"><img class="game-hero-art" src="icons/games/turd-invaders.svg" alt="" width="112" height="112"></div>
         <div class="ti-title">Turd Invaders</div>
         <div class="ti-sub">Wipe them out before they land</div>
         <div class="ti-levels">
@@ -760,7 +760,6 @@
           </div>
         </div>`;
       el.screen.hidden = false;
-      el.screen.querySelector('[data-hero]').appendChild(sprite(168, (x, s) => drawInvader(x, s, 0, 0)));
       fillIcons();
       el.screen.querySelectorAll('[data-lv]').forEach(b => { b.onclick = () => startLevel(+b.dataset.lv); });
       draw();

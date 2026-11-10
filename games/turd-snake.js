@@ -528,7 +528,7 @@
     function titleScreen() {
       g.state = 'title';
       el.screen.innerHTML = `
-        <div class="ts-hero">💩</div>
+        <div class="ts-hero"><img class="game-hero-art" src="icons/games/turd-snake.svg" alt="" width="112" height="112"></div>
         <div class="ts-title">Turd Snake</div>
         <div class="ts-sub">Eat. Grow. Don't touch the bowl.</div>
         <div class="ts-box">

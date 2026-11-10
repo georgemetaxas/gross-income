@@ -415,7 +415,7 @@
       const p = progress();
       const open = i => preview || i <= p.unlocked;
       el.screen.innerHTML = `
-        <div class="td-hero">📰</div>
+        <div class="td-hero"><img class="game-hero-art" src="icons/games/turdle.svg" alt="" width="112" height="112"></div>
         <div class="td-title">Turdle</div>
         <div class="td-sub">The Daily Dump word search</div>
         <div class="td-levels">
