@@ -9,7 +9,27 @@
 // draws the game into el and returns { destroy() }.
 (function () {
   // Tile faces. Level n uses the first `faces` of these, 4 of each.
-  const FACES = ['💩', '🧻', '🪠', '🚽', '🪰', '🌽', '🌶️', '🫘', '🧼', '🪥', '🦆', '🍑', '💨', '🧽', '🪣', '🗞️', '🥦', '🕯️'];
+  // Heavy on the foods that send you running to the bog, plus cameos from the other
+  // games: Turd Snake's menu and U-bend, the Fling Bonus monkey, Dung Run's plunger.
+  const FACES = ['💩', '🌮', '🌶️', '☕', '🧻', '🍛', 'hot-sauce', '🌽', '🍕', '🌯', '🪠', '🐒', '🪰', '🥦', '🧀', '🥛', '🌀', '🫘'];
+  // Faces with no emoji are drawn here instead (cartoon style, same outline as the logo)
+  const FACE_ART = {
+    'hot-sauce': '<svg viewBox="15 2 34 60" aria-hidden="true">'
+      + '<path d="M27 4h10v9H27z" fill="#2e7d4a" stroke="#3f230c" stroke-width="3" stroke-linejoin="round"/>'
+      + '<path d="M28 13h8v6c0 3 8 6 8 14v22c0 3-2 5-5 5H25c-3 0-5-2-5-5V33c0-8 8-11 8-14z" fill="#e5484d" stroke="#3f230c" stroke-width="3" stroke-linejoin="round"/>'
+      + '<rect x="21.5" y="34" width="21" height="16" rx="3" fill="#f5ead6" stroke="#3f230c" stroke-width="2.5"/>'
+      + '<path d="M32 37c3 3 4 5 2 8-1 2-4 2-5 0-1-2 1-3 1-5 1 1 2 2 2 3 1-2 0-4 0-6z" fill="#e07b00"/>'
+      + '<ellipse cx="25.5" cy="27" rx="2" ry="5" fill="#fff" opacity="0.55" transform="rotate(12 25.5 27)"/></svg>',
+  };
+  const faceHtml = f => FACE_ART[f] || f;
+  // Matching a pair of these pops up a one-liner
+  const QUIPS = {
+    '🌮': 'Taco Tuesday. Bog Wednesday.', '🌶️': 'Burns twice.', '☕': 'Morning coffee: nature\'s alarm clock.',
+    '🍛': 'Extra hot vindaloo. Clear your diary.', '🫘': 'Beans, beans, good for the heart...', '🌯': 'One burrito, three toilet trips.',
+    '🥛': 'Lactose intolerant? Brave.', '🌽': 'See you again tomorrow, corn.', '🧀': 'Cheese: the great blocker-upper.', 'hot-sauce': 'The hot sauce warning label was a suggestion.',
+    '🥦': 'Fibre-rich. Very regular.', '💩': 'The main event.', '🍕': 'Servo pizza. Godspeed.',
+    '🐒': 'Fling Bonus says hi.', '🌀': 'Straight round the U-bend.', '🪰': 'Lord of the flies.',
+  };
 
   // Layouts: [layer, x, y] in half-tile steps, so a tile is 2 wide and 2 tall and can sit
   // half over the ones below. rect() lays out a block of tiles.
@@ -122,18 +142,23 @@
     font-size: 16px; cursor: pointer; flex-shrink: 0; }
   .md-stage { flex: 1; min-height: 0; position: relative; display: flex; align-items: center; justify-content: center; }
   .md-board { position: relative; }
-  .md-tile { position: absolute; padding: 0; border: none; cursor: pointer; border-radius: 7px;
-    background: linear-gradient(160deg, #fffaf0, #eadcc0); color: #1a1208;
-    display: flex; align-items: center; justify-content: center; line-height: 1;
-    box-shadow: var(--d) var(--d) 0 #c29d68, calc(var(--d) + 1px) calc(var(--d) + 1px) 0 #6e4a22, calc(var(--d) + 2px) calc(var(--d) + 3px) var(--blur, 6px) rgba(0,0,0,var(--shade, 0.35));
+  .md-tile { position: absolute; padding: 0; cursor: pointer; border-radius: 10px;
+    border: 2.5px solid #3f230c; background: linear-gradient(170deg, #fffaf0 0%, #f5ead6 60%, #e9d6b0 100%); color: #1a1208;
+    display: flex; align-items: center; justify-content: center; line-height: 1; overflow: visible;
+    box-shadow: var(--d) var(--d) 0 -1px #f5c842, calc(var(--d) + 2px) calc(var(--d) + 2px) 0 -1px #3f230c,
+      calc(var(--d) + 3px) calc(var(--d) + 4px) var(--blur, 6px) rgba(0,0,0,var(--shade, 0.35));
     transition: transform 0.12s, opacity 0.2s, filter 0.15s; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
-  .md-tile span { pointer-events: none; }
-  .md-tile.blocked { filter: brightness(0.72) saturate(0.7); }
-  .md-tile.on { background: linear-gradient(160deg, #fff3b8, #f5c842); transform: translate(-2px, -3px);
-    box-shadow: var(--d) var(--d) 0 #c29d68, calc(var(--d) + 1px) calc(var(--d) + 1px) 0 #6e4a22, 0 0 0 3px #e07b00, 0 6px 14px rgba(0,0,0,0.45); }
+  /* Cartoon shine, like the logo's highlight blobs */
+  .md-tile::before { content: ''; position: absolute; left: 12%; top: 7%; width: 30%; height: 11%; border-radius: 50%;
+    background: #fff; opacity: 0.85; transform: rotate(-14deg); pointer-events: none; }
+  .md-tile svg { display: block; width: 0.85em; height: 1.25em; }
+  .md-tile span { pointer-events: none; position: relative; filter: drop-shadow(0 1.5px 0 rgba(63,35,12,0.35)); }
+  .md-tile.blocked { filter: brightness(0.66) saturate(0.6); }
+  .md-tile.on { background: linear-gradient(170deg, #fff3b8, #f5c842); transform: translate(-2px, -4px) rotate(-3deg);
+    box-shadow: var(--d) var(--d) 0 -1px #e07b00, calc(var(--d) + 2px) calc(var(--d) + 2px) 0 -1px #3f230c, 0 0 0 3px #e07b00, 0 8px 16px rgba(0,0,0,0.5); }
   .md-tile.hint { animation: mdHint 0.6s ease-in-out infinite alternate; }
-  @keyframes mdHint { from { box-shadow: var(--d) var(--d) 0 #c29d68, 0 0 0 2px rgba(76,175,110,0.4); }
-    to { box-shadow: var(--d) var(--d) 0 #c29d68, 0 0 0 5px #4caf6e; } }
+  @keyframes mdHint { from { box-shadow: var(--d) var(--d) 0 -1px #f5c842, 0 0 0 2px rgba(76,175,110,0.4); }
+    to { box-shadow: var(--d) var(--d) 0 -1px #f5c842, 0 0 0 6px #4caf6e; } }
   .md-tile.nope { animation: mdNope 0.3s; }
   @keyframes mdNope { 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
   .md-tile.gone { opacity: 0; transform: scale(0.6) translateY(-12px); pointer-events: none; }
@@ -297,7 +322,7 @@
         b.type = 'button';
         b.className = 'md-tile';
         b.style.zIndex = i + 1;
-        b.innerHTML = `<span>${t.face}</span>`;
+        b.innerHTML = `<span>${faceHtml(t.face)}</span>`;
         b.onclick = () => tap(t);
         t.el = b;
         el.board.appendChild(b);
@@ -310,13 +335,14 @@
     function paint() {
       g.tiles.forEach(t => {
         if (!t.el) return;
-        t.el.querySelector('span').textContent = t.face;
+        const sp = t.el.querySelector('span');
+        if (sp.dataset.f !== t.face) { sp.innerHTML = faceHtml(t.face); sp.dataset.f = t.face; }
         t.el.classList.toggle('gone', !!t.gone);
         t.el.hidden = !!t.gone && t.el.dataset.out === '1';
         const free = !t.gone && isFree(t, g.tiles);
         t.el.classList.toggle('blocked', !t.gone && !free);
         t.el.classList.toggle('on', g.sel === t);
-        t.el.setAttribute('aria-label', t.face + (free ? '' : ' (blocked)'));
+        t.el.setAttribute('aria-label', (FACE_ART[t.face] ? t.face.replace('-', ' ') : t.face) + (free ? '' : ' (blocked)'));
       });
     }
 
@@ -391,6 +417,7 @@
       g.history.push([a, b]);
       clearHint();
       sound.plop(); buzz(20);
+      if (QUIPS[a.face] && Math.random() < 0.6) toast(QUIPS[a.face], 1600);
       paint();
       renderHud();
       // Hide the faded tiles once their fade is done so they can't be tapped
