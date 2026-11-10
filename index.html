@@ -732,12 +732,13 @@
     transition: transform 0.12s ease;
   }
   .arcade-tile:active .arcade-icon { transform: scale(0.92); }
-  /* Mystery tile for next month's game: dashed outline, gold "?", slow glow. Not a button. */
+  /* Cartoon tile art (icons/games/*.svg), drawn in the same style as the logo mark */
+  .arcade-art { width: 81%; height: 81%; display: block; pointer-events: none; -webkit-user-drag: none; user-select: none; }
+  /* Mystery tile for next month's game: cartoon "?" on a dark tile, slow glow. Not a button. */
   .arcade-soon { cursor: default; }
   .arcade-soon:active .arcade-icon { transform: none; }
   .arcade-soon .arcade-icon {
-    background: rgba(245,200,66,0.06); border: 1.5px dashed rgba(245,200,66,0.6); box-shadow: none;
-    font-family: 'Bebas Neue', sans-serif; font-size: 40px; color: var(--gold);
+    background: linear-gradient(145deg,#2a2214,#1a1208); box-shadow: inset 0 0 0 1px rgba(245,200,66,0.25);
     animation: soonGlow 2.4s ease-in-out infinite;
   }
   .arcade-soon .arcade-name { color: var(--gold); }
@@ -846,7 +847,6 @@
   }
   .paywall-grid li { position: relative; display: flex; flex-direction: column; align-items: center; gap: 5px; }
   .paywall-grid .arcade-icon { width: 52px; height: 52px; border-radius: 15px; font-size: 28px; }
-  .paywall-grid .arcade-soon .arcade-icon { font-size: 32px; }
   .paywall-grid li.on .arcade-icon { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--gold); }
   .paywall-grid .arcade-name { font-size: 9px; }
   .paywall-grid .free-badge {
@@ -2084,6 +2084,8 @@
   // held: true keeps a finished game in the code but off the arcade until its monthly drop.
   // dropped: 'YYYY-MM-DD' on a released monthly game pins it first with a NEW badge for 30 days.
   // The last tile is always a mystery "Dropping soon" placeholder (not playable).
+  // Tile art is icons/games/<id>.svg (cartoon, same style as the logo; masters in Figma).
+  // icon (emoji) is only used as a fallback label, e.g. on /stats.
   const GAMES = [
     { id: 'dung-run', name: 'Dung Run', icon: '🚽', file: 'games/dung-run.js', global: 'DungRun',
       bg: 'linear-gradient(145deg,#2a6f8f,#123447)' },
@@ -2236,14 +2238,16 @@
     return list;
   }
 
+  const gameArt = id => `<img class="arcade-art" src="icons/games/${id}.svg" alt="" width="64" height="64" decoding="async">`;
+
   function renderArcade() {
     document.getElementById('arcadeTiles').innerHTML = arcadeOrder().map(gm => `
       <button type="button" class="arcade-tile" onclick="openGame('${gm.id}')">
-        <span class="arcade-icon" style="background:${gm.bg}" aria-hidden="true">${gm.icon}${gameLocked(gm) ? '<span class="arcade-lock">🔒</span>' : isNew(gm) ? '<span class="arcade-new">NEW</span>' : ''}</span>
+        <span class="arcade-icon" style="background:${gm.bg}" aria-hidden="true">${gameArt(gm.id)}${gameLocked(gm) ? '<span class="arcade-lock">🔒</span>' : isNew(gm) ? '<span class="arcade-new">NEW</span>' : ''}</span>
         <span class="arcade-name">${gm.name}</span>
       </button>`).join('') + `
       <div class="arcade-tile arcade-soon" role="img" aria-label="New game: ${dropLabel()}">
-        <span class="arcade-icon" aria-hidden="true">?</span>
+        <span class="arcade-icon" aria-hidden="true">${gameArt('soon')}</span>
         <span class="arcade-name" aria-hidden="true">${dropLabel()}</span>
       </div>`;
     renderFounderBar();
@@ -2275,9 +2279,9 @@
     const free = x => FREE_GAMES.includes(x.id);
     // Every game they get, up front: the tapped one ringed in gold, then next month's mystery drop
     const grid = [...ARCADE.filter(free), ...ARCADE.filter(x => !free(x))].map(x => `
-      <li class="${x.id === gm.id ? 'on' : ''}"><span class="arcade-icon" style="background:${x.bg}" aria-hidden="true">${x.icon}</span>
+      <li class="${x.id === gm.id ? 'on' : ''}"><span class="arcade-icon" style="background:${x.bg}" aria-hidden="true">${gameArt(x.id)}</span>
         <span class="arcade-name">${x.name}</span>${free(x) ? '<span class="free-badge">FREE</span>' : ''}</li>`).join('')
-      + `<li class="arcade-soon"><span class="arcade-icon" aria-hidden="true">?</span><span class="arcade-name">${dropLabel()}</span></li>`;
+      + `<li class="arcade-soon"><span class="arcade-icon" aria-hidden="true">${gameArt('soon')}</span><span class="arcade-name">${dropLabel()}</span></li>`;
     const plans = Object.entries(PLANS).map(([id, p]) => `
       <button type="button" class="paywall-plan${id === paywallPlan ? ' on' : ''}" data-pay="plan" data-plan="${id}" aria-pressed="${id === paywallPlan}">
         ${id === 'yearly' ? '<span class="paywall-best">FIBRE-RICH SAVINGS</span>' : ''}
