@@ -3477,16 +3477,29 @@
     probe.setAttribute('aria-hidden', 'true');
     probe.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;visibility:hidden;pointer-events:none;z-index:-1';
     document.body.appendChild(probe);
+    // TEMP diagnostic (Nov 11): numbers at the bottom of Bog Stats, home screen app only
+    const diag = document.createElement('div');
+    diag.style.cssText = 'font:10px/1.4 "DM Mono",monospace;color:var(--muted);text-align:center;margin-top:16px;opacity:.7';
+    const card = document.getElementById('lifetimeCard');
+    if (card) card.appendChild(diag);
     function measure() {
       const sw = screen.width, sh = screen.height;
       const full = innerWidth > innerHeight ? Math.min(sw, sh) : Math.max(sw, sh);
-      const gap = Math.round(full - probe.getBoundingClientRect().bottom);
-      document.documentElement.style.setProperty('--fix-gap', (gap > 0 && gap <= 80 ? gap : 0) + 'px');
+      const pb = probe.getBoundingClientRect().bottom;
+      const gap = Math.round(full - pb);
+      const used = gap > 0 && gap <= 120 ? gap : 0;
+      document.documentElement.style.setProperty('--fix-gap', used + 'px');
+      const vv = window.visualViewport ? Math.round(visualViewport.height) : '-';
+      diag.textContent = `fix2 · ih ${innerHeight} · dh ${document.documentElement.clientHeight} · vv ${vv} · sc ${sw}x${sh} · probe ${Math.round(pb)} · gap ${gap} · used ${used}`;
     }
     measure();
     addEventListener('resize', measure);
     addEventListener('orientationchange', () => setTimeout(measure, 300));
     addEventListener('pageshow', measure);
+    document.addEventListener('visibilitychange', () => setTimeout(measure, 300));
+    if (window.visualViewport) visualViewport.addEventListener('resize', measure);
+    // Re-check whenever a sheet or game opens (body class changes)
+    new MutationObserver(() => requestAnimationFrame(measure)).observe(document.body, { attributes: true, attributeFilter: ['class'] });
   })();
 </script>
 <script>
