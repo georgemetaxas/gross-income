@@ -65,10 +65,13 @@ How it fits together:
    ```
    supabase functions deploy stripe-webhook --no-verify-jwt
    supabase secrets set STRIPE_SECRET_KEY=sk_live_... STRIPE_WEBHOOK_SECRET=whsec_...
-   # optional, so test-mode checkouts on previews work too:
+   # ONLY while testing a checkout on a preview, then unset it again:
    supabase secrets set STRIPE_TEST_SECRET_KEY=sk_test_... STRIPE_TEST_WEBHOOK_SECRET=whsec_...
+   supabase secrets unset STRIPE_TEST_WEBHOOK_SECRET
    supabase functions deploy billing-portal
    ```
+   ⚠️ Previews and the live site share one database. While `STRIPE_TEST_WEBHOOK_SECRET` is set, a test-mode checkout (card 4242) writes a real Golden Throne row, and the old test Payment Links are in this public repo's history. Removed 12 Nov 2026; keep it unset outside a test session.
+
    `STRIPE_SECRET_KEY` can be a restricted key (`rk_live_…`) with only **Subscriptions: Read** (webhook) and **Customer portal: Write** (billing-portal).
 
    In Stripe → Developers → Webhooks, the endpoint `https://pngsoygqbvhlfkzdghtr.supabase.co/functions/v1/stripe-webhook` needs the events `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `customer.subscription.updated`, `customer.subscription.deleted` and `charge.refunded`. Its signing secret is `STRIPE_WEBHOOK_SECRET`.
