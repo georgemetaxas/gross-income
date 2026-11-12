@@ -186,6 +186,9 @@ $$;
 
 -- Ranked by bog time. A single session counts for at most 60 minutes, and
 -- earnings only show for people who opted in.
+-- Anti-cheat (sessions are written by the phone, so they can be faked): only a
+-- person's first 10 bogs of a Sydney day count, a day counts for at most 3 hours,
+-- bogs dated in the future don't count, and a bog earns at most A$1,000 an hour.
 create or replace function public.pool_leaderboard(p_pool uuid, p_since timestamptz default null)
 returns table (
   user_id uuid, display_name text, emoji text,
@@ -196,19 +199,36 @@ language plpgsql stable security definer set search_path = public as $$
 begin
   if not is_pool_member(p_pool) then raise exception 'Not in this pool'; end if;
   return query
+  with counted as (
+    select x.user_id, x.secs, x.earned,
+           -- bog time left in the day's 3 hours once the earlier bogs are counted
+           greatest(0, least(least(x.secs, 3600), 10800 - coalesce(x.before, 0)))::int as day_secs
+    from (
+      select ss.user_id, ss.secs,
+             least(ss.earned, round(ss.secs * 1000 / 3600.0, 2)) as earned,
+             row_number() over w as nth,
+             sum(least(ss.secs, 3600)) over (w rows between unbounded preceding and 1 preceding) as before
+      from sessions ss
+      join pool_members pm on pm.user_id = ss.user_id and pm.pool_id = p_pool
+      where (p_since is null or ss.started_at >= p_since)
+        and ss.started_at <= now() + interval '1 hour'
+      window w as (partition by ss.user_id, (ss.started_at at time zone 'Australia/Sydney')::date
+                   order by ss.started_at)
+    ) x
+    where x.nth <= 10
+  )
   select m.user_id,
          coalesce(pr.display_name, 'Mystery Pooper'),
          coalesce(pr.emoji, '💩'),
-         coalesce(sum(least(s.secs, 3600)), 0)::int,
-         count(s.id)::int,
+         coalesce(sum(s.day_secs), 0)::int,
+         count(s.secs)::int,
          coalesce(max(least(s.secs, 3600)), 0)::int,
          case when coalesce(pr.share_money, false) then coalesce(sum(s.earned), 0) end,
-         count(s.id) filter (where s.secs > 3600)::int,
+         count(s.secs) filter (where s.secs > 3600)::int,
          m.user_id = auth.uid()
   from pool_members m
   left join profiles pr on pr.id = m.user_id
-  left join sessions s on s.user_id = m.user_id
-                      and (p_since is null or s.started_at >= p_since)
+  left join counted s on s.user_id = m.user_id
   where m.pool_id = p_pool
   group by m.user_id, pr.display_name, pr.emoji, pr.share_money
   order by 4 desc, 5 desc;
@@ -353,8 +373,8 @@ returns jsonb
 language plpgsql stable security definer set search_path = public
 as $$
 declare
-  founder_cutoff constant timestamptz := '2026-11-02T00:00:00+11:00'; -- FOUNDER_CUTOFF in index.html
-  launch constant timestamptz := '2027-01-04T00:00:00+11:00';         -- PAYWALL_FROM in index.html
+  founder_cutoff constant timestamptz := '2026-11-02T00:00:00+11:00'; -- FOUNDER_CUTOFF in app.js
+  launch constant timestamptz := '2027-01-04T00:00:00+11:00';         -- PAYWALL_FROM in app.js
   since timestamptz := now() - make_interval(days => least(greatest(p_days, 1), 365));
 begin
   if not exists (select 1 from stats_admins where user_id = auth.uid()) then

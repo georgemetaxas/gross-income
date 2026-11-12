@@ -1,0 +1,200 @@
+  // Private stats page. Reads account_stats() and game_stats() (supabase/schema.sql),
+  // which only answer for people in stats_admins. Uses the same login as Poop Pool on this site.
+  const SUPABASE_URL = 'https://pngsoygqbvhlfkzdghtr.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_VfI274ud8nqxAFZvKzquwQ_qChku-Bu';
+  // Names and icons match GAMES in index.html; unknown ids still show, by id.
+  const NAMES = {
+    'dung-run': ['🚽', 'Dung Run'], 'turd-snake': ['💩', 'Turd Snake'], 'stool-swap': ['🌽', 'Stool Swap'],
+    'fling-bonus': ['🐒', 'Fling Bonus'], 'wrap-up': ['🧩', 'Wrap Up'], 'turdle': ['📰', 'Turdle'],
+    'turd-invaders': ['🛸', 'Turd Invaders'],
+    'step-in-it': ['👟', 'Step In It'], 'mah-dung': ['🀄', 'Mah-Dung'],
+    'backed-up': ['🪠', 'Backed Up'],
+  };
+  const app = document.getElementById('app');
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const fmt = n => n.toLocaleString('en-AU');
+  const fmtMins = secs => secs < 60 ? `${secs}s` : secs < 3600 ? `${Math.round(secs / 60)} min` : `${(secs / 3600).toFixed(1)} hr`;
+  const nameOf = id => NAMES[id] || ['🎮', id];
+  const PRICES = { monthly: 2.99, yearly: 24.99 }; // Golden Throne, A$ (PLANS in index.html)
+  const pct = (a, b) => b ? `${(a / b * 100).toFixed(a / b < 0.1 ? 1 : 0)}%` : '–';
+  let days = 30;
+  let sb;
+
+  function message(icon, text, link) {
+    app.innerHTML = `<div class="msg"><div class="big">${icon}</div><p>${text}</p>${link || ''}</div>`;
+  }
+
+  async function load() {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) {
+      return message('🔒', 'Sign in to Poop Pool on this browser first, then come back here.',
+        '<a class="btn" href="./">Go sign in</a>');
+    }
+    const [games, acct] = await Promise.all([
+      sb.rpc('game_stats', { p_days: days }),
+      sb.rpc('account_stats', { p_days: days }),
+    ]);
+    const error = games.error;
+    if (error) {
+      return /not allowed/.test(error.message)
+        ? message('🚫', `This account (${esc(session.user.email || '')}) isn't on the stats list.`)
+        : message('🪠', `Couldn't load the stats: ${esc(error.message)}`);
+    }
+    render(games.data || [], acct.error ? null : acct.data);
+  }
+
+  // Sydney days for the chosen range, oldest first, with empty days filled in
+  function dayKeys() {
+    const out = [];
+    const today = new Date(new Date().toLocaleString('en-US', { timeZone: 'Australia/Sydney' }));
+    for (let i = days - 1; i >= 0; i--) {
+      const d = new Date(today); d.setDate(d.getDate() - i);
+      out.push({ key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`, d });
+    }
+    return out;
+  }
+  const dayLabel = d => d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
+
+  // Column chart card: one column per day; tip(x) is the hover text
+  function dayChart(id, title, list, val, tip) {
+    const max = Math.max(1, ...list.map(val));
+    return `<div class="card">
+        <h2>${title}</h2>
+        <div class="daily" id="${id}">
+          <div class="tip"></div>
+          <div class="cols">${list.map((x, i) =>
+            `<div class="col" data-i="${i}"><i style="height:${(val(x) / max * 100).toFixed(1)}%"></i></div>`).join('')}</div>
+          <div class="axis"><span>${dayLabel(list[0].d)}</span><span>max ${fmt(max)} a day</span><span>Today</span></div>
+        </div>
+      </div>`;
+  }
+  function bindChart(id, list, tipText) {
+    const daily = document.getElementById(id);
+    if (!daily) return;
+    const tip = daily.querySelector('.tip');
+    const show = col => {
+      daily.querySelectorAll('.col.hl').forEach(c => c.classList.remove('hl'));
+      if (!col) { tip.style.display = 'none'; return; }
+      col.classList.add('hl');
+      tip.textContent = tipText(list[+col.dataset.i]);
+      const box = daily.getBoundingClientRect(), c = col.getBoundingClientRect();
+      const mid = c.left + c.width / 2 - box.left;
+      tip.style.left = Math.min(Math.max(mid, 80), box.width - 80) + 'px';
+      tip.style.display = 'block';
+    };
+    daily.addEventListener('pointerover', e => show(e.target.closest('.col')));
+    daily.addEventListener('pointerdown', e => show(e.target.closest('.col')));
+    daily.addEventListener('pointerleave', () => show(null));
+  }
+
+  // Founders, paid unlocks, conversion
+  function accountsHtml(a) {
+    if (!a) return `<div class="section">Flushers & sales</div>
+      <div class="card msg"><div class="big">🧾</div><p>Account numbers need the new account_stats() SQL run in Supabase.</p></div>`;
+    const launched = Date.now() >= Date.parse(a.launch);
+    const day = d => new Date(d).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', timeZone: 'Australia/Sydney' });
+    const launchDay = day(a.launch);
+    // After the cut-off the founder SQL should have granted everyone who was eligible
+    const cutoffPassed = Date.now() >= Date.parse(a.founder_cutoff || a.launch);
+    const founders = cutoffPassed ? a.founders_granted : a.founders_eligible;
+    const subs = (a.active_monthly || 0) + (a.active_yearly || 0);
+    const mrr = (a.active_monthly || 0) * PRICES.monthly + (a.active_yearly || 0) * PRICES.yearly / 12;
+    const founderNote = !cutoffPassed ? `signed up so far · locks in ${day(a.founder_cutoff || a.launch)}`
+      : a.founders_granted < a.founders_eligible ? `<span class="warn">${fmt(a.founders_eligible - a.founders_granted)} not unlocked yet: run the founder SQL</span>`
+      : 'arcade free for life';
+    return `<div class="section">Flushers & sales</div>
+      ${launched ? '' : `<p class="note">Free play until ${launchDay}. Subscribers and conversion start counting then.</p>`}
+      <div class="kpis">
+        <div class="kpi"><div class="label">Founding Flushers</div><div class="v">${fmt(founders)}</div><div class="n">${founderNote}</div></div>
+        <div class="kpi"><div class="label">Subscribers</div><div class="v">${fmt(subs)}</div><div class="n">${launched ? `${fmt(a.active_yearly || 0)} yearly · ${fmt(a.active_monthly || 0)} monthly · A$${mrr.toFixed(2)}/mo before fees${a.lapsed ? ` · ${fmt(a.lapsed)} lapsed` : ''}` : `starts ${launchDay}`}</div></div>
+        <div class="kpi"><div class="label">Accounts</div><div class="v">${fmt(a.accounts)}</div><div class="n">${launched ? `${fmt(a.signups_since_launch)} since launch` : 'all time'}</div></div>
+        <div class="kpi"><div class="label">Conversion</div><div class="v">${launched ? pct(a.paid, a.signups_since_launch) : '–'}</div><div class="n">${launched
+          ? `of new sign-ups · ${a.paywall_hits_since_launch ? `1 per ${fmt(Math.round(a.paywall_hits_since_launch / Math.max(a.paid, 1)))} paywall hits` : 'no paywall hits yet'}`
+          : `starts ${launchDay}`}</div></div>
+      </div>`;
+  }
+
+  function render(rows, acct) {
+    // Per game totals
+    const by = {};
+    for (const r of rows) {
+      const g = by[r.game] || (by[r.game] = { game: r.game, opens: 0, paywall: 0, secs: 0 });
+      g.opens += r.opens; g.paywall += r.paywall_hits; g.secs += r.secs;
+    }
+    const games = Object.values(by).sort((a, b) => b.secs - a.secs || b.opens - a.opens);
+    const tot = games.reduce((t, g) => ({ opens: t.opens + g.opens, paywall: t.paywall + g.paywall, secs: t.secs + g.secs }), { opens: 0, paywall: 0, secs: 0 });
+    const maxSecs = Math.max(1, ...games.map(g => g.secs));
+
+    // Opens per Sydney day
+    const perDay = {};
+    for (const r of rows) perDay[r.day] = (perDay[r.day] || 0) + r.opens;
+    const dayList = dayKeys().map(x => ({ ...x, opens: perDay[x.key] || 0 }));
+
+    // Sign-ups and paid unlocks per Sydney day
+    const acctDay = {};
+    for (const r of (acct && acct.daily) || []) acctDay[r.day] = r;
+    const signList = dayKeys().map(x => ({ ...x, signups: (acctDay[x.key] || {}).signups || 0, paid: (acctDay[x.key] || {}).paid || 0 }));
+    const signTip = x => `${dayLabel(x.d)} · ${fmt(x.signups)} sign-up${x.signups === 1 ? '' : 's'}${x.paid ? ` · ${fmt(x.paid)} paid` : ''}`;
+
+    const range = `<div class="range">${[7, 30, 90].map(n =>
+      `<button data-days="${n}" class="${n === days ? 'on' : ''}">${n} DAYS</button>`).join('')}</div>`;
+    const head = range + accountsHtml(acct) + (acct ? dayChart('signups', 'Sign-ups per day', signList, x => x.signups) : '')
+      + `<div class="section">Bog Arcade</div>`;
+
+    if (!games.length) {
+      app.innerHTML = head + `<div class="card msg"><div class="big">🚽</div><p>No games played in the last ${days} days yet. Stats only count plays on grossincome.com.au.</p></div>`;
+      bindChart('signups', signList, signTip);
+      return bindRange();
+    }
+
+    const top = nameOf(games[0].game);
+    const played = tot.opens - tot.paywall;
+    app.innerHTML = head + `
+      <div class="kpis">
+        <div class="kpi"><div class="label">Most played</div><div class="v name">${top[0]} ${esc(top[1])}</div><div class="n">${fmtMins(games[0].secs)}</div></div>
+        <div class="kpi"><div class="label">Game opens</div><div class="v">${fmt(tot.opens)}</div><div class="n">${fmt(Math.round(tot.opens / days * 10) / 10)} a day</div></div>
+        <div class="kpi"><div class="label">Time played</div><div class="v">${fmtMins(tot.secs)}</div><div class="n">${played ? fmtMins(Math.round(tot.secs / played)) + ' per play' : '–'}</div></div>
+        <div class="kpi"><div class="label">Paywall hits</div><div class="v">${fmt(tot.paywall)}</div><div class="n">${tot.opens ? Math.round(tot.paywall / tot.opens * 100) : 0}% of opens</div></div>
+      </div>
+
+      <div class="card">
+        <h2>Most played games</h2>
+        <div class="label" style="margin:-8px 0 14px">Ranked by time played</div>
+        <div class="rank">${games.map(g => {
+          const [ico, name] = nameOf(g.game);
+          const plays = g.opens - g.paywall;
+          return `<div>
+            <div class="row-top"><span class="game"><span class="ico">${ico}</span>${esc(name)}</span><span class="mins">${fmtMins(g.secs)}</span></div>
+            <div class="track"><div class="bar" style="width:${(g.secs / maxSecs * 100).toFixed(1)}%"></div></div>
+            <div class="meta"><span>${fmt(g.opens)} opens</span><span>${plays ? fmtMins(Math.round(g.secs / plays)) : '–'} per play</span>${g.paywall ? `<span>🔒 ${fmt(g.paywall)} paywall hits</span>` : ''}</div>
+          </div>`;
+        }).join('')}</div>
+      </div>
+
+      ${dayChart('daily', 'Game opens per day', dayList, x => x.opens)}
+
+      <div class="card">
+        <details><summary>SHOW AS TABLE</summary>
+          <div class="scroll"><table>
+            <tr><th>GAME</th><th>OPENS</th><th>PAYWALL</th><th>TIME</th><th>PER PLAY</th></tr>
+            ${games.map(g => { const p = g.opens - g.paywall; return `<tr><td>${nameOf(g.game)[0]} ${esc(nameOf(g.game)[1])}</td><td>${fmt(g.opens)}</td><td>${fmt(g.paywall)}</td><td>${fmtMins(g.secs)}</td><td>${p ? fmtMins(Math.round(g.secs / p)) : '–'}</td></tr>`; }).join('')}
+          </table></div>
+        </details>
+      </div>
+      <p class="foot">Game counts are anonymous, from grossincome.com.au, with no user or device attached. Paywall hits count game opens, not people. Days are Sydney time.</p>`;
+
+    bindChart('signups', signList, signTip);
+    bindChart('daily', dayList, x => `${dayLabel(x.d)} · ${fmt(x.opens)} open${x.opens === 1 ? '' : 's'}`);
+    bindRange();
+  }
+
+  function bindRange() {
+    app.querySelectorAll('[data-days]').forEach(b => b.onclick = () => { days = +b.dataset.days; load(); });
+  }
+
+  try {
+    sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    load().catch(e => message('🪠', `Couldn't load the stats: ${esc(e.message || e)}`));
+  } catch (e) {
+    message('📶', "Couldn't reach the database. Check your signal and refresh.");
+  }
