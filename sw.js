@@ -4,7 +4,7 @@
 // On a weak signal (bathroom wifi) the page waits at most NAV_TIMEOUT_MS for the network
 // before opening the saved copy; the fresh copy still lands in the cache for next time.
 // Other origins (Supabase, the CDN) are never touched.
-const CACHE = 'gi-v5';
+const CACHE = 'gi-v6';
 const NAV_TIMEOUT_MS = 4000;
 const SHELL = [
   './', 'manifest.webmanifest', 'icons/icon-192.png?v=2', 'icons/apple-touch-icon.png?v=2',
@@ -47,6 +47,12 @@ self.addEventListener('fetch', (e) => {
   // Keep the worker alive until the network answers, even after the saved copy was used
   e.waitUntil(network.then(() => {}, () => {}));
   const cached = () => caches.match(key).then(hit => hit || Response.error());
+  // Game scripts and icons: open the saved copy straight away (bathroom wifi), the
+  // network copy above refreshes it for next time. First open still waits for the network.
+  if (/\/(games|icons)\//.test(url.pathname)) {
+    e.respondWith(caches.match(key).then(hit => hit || network.catch(cached)));
+    return;
+  }
   if (!nav) { e.respondWith(network.catch(cached)); return; }
 
   // Pages: whichever comes first of the network, or the saved copy once the network is slow

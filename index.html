@@ -2222,6 +2222,11 @@
   }
   function activeUnlock(u) { return !!u && (!u.expires || Date.parse(u.expires) + RENEW_GRACE_MS > Date.now()); }
   function unlocked() { return activeUnlock(readJSON(UNLOCK_KEY, null)); }
+  // A Stripe subscription that will charge again (cancelled ones show as 'canceling')
+  function subRenews() {
+    const u = readJSON(UNLOCK_KEY, null);
+    return !!u && u.source === 'stripe' && ['active', 'trialing', 'past_due'].includes(u.status) && activeUnlock(u);
+  }
   let paywallPlan = 'yearly';
   function gameLocked(gm) { return paywallOn() && !unlocked() && !FREE_GAMES.includes(gm.id); }
 
@@ -2877,7 +2882,15 @@
 
   function signOutHtml() {
     // Delete my account asks once more before it goes (pool.confirmDelete)
-    const del = !pool.user || pool.sheetEdit ? '' : pool.confirmDelete ? `
+    // A renewing subscription has to be cancelled first, or Stripe keeps charging a
+    // deleted account (and Manage subscription can't find it any more)
+    const renewing = subRenews();
+    const del = !pool.user || pool.sheetEdit ? '' : pool.confirmDelete && renewing ? `
+      <p class="pool-text" style="margin-top:14px">Your Golden Throne still renews. Cancel it in billing first, so you don't get charged after your account is gone.</p>
+      <div class="pool-btns">
+        <button class="btn btn-ghost" data-act="delete-cancel">Keep it</button>
+        <button class="btn btn-ghost" data-act="manage-sub" data-busy="Opening…">Open billing</button>
+      </div>` : pool.confirmDelete ? `
       <p class="pool-text" style="margin-top:14px">This deletes your throne name, the bogs you've uploaded${readJSON(UNLOCK_KEY, null) ? ', your pool spots and your Golden Throne unlock' : ' and your pool spots'}. Pools you run pass to a mate. Your Bog Log and salary stay on this phone. It can't be undone.</p>
       <div class="pool-btns">
         <button class="btn btn-ghost" data-act="delete-cancel">Keep it</button>
@@ -3211,6 +3224,7 @@
     async 'delete-ask'() { pool.confirmDelete = true; renderProfile(); return 'done'; },
     async 'delete-cancel'() { pool.confirmDelete = false; renderProfile(); return 'done'; },
     async 'delete-account'() {
+      if (subRenews()) return 'done';
       const { error } = await pool.sb.rpc('delete_my_account');
       if (error) throw error;
       // The login is gone on the server, so only clear it here
