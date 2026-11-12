@@ -22,10 +22,10 @@ The leaderboard runs on Supabase. The site itself stays static.
 ## Security
 
 - The publishable key is public on purpose. What protects the data is row level security plus the grants at the end of `schema.sql` (LOCKDOWN): signed-out visitors can only call `pool_preview()` and add `game_events`; signed-in people only touch their own rows, and pools change only through the functions. Re-run that section after adding a table, and give any new table RLS.
-- **Login CAPTCHA:** the app runs a Cloudflare Turnstile check (widget "Gross Income login", hostnames `grossincome.com.au` and `gross-income.pages.dev`, which covers previews) before asking for a login email. Site key is `TURNSTILE_SITEKEY` in `index.html`. Supabase checks the token once it's switched on: Authentication → Attack Protection → Enable CAPTCHA, provider Turnstile, paste the widget's secret key. Turn it on only after the app sends tokens, or every login fails.
+- **Login CAPTCHA:** the app runs a Cloudflare Turnstile check (widget "Gross Income login", hostnames `grossincome.com.au` and `gross-income.pages.dev`, which covers previews) before asking for a login email. Site key is `TURNSTILE_SITEKEY` in `app.js`. Supabase checks the token once it's switched on: Authentication → Attack Protection → Enable CAPTCHA, provider Turnstile, paste the widget's secret key. Turn it on only after the app sends tokens, or every login fails.
 - **Delete my account** (profile sheet) calls `delete_my_account()`, which deletes the `auth.users` row; the cascades remove the profile, sessions, pool spots and entitlements. Owned pools pass to the next mate. Any new table holding personal data needs `on delete cascade` to `auth.users` too.
 - `_headers` sets a Content-Security-Policy. A new outside service (ads, analytics, another CDN) won't load until its host is added there.
-- `supabase-js` loads with an integrity hash (`SUPABASE_JS_SRI` in `index.html`, and in `stats.html`). Bumping the version means updating the hash too.
+- `supabase-js` loads with an integrity hash (`SUPABASE_JS_SRI` in `app.js`, and in `stats.html`). Bumping the version means updating the hash too.
 
 ## Privacy
 
@@ -40,7 +40,7 @@ The leaderboard runs on Supabase. The site itself stays static.
 - Only the live site sends (add `?trackgames` to a preview link to test). Anyone can insert; nothing can be read through the API.
 - To see it: open grossincome.com.au/stats signed in (only accounts in `stats_admins`), or SQL Editor → `select * from game_popularity;`.
 - Give someone the stats page: `insert into stats_admins select id from auth.users where email = '…';`
-- The stats page also shows Founding Flushers, paid unlocks, accounts and conversion from `account_stats()` (same `stats_admins` gate). Its dates are hard-coded to match `FOUNDER_CUTOFF` and `PAYWALL_FROM` in `index.html`; change both places if either moves.
+- The stats page also shows Founding Flushers, paid unlocks, accounts and conversion from `account_stats()` (same `stats_admins` gate). Its dates are hard-coded to match `FOUNDER_CUTOFF` and `PAYWALL_FROM` in `app.js`; change both places if either moves.
 
 ## Golden Throne (arcade subscription)
 
@@ -49,7 +49,7 @@ A subscription that opens every Bog Arcade game: A$2.99 a month or A$24.99 a yea
 How it fits together:
 
 - `entitlements` table (in `schema.sql`): one row per person. People can only read their own row; only the webhook writes. Founder and gift rows have no `expires_at` (forever). Stripe rows store the subscription id in `txn_id`, plus `plan`, `status` and `expires_at` (end of the paid period).
-- The app (`index.html`, `GOLDEN THRONE` section) unlocks while `expires_at` is empty or in the future (plus 2 days' grace for late renewals), and shows a yearly/monthly picker otherwise. Buying needs a Poop Pool login, so it follows the person to any device.
+- The app (`app.js`, `GOLDEN THRONE` section) unlocks while `expires_at` is empty or in the future (plus 2 days' grace for late renewals), and shows a yearly/monthly picker otherwise. Buying needs a Poop Pool login, so it follows the person to any device.
 - **Buy** opens the plan's Stripe Payment Link with `?client_reference_id=<user id>`. Stripe calls `functions/stripe-webhook`: checkout writes the row; renewals, cancels and failed cards update it.
 - **Manage subscription** in Profile & Crap calls `functions/billing-portal`, which opens a Stripe customer portal session for the person's stored `stripe_customer_id` (cancel, switch plan, change card). No email login: Apple Pay / Google Pay can save a different email on the Stripe customer. If the function fails, it falls back to the portal's email login link (`PORTAL_LINK`).
 - The paywall only shows on `*.pages.dev` previews, `localhost` and `?paywall` until `PAYWALL_FROM`.
@@ -59,7 +59,7 @@ How it fits together:
 1. **Database:** re-run `schema.sql` (adds the subscription columns and the new `account_stats()`).
 2. **Stripe** (test mode first, then again in live mode):
    - Product "Golden Throne" with two recurring prices: A$2.99 monthly and A$24.99 yearly. Archive the old one-off A$4.69 price and its Payment Link.
-   - A **Payment Link** for each price. After payment: "Don't show confirmation page" → redirect to `https://grossincome.com.au/?unlocked=1`. Paste them into `PLANS.monthly.link` and `PLANS.yearly.link` in `index.html`.
+   - A **Payment Link** for each price. After payment: "Don't show confirmation page" → redirect to `https://grossincome.com.au/?unlocked=1`. Paste them into `PLANS.monthly.link` and `PLANS.yearly.link` in `app.js`.
    - **Settings → Billing → Customer portal:** turn on cancel (at end of period), switch plan between the two prices, and update payment method. Copy its login link into `PORTAL_LINK`.
 3. **Functions:** with the Supabase CLI:
    ```
@@ -91,4 +91,4 @@ Delete any test-mode rows first (`delete from entitlements where source = 'strip
 
 ### Live mode (done 1 Nov 2026)
 
-`index.html` uses the live Payment Links and portal link, the live webhook has all five events, and Supabase has both live and test secrets. Previews use the live links too, so test-card checkouts need a temporary swap back to the `test_` links.
+`app.js` uses the live Payment Links and portal link, the live webhook has all five events, and Supabase has both live and test secrets. Previews use the live links too, so test-card checkouts need a temporary swap back to the `test_` links.

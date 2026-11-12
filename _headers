@@ -6,6 +6,8 @@
   Cache-Control: no-cache
 /sw.js
   Cache-Control: no-cache
+/app.js
+  Cache-Control: no-cache
 /manifest.webmanifest
   Cache-Control: no-cache
 
@@ -27,7 +29,7 @@
   Cross-Origin-Opener-Policy: same-origin
   # Only these hosts can run scripts, receive data or frame the login check. Adding a
   # new outside service (ads, analytics) means adding its host here too.
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://challenges.cloudflare.com https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://pngsoygqbvhlfkzdghtr.supabase.co wss://pngsoygqbvhlfkzdghtr.supabase.co https://cloudflareinsights.com; frame-src https://challenges.cloudflare.com; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://challenges.cloudflare.com https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://pngsoygqbvhlfkzdghtr.supabase.co wss://pngsoygqbvhlfkzdghtr.supabase.co https://cloudflareinsights.com; frame-src https://challenges.cloudflare.com; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
 
 # Self-hosted fonts never change under the same name; a new font gets a new file name.
 /fonts/*

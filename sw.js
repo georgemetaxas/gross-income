@@ -4,10 +4,10 @@
 // On a weak signal (bathroom wifi) the page waits at most NAV_TIMEOUT_MS for the network
 // before opening the saved copy; the fresh copy still lands in the cache for next time.
 // Other origins (Supabase, the CDN) are never touched.
-const CACHE = 'gi-v6';
+const CACHE = 'gi-v7';
 const NAV_TIMEOUT_MS = 4000;
 const SHELL = [
-  './', 'manifest.webmanifest', 'icons/icon-192.png?v=2', 'icons/apple-touch-icon.png?v=2',
+  './', 'app.js', 'manifest.webmanifest', 'icons/icon-192.png?v=2', 'icons/apple-touch-icon.png?v=2',
   'fonts/bebas-neue-400.woff2', 'fonts/dm-mono-400.woff2', 'fonts/dm-mono-500.woff2', 'fonts/dm-sans-var.woff2',
 ];
 
@@ -53,9 +53,12 @@ self.addEventListener('fetch', (e) => {
     e.respondWith(caches.match(key).then(hit => hit || network.catch(cached)));
     return;
   }
-  if (!nav) { e.respondWith(network.catch(cached)); return; }
+  // app.js is the page's own code, so it gets the page's rules below: on a slow signal
+  // the saved copy opens instead of a blank screen
+  const appJs = url.pathname === new URL('app.js', self.registration.scope).pathname;
+  if (!nav && !appJs) { e.respondWith(network.catch(cached)); return; }
 
-  // Pages: whichever comes first of the network, or the saved copy once the network is slow
+  // Pages + app.js: whichever comes first of the network, or the saved copy once the network is slow
   e.respondWith(new Promise(resolve => {
     let done = false;
     const finish = res => { if (!done) { done = true; resolve(res); } };
