@@ -2085,7 +2085,8 @@
   // The card is always shown; a running bog timer keeps going underneath, shrunk to a bar at the top.
   // held: true keeps a finished game in the code but off the arcade until its monthly drop.
   // dropped: 'YYYY-MM-DD' on a released monthly game pins it first with a NEW badge for 30 days.
-  // The last tile is always a mystery "Dropping soon" placeholder (not playable).
+  // A mystery "Drops 1 Dec" placeholder tile (not playable) goes first while the next drop is
+  // counting down and no NEW game is showing; otherwise it sits last.
   // Tile art is icons/games/<id>.svg (cartoon, same style as the logo; masters in Figma).
   // icon (emoji) is only used as a fallback label, e.g. on /stats.
   const GAMES = [
@@ -2225,7 +2226,8 @@
   function gameLocked(gm) { return paywallOn() && !unlocked() && !FREE_GAMES.includes(gm.id); }
 
   // Tile order: new drops first, then the last game played, then the rest shuffled once a
-  // day (same order all day, new one overnight). The free game always sits in the first 3.
+  // day (same order all day, new one overnight). The free game always sits in the first 3 tiles.
+  // Mystery tile first while a drop is counting down and nothing is NEW (see soonFirst).
   const LAST_GAME_KEY = 'gi.arcade.last';
   const isNew = gm => gm.dropped && Date.now() - Date.parse(gm.dropped) < 30 * 864e5;
   function arcadeOrder() {
@@ -2241,25 +2243,30 @@
     };
     for (let i = rest.length - 1; i > 0; i--) { const j = Math.floor(rand() * (i + 1)); [rest[i], rest[j]] = [rest[j], rest[i]]; }
     const list = [...fresh, ...(last ? [last] : []), ...rest];
+    const maxFree = soonFirst() ? 1 : 2; // the mystery tile takes a slot when it's first
     FREE_GAMES.forEach(id => {
       const i = list.findIndex(gm => gm.id === id);
-      if (i > 2) list.splice(2, 0, ...list.splice(i, 1));
+      if (i > maxFree) list.splice(maxFree, 0, ...list.splice(i, 1));
     });
     return list;
   }
 
+  const soonFirst = () => Date.now() < Date.parse(NEXT_DROP) && !ARCADE.some(isNew);
+
   const gameArt = id => `<img class="arcade-art" src="icons/games/${id}.svg" alt="" width="64" height="64" decoding="async">`;
 
   function renderArcade() {
-    document.getElementById('arcadeTiles').innerHTML = arcadeOrder().map(gm => `
-      <button type="button" class="arcade-tile" onclick="openGame('${gm.id}')">
-        <span class="arcade-icon" style="background:${gm.bg}" aria-hidden="true">${gameArt(gm.id)}${gameLocked(gm) ? '<span class="arcade-lock">🔒</span>' : isNew(gm) ? '<span class="arcade-new">NEW</span>' : ''}</span>
-        <span class="arcade-name">${gm.name}</span>
-      </button>`).join('') + `
+    const soon = `
       <div class="arcade-tile arcade-soon" role="img" aria-label="New game: ${dropLabel()}">
         <span class="arcade-icon" aria-hidden="true">${gameArt('soon')}</span>
         <span class="arcade-name" aria-hidden="true">${dropLabel()}</span>
       </div>`;
+    const tiles = arcadeOrder().map(gm => `
+      <button type="button" class="arcade-tile" onclick="openGame('${gm.id}')">
+        <span class="arcade-icon" style="background:${gm.bg}" aria-hidden="true">${gameArt(gm.id)}${gameLocked(gm) ? '<span class="arcade-lock">🔒</span>' : isNew(gm) ? '<span class="arcade-new">NEW</span>' : ''}</span>
+        <span class="arcade-name">${gm.name}</span>
+      </button>`).join('');
+    document.getElementById('arcadeTiles').innerHTML = soonFirst() ? soon + tiles : tiles + soon;
     renderFounderBar();
   }
 
