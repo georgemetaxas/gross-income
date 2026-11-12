@@ -28,7 +28,7 @@
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=2">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Gross Income">
 <link rel="icon" href="icons/logo.svg?v=2" type="image/svg+xml">
 <link rel="icon" href="icons/favicon-32.png?v=2" sizes="32x32" type="image/png">
@@ -82,7 +82,7 @@
 
   body::before {
     content: '';
-    position: fixed; inset: 0; bottom: calc(0px - var(--fix-gap, 0px));
+    position: fixed; inset: 0;
     background:
       radial-gradient(ellipse 600px 400px at 30% 20%, rgba(245,200,66,0.07) 0%, transparent 60%),
       radial-gradient(ellipse 500px 500px at 80% 80%, rgba(224,123,0,0.06) 0%, transparent 50%);
@@ -175,7 +175,7 @@
   /* ── SALARY CARD: hidden once set, reopens as a sheet ── */
   .has-salary #salaryCard { display: none; }
   .sheet-backdrop {
-    display: none; position: fixed; inset: 0; bottom: calc(0px - var(--fix-gap, 0px));
+    display: none; position: fixed; inset: 0;
     background: rgba(0,0,0,0.62); z-index: 19;
   }
   .sheet-head { display: none; align-items: center; justify-content: space-between; margin-bottom: 16px; }
@@ -192,7 +192,7 @@
   .sheet-open .sheet-backdrop { display: block; }
   .sheet-open .sheet-head { display: flex; }
   .sheet-open #salaryCard {
-    display: block; position: fixed; left: 0; right: 0; bottom: calc(0px - var(--fix-gap, 0px));
+    display: block; position: fixed; left: 0; right: 0;
     max-width: 520px; margin: 0 auto; z-index: 20;
     background: var(--surface2);
     border-radius: 24px 24px 0 0;
@@ -636,7 +636,7 @@
   .app-bar.is-install .app-bar-icon { box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
 
   /* ── iPhone add to home screen guide ── */
-  .a2hs { position: fixed; inset: 0; bottom: calc(0px - var(--fix-gap, 0px)); z-index: 40; }
+  .a2hs { position: fixed; inset: 0; z-index: 40; }
   .a2hs[hidden] { display: none; }
   .a2hs-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.62); }
   .a2hs-sheet {
@@ -751,7 +751,7 @@
   @media (prefers-reduced-motion: reduce) { .arcade-soon .arcade-icon { animation: none; } }
   .arcade-name { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; text-align: center; line-height: 1.2; }
   .game-layer {
-    position: fixed; inset: 0; bottom: calc(0px - var(--fix-gap, 0px)); z-index: 40; background: var(--bg);
+    position: fixed; inset: 0; z-index: 40; background: var(--bg);
     display: flex; flex-direction: column;
     padding: calc(10px + env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) calc(12px + env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
   }
@@ -936,7 +936,7 @@
   }
   body:not(.hs-stats) #lifetimeCard, body:not(.hs-pool) #poolCard { display: none !important; }
   .hs-stats #lifetimeCard, .hs-pool #poolCard {
-    display: block !important; position: fixed; left: 0; right: 0; bottom: calc(0px - var(--fix-gap, 0px)); z-index: 20;
+    display: block !important; position: fixed; left: 0; right: 0; z-index: 20;
     max-width: 520px; margin: 0 auto; border-radius: 24px 24px 0 0; border-bottom: 0;
     background: var(--surface2); opacity: 1; transform: none; transform-origin: 50% 100%; transition: none;
     padding-bottom: calc(34px + env(safe-area-inset-bottom));
@@ -3463,43 +3463,30 @@
   })();
 </script>
 <script>
-  // ── iOS HOME SCREEN APP: FIXED LAYERS STOP SHORT ──
-  // iOS 26 home screen apps end position:fixed layers (game, sheets, backdrops) a
-  // home-bar's height above the bottom of the screen, so games looked cut off with
-  // a dead strip below. The app fills the whole screen there, so measure how short
-  // a fixed layer falls and stretch the layers down by that much (--fix-gap).
+  // ── iOS HOME SCREEN APP: TEMP DIAGNOSTIC (Nov 12) ──
+  // iOS 26 home screen apps with a see-through status bar (black-translucent) made the
+  // app 62pt shorter than the screen, leaving a dead strip at the bottom (WebKit bug
+  // 301994). Status bar is now "default". This readout at the bottom of Bog Stats
+  // checks the fix on a real phone; remove once confirmed.
   (function () {
     const ua = navigator.userAgent;
     const isIOS = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
     const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
-    if (!isIOS || !standalone) return;
-    const probe = document.createElement('div');
-    probe.setAttribute('aria-hidden', 'true');
-    probe.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;visibility:hidden;pointer-events:none;z-index:-1';
-    document.body.appendChild(probe);
-    // TEMP diagnostic (Nov 11): numbers at the bottom of Bog Stats, home screen app only
+    const card = document.getElementById('lifetimeCard');
+    if (!isIOS || !standalone || !card) return;
     const diag = document.createElement('div');
     diag.style.cssText = 'font:10px/1.4 "DM Mono",monospace;color:var(--muted);text-align:center;margin-top:16px;opacity:.7';
-    const card = document.getElementById('lifetimeCard');
-    if (card) card.appendChild(diag);
-    function measure() {
-      const sw = screen.width, sh = screen.height;
-      const full = innerWidth > innerHeight ? Math.min(sw, sh) : Math.max(sw, sh);
-      const pb = probe.getBoundingClientRect().bottom;
-      const gap = Math.round(full - pb);
-      const used = gap > 0 && gap <= 120 ? gap : 0;
-      document.documentElement.style.setProperty('--fix-gap', used + 'px');
-      const vv = window.visualViewport ? Math.round(visualViewport.height) : '-';
-      diag.textContent = `fix2 · ih ${innerHeight} · dh ${document.documentElement.clientHeight} · vv ${vv} · sc ${sw}x${sh} · probe ${Math.round(pb)} · gap ${gap} · used ${used}`;
+    const safe = document.createElement('div');
+    safe.style.cssText = 'position:fixed;top:0;left:0;width:0;height:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom);visibility:hidden;pointer-events:none';
+    document.body.appendChild(safe);
+    card.appendChild(diag);
+    function show() {
+      const st = getComputedStyle(safe);
+      diag.textContent = `fix3 · ih ${innerHeight} · sc ${screen.width}x${screen.height} · safe ${parseFloat(st.height)}/${parseFloat(st.paddingBottom)}`;
     }
-    measure();
-    addEventListener('resize', measure);
-    addEventListener('orientationchange', () => setTimeout(measure, 300));
-    addEventListener('pageshow', measure);
-    document.addEventListener('visibilitychange', () => setTimeout(measure, 300));
-    if (window.visualViewport) visualViewport.addEventListener('resize', measure);
-    // Re-check whenever a sheet or game opens (body class changes)
-    new MutationObserver(() => requestAnimationFrame(measure)).observe(document.body, { attributes: true, attributeFilter: ['class'] });
+    show();
+    addEventListener('resize', show);
+    new MutationObserver(() => requestAnimationFrame(show)).observe(document.body, { attributes: true, attributeFilter: ['class'] });
   })();
 </script>
 <script>
