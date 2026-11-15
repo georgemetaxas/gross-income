@@ -813,8 +813,8 @@
   // drops: 'YYYY-MM-DD' is a monthly game's release date. It stays off the arcade until
   // 12:00 am Melbourne time that day, then appears by itself (no deploy needed), pinned
   // first with a green NEW badge for 7 days (NEW_DAYS). Games without drops are always out.
-  // A mystery "Drops 1 Dec" placeholder tile (not playable) goes first while the next drop is
-  // counting down and no NEW game is showing; otherwise it sits last.
+  // A mystery "Drops 1 Dec" placeholder tile (not playable) goes first in the 7 days before
+  // a drop (HYPE_DAYS) while no NEW game is showing; otherwise it sits last.
   // Tile art is icons/games/<id>.svg (cartoon, same style as the logo; masters in Figma).
   // icon (emoji) is only used as a fallback label, e.g. on /stats.
   const GAMES = [
@@ -994,7 +994,7 @@
 
   // Tile order: new drops first, then the last game played, then the rest shuffled once a
   // day (same order all day, new one overnight). The free game always sits in the first 3 tiles.
-  // Mystery tile first while a drop is counting down and nothing is NEW (see soonFirst).
+  // Mystery tile first in the last 7 days before a drop, if nothing is NEW (see soonFirst).
   const LAST_GAME_KEY = 'gi.arcade.last';
   const NEW_DAYS = 7; // how long a dropped game keeps its green NEW badge (and the first tile)
   const isNew = gm => !!gm.drops && isOut(gm) && now() - dropTime(gm) < NEW_DAYS * 864e5;
@@ -1020,7 +1020,10 @@
     return list;
   }
 
-  const soonFirst = () => isFinite(nextDrop()) && !arcadeGames().some(isNew);
+  // Mystery tile goes first only in the last 7 days before a drop (to build hype), and only
+  // while nothing is NEW; the rest of the month it sits last.
+  const HYPE_DAYS = 7;
+  const soonFirst = () => nextDrop() - now() <= HYPE_DAYS * 864e5 && !arcadeGames().some(isNew);
 
   const gameArt = id => `<img class="arcade-art" src="icons/games/${id}.svg" alt="" width="64" height="64" decoding="async">`;
 
