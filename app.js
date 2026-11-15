@@ -41,6 +41,7 @@
   const SALARY_KEY = 'gi.salary.v1';
   // A bog in progress, so it survives the phone closing the app in the background
   const RUNNING_KEY = 'gi.running.v1';
+  const HIST_OPEN_KEY = 'gi.bogLogOpen';
   const MIN_SESSION_SECS = 5;
 
   function readJSON(key, fallback) {
@@ -566,6 +567,14 @@
         `<button type="button" class="hist-del" data-start="${s.start}" aria-label="Delete this bog"><svg class="x-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>`;
       list.appendChild(row);
     });
+    // Recent bogs sit in an accordion, collapsed until opened (the choice is remembered).
+    // With no bogs yet there's nothing to fold, so the empty message shows on its own.
+    const toggle = document.getElementById('histToggle');
+    const open = !sessions.length || readJSON(HIST_OPEN_KEY, false);
+    toggle.hidden = !sessions.length;
+    toggle.setAttribute('aria-expanded', String(open));
+    document.getElementById('histToggleCount').textContent = 'Last ' + Math.min(sessions.length, 5);
+    list.hidden = !open;
     if (sessions.length) {
       const clear = document.createElement('button');
       clear.type = 'button';
@@ -756,6 +765,14 @@
     fit();
     if (document.fonts) document.fonts.ready.then(fit);
   })();
+
+  function toggleHistory() {
+    const toggle = document.getElementById('histToggle');
+    const open = toggle.getAttribute('aria-expanded') !== 'true';
+    writeJSON(HIST_OPEN_KEY, open);
+    toggle.setAttribute('aria-expanded', String(open));
+    document.getElementById('historyList').hidden = !open;
+  }
 
   // ── DELETE BOGS ──
   function deleteSessions(starts) {
