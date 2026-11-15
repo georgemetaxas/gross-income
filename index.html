@@ -469,18 +469,24 @@
   #historyPart .lt-val { color: var(--gold); }
   .history-list { margin-top: 18px; border-top: 1px solid var(--border); }
   .history-list[hidden] { display: none; }
-  /* Recent bogs accordion: a header row with the same gold ▾ as the pool switcher */
+  /* Recent bogs accordion: a boxed header row with the same gold ▾ as the pool switcher.
+     The list opens inside the box. */
+  .hist-box:has(.hist-toggle:not([hidden])) {
+    margin-top: 18px; background: var(--paper); border: 1px solid rgba(245,200,66,0.28);
+    border-radius: 12px; overflow: hidden;
+  }
   .hist-toggle {
     display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%;
-    margin-top: 18px; padding: 12px 0; background: none; border: 0; border-top: 1px solid var(--border);
+    padding: 14px 16px; background: none; border: 0;
     color: var(--cream); cursor: pointer; text-align: left;
     font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
   }
+  .hist-toggle:hover { background: rgba(245,200,66,0.05); }
   .hist-toggle[hidden] { display: none; }
   .hist-toggle-end { display: inline-flex; align-items: center; gap: 10px; color: var(--muted); letter-spacing: 1px; }
   .hist-chev { color: var(--gold); transition: transform 0.2s ease; }
   .hist-toggle[aria-expanded="true"] .hist-chev { transform: rotate(180deg); }
-  .hist-toggle + .history-list { margin-top: 0; }
+  .hist-toggle:not([hidden]) + .history-list { margin-top: 0; padding: 0 16px 6px; }
   .history-row {
     display: flex; justify-content: space-between; gap: 12px; padding: 10px 0;
     border-bottom: 1px solid var(--border);
@@ -1202,11 +1208,13 @@
               <div class="lt-lbl">Longest Sesh</div>
             </div>
           </div>
+          <div class="hist-box" id="histBox">
           <button type="button" class="hist-toggle" id="histToggle" data-click="toggleHistory" aria-expanded="false" aria-controls="historyList" hidden>
             <span>Recent bogs</span>
             <span class="hist-toggle-end"><span id="histToggleCount"></span><svg class="hist-chev" width="12" height="8" viewBox="0 0 12 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 1.5l5 5 5-5"/></svg></span>
           </button>
           <div class="history-list" id="historyList"></div>
+          </div>
         </div>
         <div class="stats-part" id="portfolioPart">
           <span class="section-label stats-sub">🚀 Lifetime Poop Portfolio</span>
