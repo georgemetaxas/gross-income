@@ -810,8 +810,9 @@
   // A game file sets window[global] = { mount(el, { hourly, onExit }) } and
   // mount returns { destroy() }. Add a game by adding a line here.
   // The card is always shown; a running bog timer keeps going underneath, shrunk to a bar at the top.
-  // held: true keeps a finished game in the code but off the arcade until its monthly drop.
-  // dropped: 'YYYY-MM-DD' on a released monthly game pins it first with a NEW badge for 30 days.
+  // drops: 'YYYY-MM-DD' is a monthly game's release date. It stays off the arcade until
+  // 12:00 am Melbourne time that day, then appears by itself (no deploy needed), pinned
+  // first with a green NEW badge for 7 days (NEW_DAYS). Games without drops are always out.
   // A mystery "Drops 1 Dec" placeholder tile (not playable) goes first while the next drop is
   // counting down and no NEW game is showing; otherwise it sits last.
   // Tile art is icons/games/<id>.svg (cartoon, same style as the logo; masters in Figma).
@@ -823,7 +824,7 @@
       bg: 'linear-gradient(145deg,#4caf6e,#1f5a34)' },
     { id: 'stool-swap', name: 'Stool Swap', icon: '🌽', file: 'games/stool-swap.js', global: 'StoolSwap',
       bg: 'linear-gradient(145deg,#f5c842,#e07b00)' },
-    { id: 'fling-bonus', name: 'Fling Bonus', icon: '🐒', file: 'games/fling-bonus.js', global: 'FlingBonus', held: true,
+    { id: 'fling-bonus', name: 'Fling Bonus', icon: '🐒', file: 'games/fling-bonus.js', global: 'FlingBonus', drops: '2026-12-01',
       bg: 'linear-gradient(145deg,#e07b00,#7a3a00)' },
     { id: 'wrap-up', name: 'Wrap Up', icon: '🧩', file: 'games/wrap-up.js', global: 'WrapUp',
       bg: 'linear-gradient(145deg,#ff7aa8,#24306b)' },
@@ -831,26 +832,58 @@
       bg: 'linear-gradient(145deg,#f5ead6,#a0652f)' },
     { id: 'turd-invaders', name: 'Turd Invaders', icon: '🛸', file: 'games/turd-invaders.js', global: 'TurdInvaders',
       bg: 'linear-gradient(145deg,#3a2a6b,#0e0a05)' },
-    { id: 'step-in-it', name: 'Step In It', icon: '👟', file: 'games/step-in-it.js', global: 'StepInIt', held: true,
+    { id: 'step-in-it', name: 'Step In It', icon: '👟', file: 'games/step-in-it.js', global: 'StepInIt', drops: '2027-03-01',
       bg: 'linear-gradient(145deg,#7a9a3a,#2e4f1c)' },
-    { id: 'mah-dung', name: 'Mah-Dung', icon: '🀄', file: 'games/mah-dung.js', global: 'MahDung', held: true,
+    { id: 'mah-dung', name: 'Mah-Dung', icon: '🀄', file: 'games/mah-dung.js', global: 'MahDung', drops: '2027-01-01',
       bg: 'linear-gradient(145deg,#2f8f86,#123f3b)' },
-    // Locked in as the April 2027 drop
-    { id: 'gas-trap', name: 'Gas Trap', icon: '💨', file: 'games/gas-trap.js', global: 'GasTrap', held: true,
+    { id: 'gas-trap', name: 'Gas Trap', icon: '💨', file: 'games/gas-trap.js', global: 'GasTrap', drops: '2027-04-01',
       bg: 'linear-gradient(145deg,#d46a9a,#5a1f45)' },
-    // Locked in as the June 2027 drop
-    { id: 'backed-up', name: 'Backed Up', icon: '🪠', file: 'games/backed-up.js', global: 'BackedUp', held: true,
+    { id: 'backed-up', name: 'Backed Up', icon: '🪠', file: 'games/backed-up.js', global: 'BackedUp', drops: '2027-06-01',
       bg: 'linear-gradient(145deg,#3f8fd0,#17375c)' },
   ];
-  // Branch previews (and localhost) show held games too, so they can be played before their drop
-  const ARCADE = GAMES.filter(gm => !gm.held || /\.gross-income\.pages\.dev$|^localhost$/.test(location.hostname));
-  // Next monthly game drop (Sydney date). The tile reads "Drops 1 Dec"; once the date
-  // passes it falls back to "Dropping soon" until this is moved to the next drop.
-  const NEXT_DROP = '2026-12-01T00:00:00+11:00';
+  // Planned drop dates with no game in GAMES yet, so the mystery tile still counts down to
+  // them. Once the game is merged with its drops date, take its line out of here.
+  const PLANNED_DROPS = [
+    '2027-02-01', // Sharts (PR #46, not merged yet)
+    '2027-05-01', // Royal Flush (not built yet)
+  ];
+  const testHost = /\.gross-income\.pages\.dev$|^localhost$/.test(location.hostname);
+  // Previews only: ?now=2026-12-01 (midnight Melbourne) or ?now=2026-12-01T09:30 (Melbourne
+  // time) pretends it's that moment, for testing drops. With ?now= the preview hides games
+  // that haven't dropped yet, like the live site does. Ignored on the live site.
+  const NOW_OFFSET = (() => {
+    const v = testHost && new URLSearchParams(location.search).get('now');
+    const m = v && /^(\d{4}-\d{2}-\d{2})(?:T(\d{2}):(\d{2}))?$/.exec(v);
+    return m ? melbTime(m[1], +(m[2] || 0), +(m[3] || 0)) - Date.now() : null;
+  })();
+  const now = () => Date.now() + (NOW_OFFSET || 0);
+  // A Melbourne wall-clock time as a timestamp. Melbourne is +11 (AEDT) or +10 (AEST); daylight
+  // saving switches at 2–3 am on a Sunday, so midnight on the 1st is never ambiguous.
+  function melbTime(date, h = 0, min = 0) {
+    const hhmm = String(h).padStart(2, '0') + ':' + String(min).padStart(2, '0');
+    for (const off of ['+11:00', '+10:00']) {
+      const t = Date.parse(`${date}T${hhmm}:00${off}`);
+      const back = new Date(t).toLocaleString('sv-SE', { timeZone: 'Australia/Melbourne', hour12: false });
+      if (back.startsWith(`${date} ${hhmm}`)) return t;
+    }
+    return Date.parse(`${date}T${hhmm}:00+10:00`);
+  }
+  const dropTime = gm => gm.drops ? melbTime(gm.drops) : 0;
+  const isOut = gm => now() >= dropTime(gm);
+  // The arcade right now. Previews (and localhost) also show games that haven't dropped, so
+  // they can be played early, unless ?now= is set.
+  const arcadeGames = () => GAMES.filter(gm => isOut(gm) || (testHost && NOW_OFFSET === null));
+  // Next drop: the soonest date still to come, from GAMES or PLANNED_DROPS.
+  function nextDrop() {
+    const t = now();
+    const times = [...GAMES.filter(gm => gm.drops).map(dropTime), ...PLANNED_DROPS.map(d => melbTime(d))];
+    return Math.min(...times.filter(x => x > t)); // Infinity when nothing's scheduled
+  }
+  // The tile reads "Drops 1 Dec", or "Dropping soon" when nothing's scheduled.
   function dropLabel() {
-    const t = Date.parse(NEXT_DROP);
-    if (!(Date.now() < t)) return 'Dropping soon';
-    return 'Drops ' + new Date(t).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', timeZone: 'Australia/Sydney' }).replace(' ', '\u00a0'); // keep "1 Dec" on one line
+    const t = nextDrop();
+    if (!isFinite(t)) return 'Dropping soon';
+    return 'Drops ' + new Date(t).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', timeZone: 'Australia/Melbourne' }).replace(' ', ' '); // keep "1 Dec" on one line
   }
   // Games call this when you come back to the app mid-play: a "Paused" cover that
   // carries on when tapped (or on any key). Calling it again just swaps the callback.
@@ -935,7 +968,6 @@
   if (qs.has('paywall')) writeJSON('gi.paywallPreview', true);
   // Branch previews only: ?nopaywall opens the whole arcade for testing (?paywall turns it back on).
   // Never on the live site or gross-income.pages.dev, so it can't be used to skip paying.
-  const testHost = /\.gross-income\.pages\.dev$|^localhost$/.test(location.hostname);
   if (testHost && qs.has('nopaywall')) writeJSON('gi.paywallPreview', 'off');
   if (testHost) {
     const tag = document.createElement('div');
@@ -964,13 +996,15 @@
   // day (same order all day, new one overnight). The free game always sits in the first 3 tiles.
   // Mystery tile first while a drop is counting down and nothing is NEW (see soonFirst).
   const LAST_GAME_KEY = 'gi.arcade.last';
-  const isNew = gm => gm.dropped && Date.now() - Date.parse(gm.dropped) < 30 * 864e5;
+  const NEW_DAYS = 7; // how long a dropped game keeps its green NEW badge (and the first tile)
+  const isNew = gm => !!gm.drops && isOut(gm) && now() - dropTime(gm) < NEW_DAYS * 864e5;
   function arcadeOrder() {
-    const fresh = ARCADE.filter(isNew).sort((a, b) => b.dropped.localeCompare(a.dropped));
-    const last = ARCADE.find(gm => gm.id === readJSON(LAST_GAME_KEY, null) && !fresh.includes(gm));
-    const rest = ARCADE.filter(gm => !fresh.includes(gm) && gm !== last);
-    // Seeded shuffle: the seed is today's Sydney date, e.g. 20261101
-    let seed = +new Date().toLocaleDateString('en-CA', { timeZone: 'Australia/Sydney' }).replace(/-/g, '');
+    const games = arcadeGames();
+    const fresh = games.filter(isNew).sort((a, b) => b.drops.localeCompare(a.drops));
+    const last = games.find(gm => gm.id === readJSON(LAST_GAME_KEY, null) && !fresh.includes(gm));
+    const rest = games.filter(gm => !fresh.includes(gm) && gm !== last);
+    // Seeded shuffle: the seed is today's Melbourne date, e.g. 20261101
+    let seed = +new Date(now()).toLocaleDateString('en-CA', { timeZone: 'Australia/Melbourne' }).replace(/-/g, '');
     const rand = () => { // mulberry32
       let t = seed = (seed + 0x6D2B79F5) | 0;
       t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
@@ -986,7 +1020,7 @@
     return list;
   }
 
-  const soonFirst = () => Date.now() < Date.parse(NEXT_DROP) && !ARCADE.some(isNew);
+  const soonFirst = () => isFinite(nextDrop()) && !arcadeGames().some(isNew);
 
   const gameArt = id => `<img class="arcade-art" src="icons/games/${id}.svg" alt="" width="64" height="64" decoding="async">`;
 
@@ -998,7 +1032,7 @@
       </div>`;
     const tiles = arcadeOrder().map(gm => `
       <button type="button" class="arcade-tile" data-click="openGame:${gm.id}">
-        <span class="arcade-icon" style="background:${gm.bg}" aria-hidden="true">${gameArt(gm.id)}${gameLocked(gm) ? '<span class="arcade-lock">🔒</span>' : isNew(gm) ? '<span class="arcade-new">NEW</span>' : ''}</span>
+        <span class="arcade-icon" style="background:${gm.bg}" aria-hidden="true">${gameArt(gm.id)}${isNew(gm) ? '<span class="arcade-new">NEW</span>' : ''}${gameLocked(gm) ? '<span class="arcade-lock">🔒</span>' : ''}</span>
         <span class="arcade-name">${gm.name}</span>
       </button>`).join('');
     document.getElementById('arcadeTiles').innerHTML = soonFirst() ? soon + tiles : tiles + soon;
@@ -1024,13 +1058,21 @@
   document.getElementById('founderBarBtn').onclick = () => openHomeSheet('pool');
   document.getElementById('founderBarX').onclick = () => { founderBarClosed = true; renderFounderBar(); };
   renderArcade();
+  // A drop can land while the app is open: redraw the arcade at midnight, and whenever the
+  // app comes back to the front (timers sleep while it's in the background).
+  (function dropWatch() {
+    const wait = nextDrop() - now();
+    if (wait < 864e5) setTimeout(() => { renderArcade(); dropWatch(); }, wait + 1000);
+  })();
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') renderArcade(); });
 
   function paywallHtml(gm) {
     const user = poolUser();
     // Free games first so the taster is the first thing people see
     const free = x => FREE_GAMES.includes(x.id);
     // Every game they get, up front: the tapped one ringed in gold, then next month's mystery drop
-    const grid = [...ARCADE.filter(free), ...ARCADE.filter(x => !free(x))].map(x => `
+    const games = arcadeGames();
+    const grid = [...games.filter(free), ...games.filter(x => !free(x))].map(x => `
       <li class="${x.id === gm.id ? 'on' : ''}"><span class="arcade-icon" style="background:${x.bg}" aria-hidden="true">${gameArt(x.id)}</span>
         <span class="arcade-name">${x.name}</span>${free(x) ? '<span class="free-badge">FREE</span>' : ''}</li>`).join('')
       + `<li class="arcade-soon"><span class="arcade-icon" aria-hidden="true">${gameArt('soon')}</span><span class="arcade-name">${dropLabel()}</span></li>`;
@@ -1105,7 +1147,7 @@
   }
 
   async function openGame(id) {
-    const gm = GAMES.find(x => x.id === id) || GAMES[0];
+    const gm = arcadeGames().find(x => x.id === id) || GAMES[0];
     if (game || !document.getElementById('gameLayer').hidden) return;
     const openId = ++gameOpenId;
     const root = document.getElementById('gameRoot');
