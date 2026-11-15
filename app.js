@@ -835,6 +835,9 @@
       bg: 'linear-gradient(145deg,#7a9a3a,#2e4f1c)' },
     { id: 'mah-dung', name: 'Mah-Dung', icon: '🀄', file: 'games/mah-dung.js', global: 'MahDung', held: true,
       bg: 'linear-gradient(145deg,#2f8f86,#123f3b)' },
+    // Locked in as the April 2027 drop
+    { id: 'gas-trap', name: 'Gas Trap', icon: '💨', file: 'games/gas-trap.js', global: 'GasTrap', held: true,
+      bg: 'linear-gradient(145deg,#d46a9a,#5a1f45)' },
     // Locked in as the June 2027 drop
     { id: 'backed-up', name: 'Backed Up', icon: '🪠', file: 'games/backed-up.js', global: 'BackedUp', held: true,
       bg: 'linear-gradient(145deg,#3f8fd0,#17375c)' },
