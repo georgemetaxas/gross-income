@@ -86,7 +86,6 @@
   .sh-screen > :last-child { margin-bottom: auto; }
   .sh-screen[hidden] { display: none; }
   .sh-hero { font-size: 72px; line-height: 1; filter: drop-shadow(0 0 24px rgba(245,200,66,0.35)); }
-  .sh-hero canvas { width: 96px; height: 96px; }
   .sh-title { font-family: 'Bebas Neue', sans-serif; font-size: 64px; line-height: 0.95; color: var(--gold, #f5c842); margin-top: 6px; }
   .sh-title.amber { color: var(--amber, #e07b00); }
   .sh-sub { font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; opacity: 0.85; margin: 8px 0 14px; }
@@ -115,9 +114,11 @@
   .sh-bigstars { font-size: 40px; letter-spacing: 6px; margin: 2px 0 10px; }
   .sh-btn { width: 100%; border: none; border-radius: 12px; background: var(--gold, #f5c842); color: #1a1208;
     font-family: 'Bebas Neue', sans-serif; font-size: 24px; letter-spacing: 3px; padding: 14px; cursor: pointer; margin-top: 4px; }
-  .sh-btn.ghost { background: transparent; color: var(--gold, #f5c842); border: 1.5px solid rgba(245,200,66,0.6); margin-top: 10px; }
-  .sh-link { background: none; border: none; color: var(--muted, #a08060); font-family: 'DM Mono', monospace; font-size: 11px;
-    letter-spacing: 1px; margin-top: 14px; cursor: pointer; text-decoration: underline; }
+  .sh-btn.ghost { background: transparent; color: var(--gold, #f5c842); border: 1.5px solid rgba(245,200,66,0.6); margin-top: 20px; }
+  .sh-link { width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; background: transparent;
+    color: var(--cream, #f5ead6); border: none; border-radius: 12px; font-family: 'Bebas Neue', sans-serif;
+    font-size: 19px; letter-spacing: 2px; padding: 12px 14px; margin-top: 20px; cursor: pointer; }
+  .sh-link svg { color: var(--gold, #f5c842); flex: 0 0 auto; margin-top: -2px; }
   @media (max-width: 359px) {
     .sh-hud { gap: 6px; padding: 8px 10px; }
     .sh-val { font-size: 21px; }
@@ -530,7 +531,7 @@
       const p = progress();
       const open = i => preview || i <= p.unlocked;
       el.screen.innerHTML = `
-        <div class="sh-hero" data-hero></div>
+        <div class="sh-hero"><img class="game-hero-art" src="icons/games/sharts.svg" alt="" width="112" height="112"></div>
         <div class="sh-title">Sharts</div>
         <div class="sh-sub">Darts for the dunny</div>
         <div class="sh-levels">
@@ -538,7 +539,7 @@
             <div class="sh-level-n">${i + 1}</div>
             <div class="sh-level-t"><b>${L.name}</b><span>${open(i) ? L.sub + (p.best[i] ? ' · best ' + bestText(L, p.best[i]) : '') : '🔒 Beat level ' + i + ' first'}</span></div>
             <div class="sh-stars">${p.stars[i] ? starStr(p.stars[i]) : ''}</div>
-            ${open(i) ? '<div class="sh-play">Play ▶</div>' : '<div class="sh-play locked" aria-label="Locked">🔒</div>'}
+            ${open(i) ? '<div class="sh-play">Play <svg width="0.8em" height="0.8em" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="vertical-align:-0.05em"><path d="M7 4.8v14.4a1.2 1.2 0 0 0 1.8 1l11.6-7.2a1.2 1.2 0 0 0 0-2L8.8 3.8A1.2 1.2 0 0 0 7 4.8z"/></svg></div>' : '<div class="sh-play locked" aria-label="Locked">🔒</div>'}
           </button>`).join('')}
         </div>
         <div class="sh-box" style="margin-top:8px">
@@ -554,7 +555,6 @@
           </div>
         </div>`;
       el.screen.hidden = false;
-      el.screen.querySelector('[data-hero]').appendChild(sprite(192, (x, s) => drawBoard(x, s, false)));
       el.screen.querySelectorAll('[data-lv]').forEach(b => { b.onclick = () => startLevel(+b.dataset.lv); });
       draw();
     }
@@ -576,8 +576,8 @@
             <div><div class="sh-lbl">Paid to play</div><div class="sh-val green">${paid}</div></div>
           </div>
           <button type="button" class="sh-btn" data-again>↺ Try again</button>
-          <button type="button" class="sh-link" data-levels>All levels</button>
-          <button type="button" class="sh-link" data-exit style="margin-top:6px">Back to the bog timer</button>`;
+          <button type="button" class="sh-link" data-levels><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5"/></svg>All levels</button>
+          <button type="button" class="sh-link" data-exit><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="M11 18l-6-6 6-6"/></svg>Back to the bog timer</button>`;
         el.screen.hidden = false;
         return wireEnd(false);
       }
@@ -603,11 +603,11 @@
           <div><div class="sh-lbl">Paid to play</div><div class="sh-val green">${paid}</div></div>
           <div><div class="sh-lbl">Level record?</div><div class="sh-val" style="color:${record ? '#f5c842' : '#a08060'}">${record ? 'YES!' : 'Nah · ' + bestText(L, p.best[g.lv])}</div></div>
         </div>
-        ${more ? '<button type="button" class="sh-btn" data-next>▶ Next level</button>' :
+        ${more ? '<button type="button" class="sh-btn" data-next><svg width="0.8em" height="0.8em" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="vertical-align:-0.05em"><path d="M7 4.8v14.4a1.2 1.2 0 0 0 1.8 1l11.6-7.2a1.2 1.2 0 0 0 0-2L8.8 3.8A1.2 1.2 0 0 0 7 4.8z"/></svg> Next level</button>' :
           '<div style="font-size:14px;opacity:0.8;margin-bottom:8px">That\'s every level so far. More on the way.</div>'}
         <button type="button" class="sh-btn ghost" data-again>↺ Play again</button>
-        <button type="button" class="sh-link" data-levels>All levels</button>
-        <button type="button" class="sh-link" data-exit style="margin-top:6px">Back to the bog timer</button>`;
+        <button type="button" class="sh-link" data-levels><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5"/></svg>All levels</button>
+        <button type="button" class="sh-link" data-exit><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="M11 18l-6-6 6-6"/></svg>Back to the bog timer</button>`;
       el.screen.hidden = false;
       wireEnd(more);
     }
@@ -657,8 +657,15 @@
       else return;
       e.preventDefault();
     }
+    // Phone locked or app switched mid-round: stop, then wait for a tap before carrying on
     function onVisible() {
-      if (document.visibilityState === 'visible' && g.state === 'play') startLoop();
+      if (g.state !== 'play') return;
+      if (document.visibilityState === 'hidden') {
+        if (frame) cancelAnimationFrame(frame);
+        frame = null; drag = null; g.holding = false; g.hold = 0;
+        return;
+      }
+      if (window.GIPause) window.GIPause(root, () => { if (alive) startLoop(); }); else startLoop();
     }
 
     el.mute.onclick = () => { sound.muted = !sound.muted; save(MUTE_KEY, sound.muted); sound.init(); renderMute(); };

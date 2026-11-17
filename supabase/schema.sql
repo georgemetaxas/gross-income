@@ -186,6 +186,9 @@ $$;
 
 -- Ranked by bog time. A single session counts for at most 60 minutes, and
 -- earnings only show for people who opted in.
+-- Anti-cheat (sessions are written by the phone, so they can be faked): only a
+-- person's first 10 bogs of a Sydney day count, a day counts for at most 3 hours,
+-- bogs dated in the future don't count, and a bog earns at most A$1,000 an hour.
 create or replace function public.pool_leaderboard(p_pool uuid, p_since timestamptz default null)
 returns table (
   user_id uuid, display_name text, emoji text,
@@ -196,22 +199,59 @@ language plpgsql stable security definer set search_path = public as $$
 begin
   if not is_pool_member(p_pool) then raise exception 'Not in this pool'; end if;
   return query
+  with counted as (
+    select x.user_id, x.secs, x.earned,
+           -- bog time left in the day's 3 hours once the earlier bogs are counted
+           greatest(0, least(least(x.secs, 3600), 10800 - coalesce(x.before, 0)))::int as day_secs
+    from (
+      select ss.user_id, ss.secs,
+             least(ss.earned, round(ss.secs * 1000 / 3600.0, 2)) as earned,
+             row_number() over w as nth,
+             sum(least(ss.secs, 3600)) over (w rows between unbounded preceding and 1 preceding) as before
+      from sessions ss
+      join pool_members pm on pm.user_id = ss.user_id and pm.pool_id = p_pool
+      where (p_since is null or ss.started_at >= p_since)
+        and ss.started_at <= now() + interval '1 hour'
+      window w as (partition by ss.user_id, (ss.started_at at time zone 'Australia/Sydney')::date
+                   order by ss.started_at)
+    ) x
+    where x.nth <= 10
+  )
   select m.user_id,
          coalesce(pr.display_name, 'Mystery Pooper'),
          coalesce(pr.emoji, '💩'),
-         coalesce(sum(least(s.secs, 3600)), 0)::int,
-         count(s.id)::int,
+         coalesce(sum(s.day_secs), 0)::int,
+         count(s.secs)::int,
          coalesce(max(least(s.secs, 3600)), 0)::int,
          case when coalesce(pr.share_money, false) then coalesce(sum(s.earned), 0) end,
-         count(s.id) filter (where s.secs > 3600)::int,
+         count(s.secs) filter (where s.secs > 3600)::int,
          m.user_id = auth.uid()
   from pool_members m
   left join profiles pr on pr.id = m.user_id
-  left join sessions s on s.user_id = m.user_id
-                      and (p_since is null or s.started_at >= p_since)
+  left join counted s on s.user_id = m.user_id
   where m.pool_id = p_pool
   group by m.user_id, pr.display_name, pr.emoji, pr.share_money
   order by 4 desc, 5 desc;
+end;
+$$;
+
+-- Delete account (Profile & Crap → Delete my account). Removes the person's login
+-- and, through the cascades, their profile, uploaded bogs, pool spots and unlocks.
+-- Pools they own pass to the mate who joined next, so a pool doesn't vanish for
+-- everyone else; a pool with nobody left goes with them.
+create or replace function public.delete_my_account()
+returns void language plpgsql security definer set search_path = public as $$
+declare
+  me uuid := auth.uid();
+begin
+  if me is null then raise exception 'Log in first'; end if;
+  update pools p set owner_id = (
+      select m.user_id from pool_members m
+      where m.pool_id = p.id and m.user_id <> me
+      order by m.joined_at limit 1)
+    where p.owner_id = me
+      and exists (select 1 from pool_members m where m.pool_id = p.id and m.user_id <> me);
+  delete from auth.users where id = me;
 end;
 $$;
 
@@ -220,6 +260,8 @@ grant execute on function public.pool_preview(text) to anon, authenticated;
 grant execute on function public.create_pool(text), public.join_pool(text),
   public.regenerate_invite_code(uuid), public.pool_leaderboard(uuid, timestamptz)
   to authenticated;
+revoke execute on function public.delete_my_account() from public, anon;
+grant execute on function public.delete_my_account() to authenticated;
 
 -- ── GOLDEN THRONE (arcade unlock) ──
 -- One row per person who has unlocked the Bog Arcade. People can read their own
@@ -235,6 +277,15 @@ create table if not exists public.entitlements (
   created_at timestamptz not null default now(),
   primary key (user_id, product)
 );
+
+-- Subscriptions (Nov 2026). Founder and gift rows leave these empty: free forever.
+-- For a Stripe subscription, txn_id is the subscription id (sub_…) and the webhook
+-- keeps status and expires_at (end of the paid period) up to date on every renewal,
+-- cancel or failed payment. The app unlocks while expires_at is in the future.
+alter table public.entitlements add column if not exists plan text check (plan in ('monthly', 'yearly'));
+alter table public.entitlements add column if not exists status text;
+alter table public.entitlements add column if not exists expires_at timestamptz;
+alter table public.entitlements add column if not exists stripe_customer_id text;
 
 alter table public.entitlements enable row level security;
 
@@ -311,3 +362,85 @@ end;
 $$;
 revoke execute on function public.game_stats(int) from public, anon;
 grant execute on function public.game_stats(int) to authenticated;
+
+-- Founders and sales for the stats page. Same stats_admins gate as game_stats().
+-- Accounts = people with a profile (same rule as the founder SQL in README.md).
+-- Founders: before the cut-off, how many signed up so far (eligible); after it,
+-- how many founder unlocks exist (granted). Subscribers = Stripe/store rows made
+-- since the paywall went live, so test purchases from before then don't count.
+create or replace function public.account_stats(p_days int default 30)
+returns jsonb
+language plpgsql stable security definer set search_path = public
+as $$
+declare
+  founder_cutoff constant timestamptz := '2026-11-02T00:00:00+11:00'; -- FOUNDER_CUTOFF in app.js
+  launch constant timestamptz := '2027-01-04T00:00:00+11:00';         -- PAYWALL_FROM in app.js
+  since timestamptz := now() - make_interval(days => least(greatest(p_days, 1), 365));
+begin
+  if not exists (select 1 from stats_admins where user_id = auth.uid()) then
+    raise exception 'not allowed';
+  end if;
+  return (
+    with acc as (select u.created_at from profiles p join auth.users u on u.id = p.id),
+         paid as (select created_at, plan, expires_at from entitlements
+                  where source in ('stripe', 'apple', 'google') and created_at >= launch),
+         active as (select plan from paid where expires_at > now())
+    select jsonb_build_object(
+      'founder_cutoff', founder_cutoff,
+      'launch', launch,
+      'accounts', (select count(*) from acc),
+      'founders_eligible', (select count(*) from acc where created_at < founder_cutoff),
+      'founders_granted', (select count(*) from entitlements where source = 'founder'),
+      'signups_since_launch', (select count(*) from acc where created_at >= launch),
+      'paid', (select count(*) from paid),
+      'active_monthly', (select count(*) from active where plan = 'monthly'),
+      'active_yearly', (select count(*) from active where plan = 'yearly'),
+      'lapsed', (select count(*) from paid where expires_at <= now()),
+      'paywall_hits_since_launch', (select count(*) from game_events
+                                    where kind = 'open' and locked and at >= launch),
+      'daily', coalesce((
+        select jsonb_agg(jsonb_build_object('day', day, 'signups', signups, 'paid', paid) order by day)
+        from (select day, sum(s)::int as signups, sum(b)::int as paid from (
+                select (created_at at time zone 'Australia/Sydney')::date as day, 1 as s, 0 as b from acc where created_at > since
+                union all
+                select (created_at at time zone 'Australia/Sydney')::date, 0, 1 from paid where created_at > since
+              ) x group by day) d), '[]'::jsonb)
+    ));
+end;
+$$;
+revoke execute on function public.account_stats(int) from public, anon;
+grant execute on function public.account_stats(int) to authenticated;
+
+-- ── LOCKDOWN (Oct 2026 security audit) ──
+-- Supabase grants every table and function to anon (signed out) and authenticated
+-- (signed in) by default, and lets RLS sort it out. Trim those grants down to what
+-- the app actually uses, so a missing or loose policy can't open anything up.
+
+-- Signed-out visitors never touch these tables directly (invites use pool_preview()).
+revoke all on public.profiles, public.sessions, public.pools, public.pool_members, public.entitlements from anon;
+revoke truncate, references, trigger on public.profiles, public.sessions, public.pools, public.pool_members, public.entitlements from authenticated;
+
+-- Profiles: created_at decides who is a Founding Flusher, so nobody can set it.
+revoke insert, update, delete on public.profiles from authenticated;
+grant insert (id, display_name, emoji, share_money), update (id, display_name, emoji, share_money)
+  on public.profiles to authenticated;
+
+-- Pools are created and joined through create_pool() / join_pool(); owners can only rename.
+revoke insert, update on public.pools from authenticated;
+grant update (name) on public.pools to authenticated;
+revoke insert, update on public.pool_members from authenticated;
+
+-- Only the Stripe webhook (service role) writes unlocks.
+revoke insert, update, delete on public.entitlements from authenticated;
+
+-- Game stats: `at` comes from the server clock, so rows can't be backdated.
+revoke insert on public.game_events from anon, authenticated;
+grant insert (game, kind, locked, secs) on public.game_events to anon, authenticated;
+
+-- Functions are executable by everyone unless revoked. Signed out only needs pool_preview().
+revoke execute on function public.create_pool(text), public.join_pool(text),
+  public.regenerate_invite_code(uuid), public.pool_leaderboard(uuid, timestamptz),
+  public.is_pool_member(uuid), public.is_pool_mate(uuid) from public, anon;
+grant execute on function public.create_pool(text), public.join_pool(text),
+  public.regenerate_invite_code(uuid), public.pool_leaderboard(uuid, timestamptz),
+  public.is_pool_member(uuid), public.is_pool_mate(uuid) to authenticated;
