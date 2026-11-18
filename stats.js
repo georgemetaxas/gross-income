@@ -6,7 +6,7 @@
   const NAMES = {
     'dung-run': ['🚽', 'Dung Run'], 'turd-snake': ['💩', 'Turd Snake'], 'stool-swap': ['🌽', 'Stool Swap'],
     'fling-bonus': ['🐒', 'Fling Bonus'], 'wrap-up': ['🧩', 'Wrap Up'], 'turdle': ['📰', 'Turdle'],
-    'turd-invaders': ['🛸', 'Turd Invaders'],
+    'turd-invaders': ['🛸', 'Turd Invaders'], 'sharts': ['🎯', 'Sharts'],
     'step-in-it': ['👟', 'Step In It'], 'mah-dung': ['🀄', 'Mah-Dung'],
     'gas-trap': ['💨', 'Gas Trap'], 'backed-up': ['🪠', 'Backed Up'],
   };

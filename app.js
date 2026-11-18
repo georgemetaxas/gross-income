@@ -838,13 +838,14 @@
       bg: 'linear-gradient(145deg,#2f8f86,#123f3b)' },
     { id: 'gas-trap', name: 'Gas Trap', icon: '💨', file: 'games/gas-trap.js', global: 'GasTrap', drops: '2027-04-01',
       bg: 'linear-gradient(145deg,#d46a9a,#5a1f45)' },
+    { id: 'sharts', name: 'Sharts', icon: '🎯', file: 'games/sharts.js', global: 'Sharts', drops: '2027-02-01',
+      bg: 'linear-gradient(145deg,#4caf6e,#3a2410)' },
     { id: 'backed-up', name: 'Backed Up', icon: '🪠', file: 'games/backed-up.js', global: 'BackedUp', drops: '2027-06-01',
       bg: 'linear-gradient(145deg,#3f8fd0,#17375c)' },
   ];
   // Planned drop dates with no game in GAMES yet, so the mystery tile still counts down to
   // them. Once the game is merged with its drops date, take its line out of here.
   const PLANNED_DROPS = [
-    '2027-02-01', // Sharts (PR #46, not merged yet)
     '2027-05-01', // Royal Flush (not built yet)
   ];
   const testHost = /\.gross-income\.pages\.dev$|^localhost$/.test(location.hostname);
