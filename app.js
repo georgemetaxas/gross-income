@@ -948,7 +948,7 @@
   // function keeps the entitlements row up to date. Setup: supabase/README.md.
   const FREE_GAMES = ['turd-snake'];
   // Payment Links redirect to grossincome.com.au/?unlocked=1. Yearly is listed first and picked by default.
-  // TEST MODE links (redirect to this branch's preview). Swap for live links before 4 Jan.
+  // LIVE Stripe Payment Links (live since Nov 1). Test links contain /test_ and must never go here.
   const PLANS = {
     yearly: { label: 'Yearly', price: 'A$24.99', per: 'year', note: 'A$2.08 a month · save 30%', link: 'https://buy.stripe.com/bJebJ3eDA7no72M2Va0ZW01' },
     monthly: { label: 'Monthly', price: 'A$2.99', per: 'month', note: 'Cancel anytime', link: 'https://buy.stripe.com/5kQ9AV2US8rs72M3Ze0ZW02' },
